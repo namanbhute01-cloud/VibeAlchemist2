@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+websockets
+python-dotenv
+opencv-python
+numpy
+Pillow
+insightface
+onnxruntime
+ultralytics
+google-auth
+google-auth-oauthlib
+google-api-python-client
