@@ -2,6 +2,10 @@ import uvicorn
 import os
 from dotenv import load_dotenv
 
+# Suppress noisy low-level library warnings (NNPACK, etc.)
+os.environ["nnpack_limit"] = "0"
+os.environ["OMP_NUM_THREADS"] = "1" 
+
 if __name__ == "__main__":
     load_dotenv()
     
