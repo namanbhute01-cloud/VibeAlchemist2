@@ -74,7 +74,7 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 # --- VISION PROCESSING LOOP ---
-def processing_loop():
+def processing_loop(loop):
     """
     Main loop: Pulls from CameraPool -> VisionPipeline -> Broadcasts Results.
     """
@@ -113,16 +113,16 @@ def processing_loop():
             if ret:
                 app.state.latest_frames[cam_id] = buffer.tobytes()
 
-            # 5. Async Broadcast Detection
+            # 5. Broadcast Detection to Main Loop
             if detections:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                loop.run_until_complete(manager.broadcast({
-                    "type": "detection",
-                    "cam_id": cam_id,
-                    "data": detections
-                }))
-                loop.close()
+                asyncio.run_coroutine_threadsafe(
+                    manager.broadcast({
+                        "type": "detection",
+                        "cam_id": cam_id,
+                        "data": detections
+                    }), 
+                    loop
+                )
 
         except queue.Empty:
             continue
@@ -155,7 +155,9 @@ async def startup_event():
     cam_pool = CameraPool(sources, frame_queue)
     cam_pool.start()
     
-    threading.Thread(target=processing_loop, daemon=True).start()
+    # Pass the current event loop to the processing thread
+    main_loop = asyncio.get_event_loop()
+    threading.Thread(target=processing_loop, args=(main_loop,), daemon=True).start()
     asyncio.create_task(status_broadcaster())
 
 @app.on_event("shutdown")
