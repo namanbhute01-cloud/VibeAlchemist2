@@ -1,26 +1,28 @@
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Response, Request
 from fastapi.responses import StreamingResponse
-import time
 import os
 
 router = APIRouter(prefix="/cameras", tags=["cameras"])
 
-# Accessing global state via app.state is cleaner in modular routes
-# But for now we'll assume the MJPEG generator can access the buffers
-
 @router.get("/")
 async def list_cameras():
-    sources = os.getenv("CAMERA_SOURCES", "0").split(",")
-    return {"count": len(sources), "sources": sources}
-
-@router.get("/feed/{cam_id}")
-async def video_feed(cam_id: int):
-    """Note: This route is usually handled in the main app to access state easily,
-    but we can define the logic here and mount it."""
-    from api.api_server import generate_mjpeg
-    return StreamingResponse(generate_mjpeg(cam_id), media_type="multipart/x-mixed-replace;boundary=frame")
+    # Attempt to use cam_pool if initialized, else fallback to .env
+    import api.api_server as server
+    if server.cam_pool:
+        sources = server.cam_pool.sources
+    else:
+        sources = os.getenv("CAMERA_SOURCES", "0").split(",")
+    
+    return [
+        {"id": i, "source": str(s), "status": "online", "name": f"Camera {i+1}"}
+        for i, s in enumerate(sources)
+    ]
 
 @router.post("/{cam_id}/settings")
-async def update_settings(cam_id: int, settings: dict):
-    # Placeholder for Phase 5 hardware tuning
-    return {"status": "ok", "cam_id": cam_id, "settings": settings}
+async def update_settings(cam_id: int, request: Request):
+    body = await request.json()
+    import api.api_server as server
+    if server.cam_pool:
+        server.cam_pool.update_settings(cam_id, body)
+        return {"status": "ok", "cam_id": cam_id, "settings": body}
+    return {"status": "error", "message": "CameraPool not initialized"}

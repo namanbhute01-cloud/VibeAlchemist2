@@ -140,8 +140,12 @@ class AlchemistPlayer:
             self.play()
 
     def set_volume(self, vol):
-        self.volume = max(0, min(100, vol))
+        self.volume = max(0, min(100, int(vol)))
         self._send_ipc(["set_property", "volume", self.volume])
+
+    def toggle_shuffle(self):
+        self.shuffle_mode = not self.shuffle_mode
+        return self.shuffle_mode
 
     def get_status(self):
         # Query properties via IPC
@@ -149,11 +153,14 @@ class AlchemistPlayer:
         dur = self._send_ipc(["get_property", "duration"])
         
         return {
+            "song": self.current_song or "None",
+            "percent": pos.get("data") if pos and "data" in pos else 0,
+            "duration": dur.get("data") if dur and "data" in dur else 0,
             "playing": self.is_playing,
-            "song": self.current_song,
-            "volume": self.volume,
-            "percent": pos.get("data") if pos else 0,
-            "duration": dur.get("data") if dur else 0
+            "paused": not self.is_playing,
+            "shuffle": self.shuffle_mode,
+            "group": self.current_group,
+            "volume": self.volume
         }
 
     def stop(self):

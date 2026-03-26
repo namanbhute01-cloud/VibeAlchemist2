@@ -2,15 +2,20 @@ from fastapi import APIRouter
 import logging
 
 router = APIRouter(prefix="/vibe", tags=["vibe"])
+logger = logging.getLogger("VibeRoute")
 
 @router.get("/current")
-async def get_current_vibe():
-    from api.api_server import vibe_engine
-    return vibe_engine.get_status() if vibe_engine else {"error": "offline"}
+async def get_current():
+    import api.api_server as server
+    if server.vibe_engine:
+        return server.vibe_engine.get_state()
+    return {"status": "error", "message": "VibeEngine not initialized"}
 
 @router.get("/journal")
 async def get_journal():
-    from api.api_server import vibe_engine
-    if not vibe_engine: return []
-    with vibe_engine.lock:
-        return list(vibe_engine.journal)
+    import api.api_server as server
+    if server.vibe_engine:
+        with server.vibe_engine.lock:
+            journal = list(server.vibe_engine.journal)
+        return {"entries": journal, "count": len(journal)}
+    return {"entries": [], "count": 0}

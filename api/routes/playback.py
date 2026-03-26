@@ -1,26 +1,44 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Request
 import logging
 
 router = APIRouter(prefix="/playback", tags=["playback"])
 logger = logging.getLogger("PlaybackRoute")
 
-@router.post("/{action}")
-async def control_playback(action: str):
-    from api.api_server import player
-    if not player:
-        raise HTTPException(status_code=503, detail="Player not initialized")
-    
-    if action == "play": player.play()
-    elif action == "pause": player.pause()
-    elif action == "next": player.next_track()
-    elif action == "prev": player.prev_track()
-    elif action == "shuffle": player.shuffle_mode = not player.shuffle_mode
-    else:
-        raise HTTPException(status_code=400, detail=f"Unknown action: {action}")
-    
-    return {"status": "success", "action": action}
-
 @router.get("/status")
 async def get_status():
-    from api.api_server import player
-    return player.get_status() if player else {"error": "offline"}
+    import api.api_server as server
+    if server.player:
+        return server.player.get_status()
+    return {"status": "error", "message": "Player not initialized"}
+
+@router.post("/{action}")
+async def control_playback(action: str, request: Request):
+    import api.api_server as server
+    if not server.player:
+        return {"status": "error", "message": "Player not initialized"}
+    
+    body = {}
+    try:
+        if await request.body():
+            body = await request.json()
+    except:
+        pass
+
+    if action == "play":
+        server.player.play()
+    elif action == "pause":
+        server.player.pause()
+    elif action == "next":
+        group = server.vibe_engine.current_vibe if server.vibe_engine else "adults"
+        server.player.play(group=group)
+    elif action == "prev":
+        server.player.prev_track()
+    elif action == "shuffle":
+        mode = server.player.toggle_shuffle()
+        return {"status": "ok", "shuffle": mode}
+    elif action == "volume":
+        vol = body.get("level") or body.get("vol")
+        if vol is not None:
+            server.player.set_volume(int(vol))
+    
+    return {"status": "ok", "action": action}

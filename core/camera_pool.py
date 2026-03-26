@@ -48,6 +48,14 @@ class CameraWorker(threading.Thread):
         # (Save heavy CLAHE for later to conserve CPU on this thread)
         return frame
 
+    def update_settings(self, settings: dict):
+        """Live update of worker settings (brightness, etc.)"""
+        if 'brightness' in settings and self.cap:
+            self.cap.set(cv2.CAP_PROP_BRIGHTNESS, settings['brightness'])
+        if 'contrast' in settings and self.cap:
+            self.cap.set(cv2.CAP_PROP_CONTRAST, settings['contrast'])
+        # Sharpness is usually software-based, skipping for low-level CAP_PROP
+
     def run(self):
         self.running = True
         self._connect()
@@ -115,6 +123,10 @@ class CameraPool:
             worker = CameraWorker(source, i, self.queue)
             worker.start()
             self.workers.append(worker)
+
+    def update_settings(self, cam_id: int, settings: dict):
+        if 0 <= cam_id < len(self.workers):
+            self.workers[cam_id].update_settings(settings)
 
     def stop(self):
         logger.info("Stopping CameraPool...")

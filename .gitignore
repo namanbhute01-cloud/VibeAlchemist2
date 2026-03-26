@@ -1,2 +1,22 @@
-models/
-arcface_r100.onnx
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+venv/
+.venv/
+env/
+.vscode/
+.idea/
+
+# Models
+models/*.onnx
+models/*.pt
+
+# Face Storage
+temp_faces/
+token.json
+credentials.json
+
+# Node modules
+node_modules/
+dist/

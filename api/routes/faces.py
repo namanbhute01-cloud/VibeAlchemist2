@@ -1,25 +1,34 @@
 from fastapi import APIRouter
-from pathlib import Path
-import os
+import logging
 
 router = APIRouter(prefix="/faces", tags=["faces"])
+logger = logging.getLogger("FacesRoute")
 
 @router.get("/stats")
-async def get_face_stats():
-    from api.api_server import face_vault
-    temp_dir = Path("temp_faces")
-    local_count = len(list(temp_dir.glob("*.png")))
-    
-    return {
-        "local_pending": local_count,
-        "total_uploaded": face_vault.upload_count if face_vault else 0,
-        "last_sync": face_vault.last_sync if face_vault else 0
-    }
+async def get_stats():
+    import api.api_server as server
+    if server.face_registry:
+        return server.face_registry.get_summary()
+    return {"total_unique": 0, "by_group": {}}
+
+@router.get("/summary")
+async def get_summary():
+    import api.api_server as server
+    if server.face_registry:
+        return server.face_registry.get_summary()
+    return {"total_unique": 0, "by_group": {}}
+
+@router.get("/drive/status")
+async def get_drive_status():
+    import api.api_server as server
+    if server.face_vault:
+        return server.face_vault.get_status()
+    return {"connected": False, "last_sync": None, "pending_count": 0}
 
 @router.post("/sync")
-async def trigger_sync():
-    from api.api_server import face_vault
-    if face_vault:
-        face_vault.sync_now()
-        return {"status": "sync_triggered"}
-    return {"error": "Vault offline"}
+async def sync_faces():
+    import api.api_server as server
+    if server.face_vault:
+        server.face_vault.sync_now()
+        return {"status": "ok"}
+    return {"status": "error", "message": "FaceVault not initialized"}

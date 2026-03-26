@@ -96,7 +96,20 @@ class FaceVault:
         self.upload_count += uploaded
         logger.info(f"Drive Sync Complete. Uploaded: {uploaded}/{len(files)}")
 
+    def get_status(self) -> dict:
+        pending = len(list(self.temp_dir.glob("*.png"))) if self.temp_dir.exists() else 0
+        return {
+            "connected": self.service is not None,
+            "last_sync": self.last_sync,
+            "pending_count": pending,
+            "uploads": self.upload_count
+        }
+
+    def shutdown_push(self):
+        """Final sync before exit."""
+        logger.info("Final face sync before shutdown...")
+        self.sync_now()
+
     def stop(self):
         self.running = False
-        # One final sync on exit?
-        # self.sync_now()
+        self.shutdown_push()

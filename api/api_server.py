@@ -6,21 +6,14 @@ import logging
 import threading
 import queue
 import os
-from typing import List
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from typing import List, Optional
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
+from contextlib import asynccontextmanager
 
-# Core Imports
-from core.camera_pool import CameraPool
-from core.vision_pipeline import VisionPipeline
-from core.vibe_engine import VibeEngine
-from core.face_vault import FaceVault
-from core.alchemist_player import AlchemistPlayer
-
-# Routes
-from api.routes import cameras, playback, vibe, faces
+# Core Imports are moved inside lifespan for degraded mode
 
 # Setup Logging & Env
 load_dotenv()
@@ -34,23 +27,7 @@ cam_pool = None
 vibe_engine = None
 face_vault = None
 player = None
-
-# --- FASTAPI APP ---
-app = FastAPI(title="Vibe Alchemist V2 API")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Include Modular Routers
-app.include_router(cameras.router, prefix="/api")
-app.include_router(playback.router, prefix="/api")
-app.include_router(vibe.router, prefix="/api")
-app.include_router(faces.router, prefix="/api")
+face_registry = None
 
 # --- WEBSOCKET MANAGER ---
 class ConnectionManager:
@@ -62,7 +39,8 @@ class ConnectionManager:
         self.active_connections.append(websocket)
 
     def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
 
     async def broadcast(self, message: dict):
         for connection in self.active_connections:
@@ -78,13 +56,17 @@ def processing_loop(loop):
     """
     Main loop: Pulls from CameraPool -> VisionPipeline -> Broadcasts Results.
     """
-    global pipeline, cam_pool, vibe_engine, face_vault
+    global pipeline, cam_pool, vibe_engine, face_vault, face_registry, player
     
     app.state.latest_frames = {} 
     logger.info("Starting Vision Processing Loop...")
     
     while True:
         try:
+            if not pipeline or not cam_pool:
+                time.sleep(1)
+                continue
+
             item = frame_queue.get(timeout=1.0) 
             cam_id = item["cam_id"]
             frame = item["frame"]
@@ -94,12 +76,13 @@ def processing_loop(loop):
             
             # 2. Update Engine & Vault
             for det in detections:
-                vibe_engine.log_detection(det['group'])
+                if vibe_engine: vibe_engine.log_detection(det['group'])
                 
                 # Check 95% rule for player
-                status = player.get_status()
-                if status.get("percent", 0) > 95:
-                    vibe_engine.prepare_handover()
+                if player:
+                    status = player.get_status()
+                    if status.get("percent", 0) > 95:
+                        vibe_engine.prepare_handover()
 
             # 3. Draw Debug Info (for MJPEG)
             for det in detections:
@@ -109,7 +92,7 @@ def processing_loop(loop):
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
             # 4. Encode MJPEG Buffer
-            ret, buffer = cv2.imencode('.jpg', frame)
+            ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
             if ret:
                 app.state.latest_frames[cam_id] = buffer.tobytes()
 
@@ -129,60 +112,119 @@ def processing_loop(loop):
         except Exception as e:
             logger.error(f"Loop Error: {e}")
 
-# --- MJPEG GENERATOR ---
-def generate_mjpeg(cam_id):
-    while True:
-        if hasattr(app.state, 'latest_frames'):
-            frame_bytes = app.state.latest_frames.get(cam_id)
-            if frame_bytes:
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
-        time.sleep(0.1) # ~20 FPS
-
-# --- LIFECYCLE EVENTS ---
-@app.on_event("startup")
-async def startup_event():
-    global pipeline, cam_pool, vibe_engine, face_vault, player
+# --- LIFECYCLE ---
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global pipeline, cam_pool, vibe_engine, face_vault, player, face_registry
     
     logger.info("Initializing Vibe Alchemist V2 Systems...")
     
-    pipeline = VisionPipeline(models_dir="models")
-    vibe_engine = VibeEngine()
-    face_vault = FaceVault()
-    player = AlchemistPlayer()
-    
-    sources = os.getenv("CAMERA_SOURCES", "0").split(",")
-    cam_pool = CameraPool(sources, frame_queue)
-    cam_pool.start()
-    
-    # Pass the current event loop to the processing thread
-    main_loop = asyncio.get_event_loop()
-    threading.Thread(target=processing_loop, args=(main_loop,), daemon=True).start()
-    asyncio.create_task(status_broadcaster())
+    try:
+        from core.camera_pool import CameraPool
+        from core.vision_pipeline import VisionPipeline
+        from core.vibe_engine import VibeEngine
+        from core.face_vault import FaceVault
+        from core.alchemist_player import AlchemistPlayer
+        from core.face_registry import FaceRegistry
 
-@app.on_event("shutdown")
-async def shutdown_event():
+        vibe_engine = VibeEngine()
+        player = AlchemistPlayer()
+        face_registry = FaceRegistry()
+        face_vault = FaceVault()
+        
+        # Load vision models
+        pipeline = VisionPipeline(
+            models_dir="models", 
+            pool=None, # pool started after
+            engine=vibe_engine, 
+            vault=face_vault, 
+            registry=face_registry
+        )
+        
+        sources = os.getenv("CAMERA_SOURCES", "0").split(",")
+        cam_pool = CameraPool(sources, frame_queue)
+        pipeline.pool = cam_pool # Link pool back
+        cam_pool.start()
+        
+        # Start background threads
+        main_loop = asyncio.get_event_loop()
+        threading.Thread(target=processing_loop, args=(main_loop,), daemon=True).start()
+        asyncio.create_task(status_broadcaster())
+        
+        logger.info("[STARTUP] All core modules initialized.")
+    except Exception as e:
+        logger.error(f"[STARTUP ERROR] {e} — server running in degraded mode")
+
+    yield
+
+    # Shutdown
+    logger.info("Shutting down systems...")
     if cam_pool: cam_pool.stop()
     if face_vault: face_vault.stop()
     if player: player.stop()
+    logger.info("[SHUTDOWN] Clean exit.")
 
-async def status_broadcaster():
-    """1Hz System Status Broadcast."""
-    while True:
-        await asyncio.sleep(1)
-        if player and vibe_engine:
-            await manager.broadcast({
-                "type": "status",
-                "player": player.get_status(),
-                "vibe": vibe_engine.get_status(),
-                "vault": {"last_sync": face_vault.last_sync, "uploads": face_vault.upload_count}
-            })
+app = FastAPI(title="Vibe Alchemist V2 API", lifespan=lifespan)
 
+# --- MIDDLEWARE ---
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:8080", # Added 8080 as user is using it
+        "http://localhost:8000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# --- WEBSOCKET ENDPOINT ---
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
     try:
         while True:
-            await websocket.receive_text()
-    except WebSocketDisconnect:
+            # We broadcast live vibe state every 500ms
+            if vibe_engine and player:
+                state = vibe_engine.get_state()
+                state["type"] = "vibe_update"
+                await websocket.send_json(state)
+            await asyncio.sleep(0.5)
+    except (WebSocketDisconnect, Exception):
         manager.disconnect(websocket)
+
+# --- MJPEG FEED ---
+@app.get("/api/cameras/feed/{cam_id}")
+async def video_feed(cam_id: int):
+    def generate():
+        while True:
+            if hasattr(app.state, 'latest_frames'):
+                frame_bytes = app.state.latest_frames.get(cam_id)
+                if frame_bytes:
+                    yield (b'--frame\r\n'
+                           b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+            time.sleep(0.1)
+    return StreamingResponse(generate(), media_type="multipart/x-mixed-replace;boundary=frame")
+
+# --- BROADCASTER ---
+async def status_broadcaster():
+    """1Hz System Status Broadcast."""
+    while True:
+        await asyncio.sleep(1)
+        if player and vibe_engine and face_vault:
+            await manager.broadcast({
+                "type": "status",
+                "player": player.get_status(),
+                "vibe": vibe_engine.get_status(),
+                "vault": face_vault.get_status(),
+                "faces": face_registry.get_summary() if face_registry else {}
+            })
+
+# Include Modular Routers
+from api.routes import cameras, playback, vibe, faces
+app.include_router(cameras.router, prefix="/api")
+app.include_router(playback.router, prefix="/api")
+app.include_router(vibe.router, prefix="/api")
+app.include_router(faces.router, prefix="/api")

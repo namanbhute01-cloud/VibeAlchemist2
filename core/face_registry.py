@@ -71,6 +71,15 @@ class FaceRegistry:
             if time.time() - self.last_prune > 300:
                 self._prune()
 
+    def get_summary(self) -> dict:
+        """Returns counts of people detected by group."""
+        by_group = {"kids": 0, "youths": 0, "adults": 0, "seniors": 0}
+        for rec in self.known_faces.values():
+            g = rec.get('group', 'adults')
+            if g in by_group:
+                by_group[g] += 1
+        return {"total_unique": len(self.known_faces), "by_group": by_group}
+
     def _prune(self):
         """Removes faces not seen for a long time."""
         now = time.time()

@@ -4,7 +4,6 @@ import logging
 import os
 import onnxruntime as ort
 from ultralytics import YOLO
-from .face_registry import FaceRegistry
 
 logger = logging.getLogger("VisionPipeline")
 
@@ -14,9 +13,12 @@ class VisionPipeline:
     Motion (MOG2) -> Human (YOLO) -> Face (YOLO-Face) -> Identity/Age (ArcFace/DEX)
     Optimized for CPU inference using ONNX Runtime.
     """
-    def __init__(self, models_dir="models"):
+    def __init__(self, models_dir="models", pool=None, engine=None, vault=None, registry=None):
         self.models_dir = models_dir
-        self.registry = FaceRegistry()
+        self.pool = pool
+        self.engine = engine
+        self.vault = vault
+        self.registry = registry
         
         # 1. Motion Detector
         self.bg_subtractor = cv2.createBackgroundSubtractorMOG2(history=500, varThreshold=25, detectShadows=False)
@@ -25,7 +27,7 @@ class VisionPipeline:
         self.person_model = self._load_yolo("yolov8n.onnx", "yolov8n.pt")
         
         # 3. Face Detector (YOLOv8-face ONNX)
-        self.face_model = self._load_yolo("yolov8n-face.onnx", "yolov8n-face.pt") # Fallback to pt if onnx missing
+        self.face_model = self._load_yolo("yolov8n-face.onnx", "yolov8n-face.pt")
         
         # 4. Feature Extractors (Raw ONNX)
         self.arcface_sess = self._load_onnx_session("arcface_r100.onnx")
@@ -51,6 +53,7 @@ class VisionPipeline:
         path = os.path.join(self.models_dir, model_name)
         if os.path.exists(path):
             try:
+                # Specify CPU execution provider explicitly
                 sess = ort.InferenceSession(path, providers=['CPUExecutionProvider'])
                 logger.info(f"Loaded {model_name} successfully.")
                 return sess
@@ -86,59 +89,51 @@ class VisionPipeline:
         h, w = frame.shape[:2]
 
         # --- STEP 2: HUMAN DETECTION ---
-        # conf=0.4 to reduce false positives
         persons = self.person_model(frame, classes=[0], conf=0.4, verbose=False)
         
         for result in persons:
             for box in result.boxes:
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
-                # Ensure crop is valid
                 x1, y1 = max(0, x1), max(0, y1)
                 x2, y2 = min(w, x2), min(h, y2)
                 
                 person_crop = frame[y1:y2, x1:x2]
                 if person_crop.size == 0: continue
 
-                # --- STEP 3: FACE DETECTION (Inside Person Crop) ---
-                # We run face detection ONLY on the person crop to save CPU
+                # --- STEP 3: FACE DETECTION ---
                 faces = self.face_model(person_crop, conf=0.5, verbose=False)
 
                 for fbox in faces[0].boxes:
                     fx1, fy1, fx2, fy2 = map(int, fbox.xyxy[0])
-                    
-                    # Map back to global coordinates
                     gx1, gy1 = x1 + fx1, y1 + fy1
                     gx2, gy2 = x1 + fx2, y1 + fy2
                     
                     face_crop = person_crop[fy1:fy2, fx1:fx2]
-                    if face_crop.size < 400: continue # Skip tiny faces (<20x20)
+                    if face_crop.size < 400: continue
 
                     # --- STEP 4: ENHANCEMENT & ANALYSIS ---
                     enhanced_face = self.enhance_face(face_crop)
-                    
-                    # Identity & Age (Placeholder logic if models missing)
                     embedding = self._get_embedding(enhanced_face)
                     age = self._predict_age(enhanced_face)
+                    group = self._age_to_group(age)
                     
                     # Deduplication
                     face_id = "unknown"
-                    if embedding is not None:
-                        # Determine group based on age
-                        group = self._age_to_group(age)
-                        
+                    if embedding is not None and self.registry:
                         fid, sim = self.registry.is_known(embedding)
                         if fid:
                             self.registry.update(fid, cam_id)
                             face_id = fid
-                            # Use registered group for stability? Or update it?
-                            # For now, keep stability.
                         else:
                             face_id = self.registry.register(embedding, group, cam_id)
+                            # Save new faces to vault
+                            if self.vault:
+                                self.vault.save_face(enhanced_face, face_id, group)
 
                     results.append({
                         'id': face_id,
                         'age': age,
-                        'group': self._age_to_group(age),
+                        'group': group,
                         'bbox': [gx1, gy1, gx2, gy2],
                         'cam_id': cam_id
                     })
@@ -148,13 +143,11 @@ class VisionPipeline:
     def _get_embedding(self, face):
         """Runs ArcFace inference."""
         if not self.arcface_sess: return None
-        # Preprocessing for ArcFace (112x112, normalize)
         blob = cv2.resize(face, (112, 112)).transpose(2, 0, 1).astype(np.float32)
         blob = np.expand_dims(blob, axis=0)
         blob = (blob - 127.5) / 128.0
         
         try:
-            # Assumes output node 0 is the embedding
             outs = self.arcface_sess.run(None, {self.arcface_sess.get_inputs()[0].name: blob})
             return outs[0].flatten()
         except:
@@ -162,14 +155,12 @@ class VisionPipeline:
 
     def _predict_age(self, face):
         """Runs DEX Age inference."""
-        if not self.age_sess: return 25 # Default
-        # Preprocessing for DEX (224x224 usually)
+        if not self.age_sess: return 25
         blob = cv2.resize(face, (224, 224)).transpose(2, 0, 1).astype(np.float32)
         blob = np.expand_dims(blob, axis=0)
         
         try:
             outs = self.age_sess.run(None, {self.age_sess.get_inputs()[0].name: blob})
-            # DEX outputs 101 logits. Expected value = sum(softmax(logits) * range(101))
             logits = outs[0][0]
             probs = np.exp(logits) / np.sum(np.exp(logits))
             age = np.sum(probs * np.arange(101))

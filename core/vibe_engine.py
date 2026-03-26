@@ -68,6 +68,18 @@ class VibeEngine:
             self.next_vibe = None
         return self.current_vibe
 
+    def get_state(self):
+        """Returns the full state for the UI/WebSocket."""
+        with self.lock:
+            dominant = self.get_dominant_vibe()
+            return {
+                "status": "online",
+                "current_vibe": self.current_vibe,
+                "detected_group": dominant,
+                "journal_count": len(self.journal),
+                "next_vibe": self.next_vibe
+            }
+
     def get_status(self):
         with self.lock:
             return {
