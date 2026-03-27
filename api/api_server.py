@@ -119,6 +119,13 @@ async def lifespan(app: FastAPI):
     
     logger.info("Initializing Vibe Alchemist V2 Systems...")
     
+    # Auto-create required directories
+    music_dir = Path(os.getenv("ROOT_MUSIC_DIR", "./OfflinePlayback"))
+    for group in ["kids", "youths", "adults", "seniors"]:
+        (music_dir / group).mkdir(parents=True, exist_ok=True)
+    Path(os.getenv("FACE_TEMP_DIR", "./temp_faces")).mkdir(exist_ok=True)
+    logger.info(f"Storage ready: {music_dir.resolve()}")
+
     try:
         from core.camera_pool import CameraPool
         from core.vision_pipeline import VisionPipeline
@@ -128,13 +135,13 @@ async def lifespan(app: FastAPI):
         from core.face_registry import FaceRegistry
 
         vibe_engine = VibeEngine()
-        player = AlchemistPlayer()
+        player = AlchemistPlayer(music_root=str(music_dir))
         face_registry = FaceRegistry()
-        face_vault = FaceVault()
+        face_vault = FaceVault(temp_dir=os.getenv("FACE_TEMP_DIR", "temp_faces"))
         
         # Load vision models
         pipeline = VisionPipeline(
-            models_dir="models", 
+            models_dir=os.getenv("MODELS_DIR", "models"), 
             pool=None, # pool started after
             engine=vibe_engine, 
             vault=face_vault, 
@@ -165,6 +172,11 @@ async def lifespan(app: FastAPI):
     logger.info("[SHUTDOWN] Clean exit.")
 
 app = FastAPI(title="Vibe Alchemist V2 API", lifespan=lifespan)
+
+# Add imports for StaticFiles
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from pathlib import Path
 
 # --- MIDDLEWARE ---
 app.add_middleware(
@@ -228,3 +240,30 @@ app.include_router(cameras.router, prefix="/api")
 app.include_router(playback.router, prefix="/api")
 app.include_router(vibe.router, prefix="/api")
 app.include_router(faces.router, prefix="/api")
+
+# --- STATIC FILE SERVING (After API Routes) ---
+static_dir = Path(__file__).parent.parent / "static"
+if static_dir.exists():
+    # Mount assets (JS, CSS, etc.)
+    assets_dir = static_dir / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
+
+# Serve index.html for ALL non-API routes (React Router SPA fallback)
+@app.get("/")
+async def serve_root():
+    index = static_dir / "index.html"
+    if index.exists():
+        return FileResponse(str(index))
+    return {"error": "Frontend not built. Run: npm run build"}
+
+@app.get("/{full_path:path}")
+async def serve_spa(full_path: str):
+    # Don't intercept API routes or feed routes
+    if full_path.startswith("api/") or full_path.startswith("feed/") or full_path == "ws":
+        return {"error": "Not found"}
+    index = static_dir / "index.html"
+    if index.exists():
+        return FileResponse(str(index))
+    return {"error": "Frontend not built"}
+
