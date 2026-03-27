@@ -72,18 +72,6 @@ class VibeEngine:
         """Returns the full state for the UI/WebSocket."""
         with self.lock:
             dominant = self.get_dominant_vibe()
-            import api.api_server as server
-            
-            # Extract player status if available for rich state
-            is_playing = False
-            paused = True
-            percent_pos = 0.0
-            if hasattr(server, 'player') and server.player:
-                p_status = server.player.get_status()
-                is_playing = p_status.get('playing', False)
-                paused = p_status.get('paused', True)
-                percent_pos = p_status.get('percent', 0.0)
-
             return {
                 "status": "VIBING",           # Current engine status
                 "engine_status": "VIBING",    # Alias
@@ -93,11 +81,10 @@ class VibeEngine:
                 "dominant_vibe": dominant,    # Alias
                 "journal_count": len(self.journal),
                 "journal_size": len(self.journal), # Alias
-                "next_vibe": self.next_vibe,
-                "is_playing": is_playing,
-                "paused": paused,
-                "percent_pos": percent_pos
+                "next_vibe": self.next_vibe
             }
+
+
 
 
     def get_status(self):

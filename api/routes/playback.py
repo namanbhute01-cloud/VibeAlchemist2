@@ -1,44 +1,41 @@
 from fastapi import APIRouter, Request
 import logging
+from typing import Optional
+from api.models import PlaybackCommand
 
 router = APIRouter(prefix="/playback", tags=["playback"])
 logger = logging.getLogger("PlaybackRoute")
 
 @router.get("/status")
 async def get_status():
-    import api.api_server as server
-    if server.player:
-        return server.player.get_status()
-    return {"status": "error", "message": "Player not initialized"}
+    from api.api_server import player, api_response
+    if player:
+        return api_response(data=player.get_status())
+    return api_response(success=False, error="Player not initialized")
 
 @router.post("/{action}")
-async def control_playback(action: str, request: Request):
-    import api.api_server as server
-    if not server.player:
-        return {"status": "error", "message": "Player not initialized"}
+async def control_playback(action: str, cmd: Optional[PlaybackCommand] = None):
+    from api.api_server import player, vibe_engine, api_response
+    if not player:
+        return api_response(success=False, error="Player not initialized")
     
-    body = {}
-    try:
-        if await request.body():
-            body = await request.json()
-    except:
-        pass
-
     if action == "play":
-        server.player.play()
+        player.play(group=cmd.group if cmd else None)
     elif action == "pause":
-        server.player.pause()
+        player.pause()
     elif action == "next":
-        group = server.vibe_engine.current_vibe if server.vibe_engine else "adults"
-        server.player.play(group=group)
+        group = cmd.group if (cmd and cmd.group) else (vibe_engine.current_vibe if vibe_engine else "adults")
+        player.play(group=group)
     elif action == "prev":
-        server.player.prev_track()
+        player.prev_track()
     elif action == "shuffle":
-        mode = server.player.toggle_shuffle()
-        return {"status": "ok", "shuffle": mode}
+        mode = player.toggle_shuffle()
+        return api_response(data={"shuffle": mode})
     elif action == "volume":
-        vol = body.get("level") or body.get("vol")
-        if vol is not None:
-            server.player.set_volume(int(vol))
+        if cmd:
+            vol = cmd.level if cmd.level is not None else cmd.vol
+            if vol is not None:
+                player.set_volume(vol)
+                return api_response(data={"volume": vol})
     
-    return {"status": "ok", "action": action}
+    return api_response(data={"action": action})

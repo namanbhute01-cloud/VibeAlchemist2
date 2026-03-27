@@ -9,21 +9,20 @@ logger = logging.getLogger("CamerasRoute")
 @router.get("/")
 async def list_cameras():
     # Attempt to use cam_pool if initialized, else fallback to .env
-    import api.api_server as server
+    from api.api_server import cam_pool, api_response
     
     sources = []
-    if hasattr(server, 'cam_pool') and server.cam_pool is not None:
-        # Robust check for different attribute names
-        sources = getattr(server.cam_pool, 'sources', 
-                  getattr(server.cam_pool, 'camera_sources',
-                  getattr(server.cam_pool, '_sources', [])))
+    if cam_pool is not None:
+        sources = getattr(cam_pool, 'sources', 
+                  getattr(cam_pool, 'camera_sources',
+                  getattr(cam_pool, '_sources', [])))
     
     if not sources:
         # Fallback to .env parsing
         env_sources = os.getenv("CAMERA_SOURCES", "0")
         sources = env_sources.split(",") if env_sources else ["0"]
 
-    return [
+    data = [
         {
             "id": i, 
             "source": str(s), 
@@ -33,12 +32,13 @@ async def list_cameras():
         }
         for i, s in enumerate(sources)
     ]
+    return api_response(data=data)
 
 @router.post("/{cam_id}/settings")
 async def update_settings(cam_id: int, request: Request):
+    from api.api_server import cam_pool, api_response
     body = await request.json()
-    import api.api_server as server
-    if hasattr(server, 'cam_pool') and server.cam_pool is not None:
-        server.cam_pool.update_settings(cam_id, body)
-        return {"status": "ok", "cam_id": cam_id, "settings": body}
-    return {"status": "error", "message": "CameraPool not initialized"}
+    if cam_pool is not None:
+        cam_pool.update_settings(cam_id, body)
+        return api_response(data={"cam_id": cam_id, "settings": body})
+    return api_response(success=False, error="CameraPool not initialized")

@@ -87,6 +87,7 @@ class AlchemistPlayer:
                     return None 
             else:
                 with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
+                    s.settimeout(0.2) # 200ms timeout to avoid event loop freeze
                     s.connect(self.socket_path)
                     s.sendall(msg.encode())
                     data = s.recv(4096).decode()

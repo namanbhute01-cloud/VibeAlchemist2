@@ -117,6 +117,7 @@ def processing_loop(loop):
 async def lifespan(app: FastAPI):
     global pipeline, cam_pool, vibe_engine, face_vault, player, face_registry
     
+    app.state.start_time = time.time()
     logger.info("Initializing Vibe Alchemist V2 Systems...")
     
     # Auto-create required directories
@@ -149,7 +150,9 @@ async def lifespan(app: FastAPI):
         )
         
         sources = os.getenv("CAMERA_SOURCES", "0").split(",")
-        cam_pool = CameraPool(sources, frame_queue)
+        target_h = int(os.getenv("TARGET_HEIGHT", "720"))
+        
+        cam_pool = CameraPool(sources, frame_queue, target_height=target_h)
         pipeline.pool = cam_pool # Link pool back
         cam_pool.start()
         
@@ -178,33 +181,95 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
 
+# --- UTILITIES ---
+def api_response(success: bool = True, data: any = None, error: str = None):
+    """Standardized API Response Wrapper."""
+    return {
+        "success": success,
+        "data": data,
+        "error": error
+    }
+
 # --- MIDDLEWARE ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://localhost:8080", # Added 8080 as user is using it
-        "http://localhost:8000",
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    path = request.url.path
+    method = request.method
+
+    # Direct print for debugging
+    if not path.startswith(("/api/cameras/feed", "/assets")):
+        print(f"➜ {method:4} | {path}")
+
+    try:
+        response = await call_next(request)
+    except Exception as e:
+        print(f"DEBUG ERROR: {e}")
+        return StreamingResponse(
+            iter([json.dumps(api_response(False, error=str(e))).encode()]),
+            status_code=500,
+            media_type="application/json"
+        )
+
+    process_time = (time.time() - start_time) * 1000
+    status_code = response.status_code
+
+    # ANSI Colors
+    color = "\033[32m" # Green
+    if status_code >= 400: color = "\033[31m" # Red
+    elif status_code >= 300: color = "\033[33m" # Yellow
+    reset = "\033[0m"
+
+    # Don't log feed to keep console clean
+    if not path.startswith("/api/cameras/feed"):
+        logger.info(f"| {method:4} | {path:<30} | {color}{status_code}{reset} | {process_time:7.2f}ms")
+
+    return response
+
+# --- HEALTH CHECK ---
+@app.get("/api/health")
+async def health_check():
+    """Automated System Connectivity Test."""
+    status = {
+        "engine": "online" if vibe_engine else "offline",
+        "player": "online" if player else "offline",
+        "cameras": len(cam_pool.workers) if cam_pool else 0,
+        "uptime": time.time() - app.state.start_time if hasattr(app.state, 'start_time') else 0
+    }
+    return api_response(data=status)
+
+
 # --- WEBSOCKET ENDPOINT ---
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
+    logger.info(f"\033[36m[WS]\033[0m Client connected from {websocket.client.host}")
     try:
         while True:
-            # We broadcast live vibe state every 500ms
-            if vibe_engine and player:
+            if vibe_engine:
                 state = vibe_engine.get_state()
                 state["type"] = "vibe_update"
                 await websocket.send_json(state)
             await asyncio.sleep(0.5)
-    except (WebSocketDisconnect, Exception):
+    except (WebSocketDisconnect, Exception) as e:
+        logger.info(f"\033[36m[WS]\033[0m Client disconnected ({type(e).__name__})")
         manager.disconnect(websocket)
 
 # --- MJPEG FEED ---
@@ -225,14 +290,25 @@ async def status_broadcaster():
     """1Hz System Status Broadcast."""
     while True:
         await asyncio.sleep(1)
-        if player and vibe_engine and face_vault:
-            await manager.broadcast({
-                "type": "status",
-                "player": player.get_status(),
-                "vibe": vibe_engine.get_status(),
-                "vault": face_vault.get_status(),
-                "faces": face_registry.get_summary() if face_registry else {}
-            })
+        try:
+            if vibe_engine and face_registry:
+                # Offload blocking IPC to a thread to keep event loop fast
+                player_status = {}
+                if player:
+                    try:
+                        player_status = await asyncio.to_thread(player.get_status)
+                    except Exception as e:
+                        player_status = {"error": str(e)}
+                
+                await manager.broadcast({
+                    "type": "status",
+                    "player": player_status,
+                    "vibe": vibe_engine.get_status(),
+                    "vault": face_vault.get_status() if face_vault else {},
+                    "faces": face_registry.get_summary() if face_registry else {}
+                })
+        except Exception as e:
+            print(f"DEBUG BROADCASTER ERROR: {e}")
 
 # Include Modular Routers
 from api.routes import cameras, playback, vibe, faces
@@ -244,12 +320,15 @@ app.include_router(faces.router, prefix="/api")
 # --- STATIC FILE SERVING (After API Routes) ---
 static_dir = Path(__file__).parent.parent / "static"
 if static_dir.exists():
-    # Mount assets (JS, CSS, etc.)
     assets_dir = static_dir / "assets"
     if assets_dir.exists():
         app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
 
-# Serve index.html for ALL non-API routes (React Router SPA fallback)
+    @app.get("/favicon.ico", include_in_schema=False)
+    async def favicon():
+        return FileResponse(str(static_dir / "favicon.ico"))
+
+# Serve index.html for ALL non-API, non-asset routes (React Router SPA fallback)
 @app.get("/")
 async def serve_root():
     index = static_dir / "index.html"
@@ -259,9 +338,12 @@ async def serve_root():
 
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str):
-    # Don't intercept API routes or feed routes
-    if full_path.startswith("api/") or full_path.startswith("feed/") or full_path == "ws":
-        return {"error": "Not found"}
+    # CRITICAL: Never intercept API, Feed, WS, or direct Asset paths
+    # If it has a dot, it's likely a file that should have been caught by mount/other routes
+    if full_path.startswith(("api/", "feed/", "ws", "assets/")) or "." in full_path:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404)
+    
     index = static_dir / "index.html"
     if index.exists():
         return FileResponse(str(index))

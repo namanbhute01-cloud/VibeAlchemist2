@@ -108,9 +108,10 @@ class CameraPool:
     """
     Manager for multiple CameraWorker threads.
     """
-    def __init__(self, sources: List[Union[int, str]], frame_queue: queue.Queue):
+    def __init__(self, sources: List[Union[int, str]], frame_queue: queue.Queue, target_height=720):
         self.sources = sources
         self.queue = frame_queue
+        self.target_height = target_height
         self.workers = []
 
     def start(self):
@@ -120,7 +121,7 @@ class CameraPool:
             if isinstance(source, str) and source.isdigit():
                 source = int(source)
             
-            worker = CameraWorker(source, i, self.queue)
+            worker = CameraWorker(source, i, self.queue, target_height=self.target_height)
             worker.start()
             self.workers.append(worker)
 
