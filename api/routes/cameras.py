@@ -2,21 +2,21 @@ from fastapi import APIRouter, Response, Request
 import os
 import logging
 
-router = APIRouter(prefix="", tags=["cameras"])
+router = APIRouter(prefix="/cameras", tags=["cameras"])
 logger = logging.getLogger("CamerasRoute")
 
-@router.get("/cameras")
-@router.get("/cameras/")
+@router.get("")
+@router.get("/")
 async def list_cameras():
     """Returns flat list of cameras as per contract."""
     from api import api_server as server
-    
+
     cam_pool = getattr(server, 'cam_pool', None)
     sources = []
-    
+
     if cam_pool is not None:
         sources = getattr(cam_pool, 'sources', [])
-    
+
     if not sources:
         # Fallback to .env parsing
         env_sources = os.getenv("CAMERA_SOURCES", "0")
@@ -24,9 +24,9 @@ async def list_cameras():
 
     return [
         {
-            "id": i, 
-            "source": str(s), 
-            "status": "online", 
+            "id": i,
+            "source": str(s),
+            "status": "online",
             "name": f"Camera {i}",
             "feed_url": f"/feed/{i}"
         }
@@ -38,7 +38,7 @@ async def update_settings(cam_id: int, request: Request):
     """Updates camera settings."""
     from api import api_server as server
     cam_pool = getattr(server, 'cam_pool', None)
-    
+
     try:
         body = await request.json()
     except Exception:
@@ -47,5 +47,5 @@ async def update_settings(cam_id: int, request: Request):
     if cam_pool is not None:
         cam_pool.update_settings(cam_id, body)
         return {"ok": True}
-    
+
     return {"ok": False, "error": "CameraPool not initialized"}

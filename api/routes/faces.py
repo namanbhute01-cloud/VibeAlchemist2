@@ -1,11 +1,11 @@
 from fastapi import APIRouter
 import logging
 
-router = APIRouter(prefix="", tags=["faces"])
+router = APIRouter(prefix="/faces", tags=["faces"])
 logger = logging.getLogger("FacesRoute")
 
-@router.get("/faces")
-@router.get("/faces/")
+@router.get("")
+@router.get("/")
 async def list_faces():
     """Returns flat face summary stats."""
     from api import api_server as server
@@ -15,7 +15,6 @@ async def list_faces():
     return {"total_unique": 0, "by_group": {"kids": 0, "youths": 0, "adults": 0, "seniors": 0}}
 
 @router.get("/drive/status")
-@router.get("/drive/status/")
 async def drive_status():
     """Returns flat drive sync status."""
     from api import api_server as server
@@ -24,7 +23,7 @@ async def drive_status():
         return face_vault.get_status()
     return {"connected": False, "last_sync": None, "pending_count": 0}
 
-@router.post("/faces/sync")
+@router.post("/sync")
 async def sync_now():
     """Triggers immediate sync."""
     from api import api_server as server
