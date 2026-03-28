@@ -1,9 +1,31 @@
 from fastapi import APIRouter, Request
 import logging
+import os
+from pathlib import Path
 from typing import Optional
 
 router = APIRouter(prefix="/playback", tags=["playback"])
 logger = logging.getLogger("PlaybackRoute")
+
+@router.get("/library")
+async def get_library():
+    """Returns the music library organized by age groups."""
+    from api import api_server as server
+    player = getattr(server, 'player', None)
+    
+    if player and hasattr(player, 'music_root'):
+        music_dir = Path(player.music_root)
+        library = {}
+        for group in ["kids", "youths", "adults", "seniors"]:
+            group_dir = music_dir / group
+            if group_dir.exists():
+                files = [f.name for f in group_dir.iterdir() if f.is_file() and f.suffix.lower() in ['.mp3', '.wav', '.flac', '.m4a', '.ogg']]
+                library[group] = files
+            else:
+                library[group] = []
+        return library
+    
+    return {"kids": [], "youths": [], "adults": [], "seniors": []}
 
 @router.get("/status")
 async def get_status():

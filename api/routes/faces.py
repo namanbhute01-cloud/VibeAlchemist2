@@ -5,6 +5,7 @@ router = APIRouter(prefix="", tags=["faces"])
 logger = logging.getLogger("FacesRoute")
 
 @router.get("/faces")
+@router.get("/faces/")
 async def list_faces():
     """Returns flat face summary stats."""
     from api import api_server as server
@@ -14,6 +15,7 @@ async def list_faces():
     return {"total_unique": 0, "by_group": {"kids": 0, "youths": 0, "adults": 0, "seniors": 0}}
 
 @router.get("/drive/status")
+@router.get("/drive/status/")
 async def drive_status():
     """Returns flat drive sync status."""
     from api import api_server as server

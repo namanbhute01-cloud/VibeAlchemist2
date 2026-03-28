@@ -6,6 +6,7 @@ router = APIRouter(prefix="/vibe", tags=["vibe"])
 logger = logging.getLogger("VibeRoute")
 
 @router.get("/current")
+@router.get("/current/")
 async def get_current():
     """Returns flat vibe state."""
     from api import api_server as server
@@ -29,6 +30,7 @@ async def get_current():
     }
 
 @router.get("/journal")
+@router.get("/journal/")
 async def get_journal():
     """Returns flat aggregated vibe analytics."""
     from api import api_server as server

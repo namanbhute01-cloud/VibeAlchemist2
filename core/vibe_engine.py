@@ -83,8 +83,8 @@ class VibeEngine:
             self.next_vibe = None
         return self.current_vibe
 
-    def get_state(self, player=None) -> dict:
-        """Returns the full state for the UI/WebSocket. Strictly 11 keys."""
+    def get_state(self, player=None, camera_count=0, face_count=0) -> dict:
+        """Returns the full state for the UI/WebSocket. Includes global system metrics."""
         dominant = self.get_dominant_vibe()
         
         with self.lock:
@@ -103,6 +103,8 @@ class VibeEngine:
                 "shuffle":        bool(p_status.get('shuffle', True)),
                 "current_song":   str(p_status.get('song', "")),
                 "next_vibe":      self.next_vibe,
+                "active_cameras": int(camera_count),
+                "unique_faces":   int(face_count)
             }
 
     def get_status(self):

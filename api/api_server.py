@@ -146,7 +146,15 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             if vibe_engine:
-                state = vibe_engine.get_state(player=player)
+                # Fetch counts for real-time StatCards
+                cam_count = len(cam_pool.sources) if cam_pool else 0
+                face_count = face_registry.get_summary().get('total_unique', 0) if face_registry else 0
+                
+                state = vibe_engine.get_state(
+                    player=player, 
+                    camera_count=cam_count, 
+                    face_count=face_count
+                )
                 await websocket.send_json(state)
             await asyncio.sleep(0.5)
     except (WebSocketDisconnect, Exception):

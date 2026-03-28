@@ -1,0 +1,24 @@
+INFO:     Will watch for changes in these directories: ['/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2']
+INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
+INFO:     Started reloader process [17632] using StatReload
+--- VIBE ALCHEMIST V2 STARTING ON 0.0.0.0:8080 ---
+INFO:     Started server process [17635]
+INFO:     Waiting for application startup.
+2026-03-28 17:39:54,874 | INFO | Initializing Vibe Alchemist V2 Systems...
+2026-03-28 17:40:01,353 | INFO | MPV Engine Started.
+2026-03-28 17:40:01,353 | WARNING | Google Drive credentials not configured. Running in local-only mode.
+2026-03-28 17:40:01,354 | INFO | Loading yolov8n.onnx (ONNX)...
+2026-03-28 17:40:01,357 | INFO | Loading yolov8n-face.onnx (ONNX)...
+2026-03-28 17:40:02,108 | INFO | Loaded arcface_r100.onnx successfully.
+2026-03-28 17:40:02,120 | INFO | Loaded dex_age.onnx successfully.
+2026-03-28 17:40:02,120 | INFO | Starting CameraPool with 1 sources...
+2026-03-28 17:40:02,120 | INFO | [Cam 0] Connecting to source: 0
+2026-03-28 17:40:02,121 | INFO | [STARTUP] All core modules initialized.
+INFO:     Application startup complete.
+Loading models/yolov8n.onnx for ONNX Runtime inference...
+Using ONNX Runtime 1.24.4 with CPUExecutionProvider
+Loading models/yolov8n-face.onnx for ONNX Runtime inference...
+Using ONNX Runtime 1.24.4 with CPUExecutionProvider
+INFO:     127.0.0.1:39912 - "GET /api/cameras HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:39928 - "GET /api/vibe/current HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39934 - "GET /api/playback/status HTTP/1.1" 200 OK

@@ -2,10 +2,11 @@ from fastapi import APIRouter, Response, Request
 import os
 import logging
 
-router = APIRouter(prefix="/cameras", tags=["cameras"])
+router = APIRouter(prefix="", tags=["cameras"])
 logger = logging.getLogger("CamerasRoute")
 
-@router.get("/")
+@router.get("/cameras")
+@router.get("/cameras/")
 async def list_cameras():
     """Returns flat list of cameras as per contract."""
     from api import api_server as server
