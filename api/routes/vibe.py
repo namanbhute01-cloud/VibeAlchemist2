@@ -7,25 +7,39 @@ logger = logging.getLogger("VibeRoute")
 
 @router.get("/current")
 async def get_current():
-    from api.api_server import vibe_engine, api_response
+    """Returns flat vibe state."""
+    from api import api_server as server
+    vibe_engine = getattr(server, 'vibe_engine', None)
     if vibe_engine:
-        return api_response(data=vibe_engine.get_state())
-    return api_response(success=False, error="VibeEngine not initialized")
+        return vibe_engine.get_state()
+    return {
+        "status": "offline",
+        "detected_group": "None",
+        "current_vibe": "None",
+        "age": "...",
+        "journal_count": 0,
+        "percent_pos": 0,
+        "is_playing": False,
+        "paused": True,
+        "shuffle": True,
+        "current_song": "",
+        "next_vibe": None
+    }
 
 @router.get("/journal")
 async def get_journal():
-    """Returns aggregated vibe analytics to prevent frontend stuttering."""
-    from api.api_server import vibe_engine, api_response
+    """Returns flat aggregated vibe analytics."""
+    from api import api_server as server
+    vibe_engine = getattr(server, 'vibe_engine', None)
     if vibe_engine:
         with vibe_engine.lock:
             journal = list(vibe_engine.journal)
         
-        # Aggregate logic (Optimization from PDF)
         counts = dict(Counter(journal))
-        summary = {
-            "total_samples": len(journal),
+        return {
+            "entries": journal,
+            "count": len(journal),
             "distribution": counts,
-            "recent_trend": journal[-10:] if len(journal) >= 10 else journal
+            "next_vibe": vibe_engine.next_vibe
         }
-        return api_response(data=summary)
-    return api_response(success=False, error="VibeEngine not initialized")
+    return {"entries": [], "count": 0, "distribution": {}, "next_vibe": None}

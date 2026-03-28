@@ -26,13 +26,13 @@ class AlchemistPlayer:
         self.process = None
         self.current_song = None
         self.is_playing = False
+        self.paused = False
         self.volume = 70
         self.shuffle_mode = True
         
         # Playlist Management
-        self.history = deque(maxlen=50) # Played songs
-        self.queue = deque() # Upcoming songs (if shuffle off)
-        self.current_group = "adults"
+        self.song_history = deque(maxlen=50) # Played songs
+        self.current_folder = "adults"
         
         # Start MPV idle
         self._start_mpv()
@@ -83,88 +83,97 @@ class AlchemistPlayer:
             if sys.platform == 'win32':
                 with open(self.socket_path, 'r+b', buffering=0) as f:
                     f.write(msg.encode())
-                    # Reading response on windows pipe is tricky without blocking
                     return None 
             else:
                 with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
-                    s.settimeout(0.2) # 200ms timeout to avoid event loop freeze
+                    s.settimeout(0.2)
                     s.connect(self.socket_path)
                     s.sendall(msg.encode())
                     data = s.recv(4096).decode()
                     return json.loads(data.split('\n')[0])
-        except Exception as e:
-            # logger.error(f"IPC Error: {e}")
+        except Exception:
             return None
 
-    def play(self, group=None):
-        """Plays a song from the specified group (or current)."""
-        if group:
-            self.current_group = group
-            
-        folder = self.music_root / self.current_group
+    def play(self, filepath: str):
+        """Plays a specific file."""
+        self._send_ipc(["loadfile", filepath])
+        self.current_song = Path(filepath).stem
+        self.song_history.append(filepath)
+        self.is_playing = True
+        self.paused = False
+        logger.info(f"Now Playing: {self.current_song}")
+
+    def next(self, group: str):
+        """Plays a song from the specified group."""
+        self.current_folder = group
+        folder = self.music_root / group
         songs = list(folder.glob("*.*"))
-        valid_exts = {".mp3", ".wav", ".flac", ".m4a", ".ogg"}
+        valid_exts = {".mp3", ".wav", ".flac", ".m4a", ".ogg", ".opus"}
         songs = [s for s in songs if s.suffix.lower() in valid_exts]
         
         if not songs:
-            logger.warning(f"No songs found in {self.current_group}")
+            logger.warning(f"No songs found in {group}")
             return
 
         if self.shuffle_mode:
             next_song = random.choice(songs)
         else:
-            # Basic sequential logic (would need index tracking)
             next_song = songs[0] 
 
-        self._load_file(str(next_song))
+        self.play(str(next_song))
 
-    def _load_file(self, filepath):
-        self._send_ipc(["loadfile", filepath])
-        self.current_song = Path(filepath).stem
-        self.history.append(filepath)
-        self.is_playing = True
-        logger.info(f"Now Playing: {self.current_song}")
-
-    def pause(self):
-        self._send_ipc(["cycle", "pause"])
-        self.is_playing = not self.is_playing
-
-    def next_track(self):
-        self.play() # Shuffle logic handles it
-
-    def prev_track(self):
-        if len(self.history) > 1:
-            self.history.pop() # Remove current
-            prev = self.history.pop() # Get previous
-            self._load_file(prev)
+    def prev(self):
+        """Plays the previous song from history."""
+        if len(self.song_history) > 1:
+            self.song_history.pop() # Remove current
+            prev_file = self.song_history.pop() # Get previous
+            self.play(prev_file)
         else:
-            self.play()
+            self.next(self.current_folder)
 
-    def set_volume(self, vol):
-        self.volume = max(0, min(100, int(vol)))
-        self._send_ipc(["set_property", "volume", self.volume])
+    def toggle_pause(self):
+        """Toggles play/pause state."""
+        self._send_ipc(["cycle", "pause"])
+        self.paused = not self.paused
+        # Note: self.is_playing should strictly mean 'engine active'
+        # but for the UI we might use it as 'actually making sound'
+        # Following spec: is_playing should be engine active.
 
-    def toggle_shuffle(self):
+    def toggle_shuffle(self) -> bool:
+        """Toggles shuffle mode."""
         self.shuffle_mode = not self.shuffle_mode
         return self.shuffle_mode
 
-    def get_status(self):
-        # Query properties via IPC
-        pos = self._send_ipc(["get_property", "percent-pos"])
-        dur = self._send_ipc(["get_property", "duration"])
-        
+    def set_volume(self, level: int):
+        """Sets output volume."""
+        self.volume = max(0, min(100, int(level)))
+        self._send_ipc(["set_property", "volume", self.volume])
+
+    def get_pos(self) -> float:
+        """Returns current playback percentage."""
+        res = self._send_ipc(["get_property", "percent-pos"])
+        if res and "data" in res and res["data"] is not None:
+            return float(res["data"])
+        return 0.0
+
+    def is_active(self) -> bool:
+        """Returns True if a file is loaded and engine is running."""
+        return self.is_playing and self.process is not None
+
+    def get_status(self) -> dict:
+        """Returns full status for API."""
         return {
-            "song": self.current_song or "None",
-            "percent": pos.get("data") if pos and "data" in pos else 0,
-            "duration": dur.get("data") if dur and "data" in dur else 0,
-            "playing": self.is_playing,
-            "paused": not self.is_playing,
-            "shuffle": self.shuffle_mode,
-            "group": self.current_group,
-            "volume": self.volume
+            "song":    self.current_song or "None",
+            "percent": float(self.get_pos()),
+            "paused":  bool(self.paused),
+            "shuffle": bool(self.shuffle_mode),
+            "group":   str(self.current_folder),
+            "volume":  int(self.volume),
         }
 
     def stop(self):
+        """Stops the MPV process."""
         if self.process:
             self.process.terminate()
             self.process = None
+        self.is_playing = False

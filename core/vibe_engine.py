@@ -20,18 +20,21 @@ class VibeEngine:
         # Current active state
         self.current_vibe = "adults" # Default
         self.next_vibe = None
+        self.status = "VIBING"       # SEARCHING | LOADING | VIBING
+        self.current_age = "..."
         
         # Mapping for averaging (kids=1, youths=2, adults=3, seniors=4)
         self.group_map = {"kids": 1, "youths": 2, "adults": 3, "seniors": 4}
         self.inv_map = {1: "kids", 2: "youths", 3: "adults", 4: "seniors"}
 
-    def log_detection(self, group):
+    def log_detection(self, group, age="..."):
         """Logs a new detected group into the journal."""
         if group not in self.group_map:
             return
 
         with self.lock:
             self.journal.append(group)
+            self.current_age = str(age)
             
     def get_dominant_vibe(self):
         """Calculates the dominant vibe based on the current journal."""
@@ -39,12 +42,6 @@ class VibeEngine:
             if not self.journal:
                 return self.current_vibe
             
-            # Simple Mode (Most Frequent)
-            # counts = Counter(self.journal)
-            # most_common = counts.most_common(1)[0][0]
-            
-            # Weighted Average approach (matches legacy alcha.py logic)
-            # This allows a mix of kids+adults to drift towards 'youths' music potentially
             vals = [self.group_map[g] for g in self.journal]
             avg_val = round(statistics.mean(vals))
             dominant = self.inv_map.get(avg_val, "adults")
@@ -68,24 +65,27 @@ class VibeEngine:
             self.next_vibe = None
         return self.current_vibe
 
-    def get_state(self):
-        """Returns the full state for the UI/WebSocket."""
+    def get_state(self) -> dict:
+        """Returns the full state for the UI/WebSocket. Strictly 11 keys."""
+        from api import api_server as server
+        
+        dominant = self.get_dominant_vibe()
+        p = getattr(server, 'player', None)
+        
         with self.lock:
-            dominant = self.get_dominant_vibe()
             return {
-                "status": "VIBING",           # Current engine status
-                "engine_status": "VIBING",    # Alias
-                "current_vibe": self.current_vibe,
-                "current_song_group": self.current_vibe, # Alias
+                "status":         self.status,
                 "detected_group": dominant,
-                "dominant_vibe": dominant,    # Alias
-                "journal_count": len(self.journal),
-                "journal_size": len(self.journal), # Alias
-                "next_vibe": self.next_vibe
+                "current_vibe":   dominant,   # alias for UI
+                "age":            str(self.current_age),
+                "journal_count":  len(self.journal),
+                "percent_pos":    float(p.get_status().get('percent', 0) if p else 0),
+                "is_playing":     bool(p.is_playing if p else False),
+                "paused":         bool(not p.is_playing if p else True),
+                "shuffle":        bool(p.shuffle_mode if p else True),
+                "current_song":   str(p.current_song if p else ""),
+                "next_vibe":      self.next_vibe,
             }
-
-
-
 
     def get_status(self):
         with self.lock:

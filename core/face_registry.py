@@ -1,6 +1,7 @@
 import numpy as np
 import time
 import logging
+import threading
 from numpy.linalg import norm
 
 logger = logging.getLogger("FaceRegistry")
@@ -16,6 +17,7 @@ class FaceRegistry:
         # id -> {'embedding': np.array, 'group': str, 'last_seen': float, 'cam_id': int}
         self.known_faces = {}
         self.last_prune = time.time()
+        self.lock = threading.Lock()
 
     def _cosine_similarity(self, emb1, emb2):
         """Calculates cosine similarity between two vectors."""
@@ -28,57 +30,62 @@ class FaceRegistry:
         Checks if the embedding matches any known face.
         Returns: (face_id, similarity) if found, else (None, 0.0)
         """
-        best_sim = 0.0
-        best_id = None
+        with self.lock:
+            best_sim = 0.0
+            best_id = None
 
-        for fid, data in self.known_faces.items():
-            sim = self._cosine_similarity(embedding, data['embedding'])
-            if sim > best_sim:
-                best_sim = sim
-                best_id = fid
+            for fid, data in self.known_faces.items():
+                sim = self._cosine_similarity(embedding, data['embedding'])
+                if sim > best_sim:
+                    best_sim = sim
+                    best_id = fid
 
-        if best_sim > self.threshold:
-            return best_id, best_sim
-        
-        return None, 0.0
+            if best_sim > self.threshold:
+                return best_id, best_sim
+            
+            return None, 0.0
 
     def register(self, embedding, group, cam_id):
         """
         Registers a new face.
         Returns the new face ID.
         """
-        # Simple ID generation
-        new_id = f"face_{len(self.known_faces) + 1}_{int(time.time())}"
-        
-        self.known_faces[new_id] = {
-            'embedding': embedding,
-            'group': group,
-            'last_seen': time.time(),
-            'cam_id': cam_id,
-            'first_seen': time.time()
-        }
-        logger.info(f"New Identity Registered: {new_id} (Group: {group}, Cam: {cam_id})")
-        return new_id
+        with self.lock:
+            # Simple ID generation
+            new_id = f"face_{len(self.known_faces) + 1}_{int(time.time())}"
+            
+            self.known_faces[new_id] = {
+                'embedding': embedding,
+                'group': group,
+                'last_seen': time.time(),
+                'cam_id': cam_id,
+                'first_seen': time.time()
+            }
+            logger.info(f"New Identity Registered: {new_id} (Group: {group}, Cam: {cam_id})")
+            return new_id
 
     def update(self, face_id, cam_id=None):
         """Updates the last_seen timestamp for a known face."""
-        if face_id in self.known_faces:
-            self.known_faces[face_id]['last_seen'] = time.time()
-            if cam_id is not None:
-                self.known_faces[face_id]['cam_id'] = cam_id
-            
-            # Prune old faces periodically
-            if time.time() - self.last_prune > 300:
-                self._prune()
+        with self.lock:
+            if face_id in self.known_faces:
+                self.known_faces[face_id]['last_seen'] = time.time()
+                if cam_id is not None:
+                    self.known_faces[face_id]['cam_id'] = cam_id
+                
+                # Prune old faces periodically
+                if time.time() - self.last_prune > 300:
+                    self._prune()
 
     def get_summary(self) -> dict:
         """Returns counts of people detected by group."""
         by_group = {"kids": 0, "youths": 0, "adults": 0, "seniors": 0}
-        for rec in self.known_faces.values():
-            g = rec.get('group', 'adults')
-            if g in by_group:
-                by_group[g] += 1
-        return {"total_unique": len(self.known_faces), "by_group": by_group}
+        with self.lock:
+            for rec in self.known_faces.values():
+                # Handle both dict and object (if any)
+                g = rec.get('group', 'adults') if isinstance(rec, dict) else getattr(rec, 'group', 'adults')
+                if g in by_group:
+                    by_group[g] += 1
+            return {"total_unique": len(self.known_faces), "by_group": by_group}
 
     def _prune(self):
         """Removes faces not seen for a long time."""

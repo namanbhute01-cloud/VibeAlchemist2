@@ -1,41 +1,56 @@
 from fastapi import APIRouter, Request
 import logging
 from typing import Optional
-from api.models import PlaybackCommand
 
 router = APIRouter(prefix="/playback", tags=["playback"])
 logger = logging.getLogger("PlaybackRoute")
 
 @router.get("/status")
 async def get_status():
-    from api.api_server import player, api_response
+    """Returns flat playback status."""
+    from api import api_server as server
+    player = getattr(server, 'player', None)
     if player:
-        return api_response(data=player.get_status())
-    return api_response(success=False, error="Player not initialized")
+        return player.get_status()
+    return {
+        "song": "None",
+        "percent": 0,
+        "paused": False,
+        "shuffle": True,
+        "group": "adults",
+        "volume": 70
+    }
 
 @router.post("/{action}")
-async def control_playback(action: str, cmd: Optional[PlaybackCommand] = None):
-    from api.api_server import player, vibe_engine, api_response
-    if not player:
-        return api_response(success=False, error="Player not initialized")
+async def control_playback(action: str, request: Request):
+    """Handles playback actions with flat JSON responses."""
+    from api import api_server as server
+    player = getattr(server, 'player', None)
+    vibe_engine = getattr(server, 'vibe_engine', None)
     
-    if action == "play":
-        player.play(group=cmd.group if cmd else None)
-    elif action == "pause":
-        player.pause()
+    if not player:
+        return {"ok": False, "error": "Player not initialized"}
+    
+    body = {}
+    try:
+        body = await request.json()
+    except Exception:
+        pass
+
+    if action == "pause" or action == "play":
+        # In the context of toggle_pause, we just call it
+        player.toggle_pause()
     elif action == "next":
-        group = cmd.group if (cmd and cmd.group) else (vibe_engine.current_vibe if vibe_engine else "adults")
-        player.play(group=group)
+        group = body.get("group") or (vibe_engine.current_vibe if vibe_engine else "adults")
+        player.next(group)
     elif action == "prev":
-        player.prev_track()
+        player.prev()
     elif action == "shuffle":
         mode = player.toggle_shuffle()
-        return api_response(data={"shuffle": mode})
+        return {"ok": True, "shuffle": mode}
     elif action == "volume":
-        if cmd:
-            vol = cmd.level if cmd.level is not None else cmd.vol
-            if vol is not None:
-                player.set_volume(vol)
-                return api_response(data={"volume": vol})
+        level = body.get("level") or body.get("vol") or 70
+        player.set_volume(int(level))
+        return {"ok": True}
     
-    return api_response(data={"action": action})
+    return {"ok": True}

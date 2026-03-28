@@ -3,7 +3,9 @@ import threading
 import time
 import logging
 import queue
+import os
 from typing import List, Union
+import numpy as np
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
@@ -14,14 +16,20 @@ class CameraWorker(threading.Thread):
     Worker thread for a single camera source.
     Reads frames, resizes them, and pushes to the shared queue.
     """
-    def __init__(self, source: Union[int, str], cam_id: int, frame_queue: queue.Queue, target_height=720):
+    def __init__(self, source: Union[int, str], cam_id: int, frame_queue: queue.Queue, pool, target_height=720):
         super().__init__(daemon=True)
         self.source = source
         self.cam_id = cam_id
         self.queue = frame_queue
+        self.pool = pool
         self.target_height = target_height
         self.running = False
         self.cap = None
+        
+        # Settings
+        self.brightness = 0
+        self.contrast = 1.0
+        self.sharpness = 0
 
     def _connect(self):
         """Attempts to connect to the camera source."""
@@ -36,25 +44,24 @@ class CameraWorker(threading.Thread):
 
     def _preprocess(self, frame):
         """
-        Basic preprocessing: Resize and optional CLAHE.
-        The main enhancement happens in the Vision Pipeline.
+        Basic preprocessing: Resize and user settings.
         """
+        # Apply user settings
+        if self.brightness != 0 or self.contrast != 1.0:
+            frame = cv2.convertScaleAbs(frame, alpha=self.contrast, beta=self.brightness * 10)
+        
+        # Simple sharpness (Laplacian enhancement)
+        if self.sharpness > 0:
+            kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
+            sharpened = cv2.filter2D(frame, -1, kernel)
+            frame = cv2.addWeighted(frame, 1-self.sharpness, sharpened, self.sharpness, 0)
+
         h, w = frame.shape[:2]
-        scale = self.target_height / h
-        if scale < 1.0:
+        if h > self.target_height:
+            scale = self.target_height / h
             frame = cv2.resize(frame, (int(w * scale), self.target_height))
         
-        # Basic brightness normalization if too dark
-        # (Save heavy CLAHE for later to conserve CPU on this thread)
         return frame
-
-    def update_settings(self, settings: dict):
-        """Live update of worker settings (brightness, etc.)"""
-        if 'brightness' in settings and self.cap:
-            self.cap.set(cv2.CAP_PROP_BRIGHTNESS, settings['brightness'])
-        if 'contrast' in settings and self.cap:
-            self.cap.set(cv2.CAP_PROP_CONTRAST, settings['contrast'])
-        # Sharpness is usually software-based, skipping for low-level CAP_PROP
 
     def run(self):
         self.running = True
@@ -73,11 +80,13 @@ class CameraWorker(threading.Thread):
                 self.cap.release()
                 continue
             
-            # Preprocess
             try:
                 processed_frame = self._preprocess(frame)
                 
-                # Push to queue (non-blocking, drop if full to maintain real-time)
+                # Store in pool for direct access
+                self.pool.latest_frames[self.cam_id] = processed_frame
+                
+                # Push to queue for pipeline
                 if self.queue.full():
                     try:
                         self.queue.get_nowait() # Drop old frame
@@ -102,35 +111,57 @@ class CameraWorker(threading.Thread):
 
     def stop(self):
         self.running = False
-        self.join()
 
 class CameraPool:
     """
     Manager for multiple CameraWorker threads.
     """
-    def __init__(self, sources: List[Union[int, str]], frame_queue: queue.Queue, target_height=720):
-        self.sources = sources
+    def __init__(self, sources: List[Union[int, str]] = None, frame_queue: queue.Queue = None, target_height=720):
+        # Step 1.1 — Fix camera source parsing
+        if sources is None:
+            raw = os.getenv("CAMERA_SOURCES", "0")
+            sources_list = []
+            for s in raw.split(","):
+                s = s.strip()
+                if not s:
+                    continue
+                if s.isdigit():
+                    sources_list.append(int(s))   # USB camera — MUST be int
+                else:
+                    sources_list.append(s)         # RTSP/HTTP URL — keep as string
+            self.sources = sources_list
+        else:
+            self.sources = sources
+            
         self.queue = frame_queue
         self.target_height = target_height
         self.workers = []
+        self.latest_frames = {}
 
     def start(self):
         logger.info(f"Starting CameraPool with {len(self.sources)} sources...")
         for i, source in enumerate(self.sources):
-            # Convert string digits to int (for USB cams)
-            if isinstance(source, str) and source.isdigit():
-                source = int(source)
-            
-            worker = CameraWorker(source, i, self.queue, target_height=self.target_height)
+            worker = CameraWorker(source, i, self.queue, self, target_height=self.target_height)
             worker.start()
             self.workers.append(worker)
 
+    # Step 1.2 — Add get_latest_frame
+    def get_latest_frame(self, cam_id: int):
+        return self.latest_frames.get(cam_id, None)
+
+    # Step 1.3 — Add update_settings
     def update_settings(self, cam_id: int, settings: dict):
         if 0 <= cam_id < len(self.workers):
-            self.workers[cam_id].update_settings(settings)
+            worker = self.workers[cam_id]
+            if hasattr(worker, 'brightness'): worker.brightness = settings.get('brightness', worker.brightness)
+            if hasattr(worker, 'contrast'):   worker.contrast   = settings.get('contrast',   worker.contrast)
+            if hasattr(worker, 'sharpness'):  worker.sharpness  = settings.get('sharpness',  worker.sharpness)
 
-    def stop(self):
+    def stop_all(self):
         logger.info("Stopping CameraPool...")
         for worker in self.workers:
             worker.stop()
+        for worker in self.workers:
+            worker.join(timeout=2)
         self.workers.clear()
+        self.latest_frames.clear()
