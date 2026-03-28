@@ -125,7 +125,7 @@ app = FastAPI(title="Vibe Alchemist V2", lifespan=lifespan)
 # 1. CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://127.0.0.1:5173", "http://127.0.0.1:8080", "http://localhost:5173", "http://192.168.29.51:8080", "*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -138,14 +138,15 @@ app.include_router(playback.router, prefix="/api")
 app.include_router(vibe.router, prefix="/api")
 app.include_router(faces.router, prefix="/api")
 
-# 3. WebSocket /ws
+# 3. WebSocket /ws and /ws/vibe-stream
 @app.websocket("/ws")
+@app.websocket("/ws/vibe-stream")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     try:
         while True:
             if vibe_engine:
-                state = vibe_engine.get_state()
+                state = vibe_engine.get_state(player=player)
                 await websocket.send_json(state)
             await asyncio.sleep(0.5)
     except (WebSocketDisconnect, Exception):
@@ -168,27 +169,28 @@ async def camera_feed(cam_id: int):
             time.sleep(0.1)
     return StreamingResponse(generate(), media_type="multipart/x-mixed-replace;boundary=frame")
 
-# 5. StaticFiles mount for /assets
+# 5. Static Files & SPA Catch-all
 static_dir = Path(__file__).parent.parent / "static"
-if static_dir.exists():
-    assets_dir = static_dir / "assets"
-    if assets_dir.exists():
-        app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
 
-# 6. SPA Catch-all (MUST be last)
-@app.get("/")
-async def serve_root():
-    index_file = static_dir / "index.html"
-    if index_file.exists():
-        return FileResponse(str(index_file))
-    return {"error": "Frontend not built"}
+# Mount /assets specifically for speed and clarity
+if (static_dir / "assets").exists():
+    app.mount("/assets", StaticFiles(directory=str(static_dir / "assets")), name="assets")
 
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str):
-    skip = ("api/", "feed/", "ws", "assets/", "docs", "openapi")
+    # Skip core system endpoints
+    skip = ("api/", "feed/", "ws", "docs", "openapi")
     if any(full_path.startswith(s) for s in skip):
         raise HTTPException(status_code=404)
+    
+    # Check if a specific static file exists (e.g., favicon.ico, placeholder.svg)
+    target_file = static_dir / full_path
+    if target_file.is_file():
+        return FileResponse(target_file)
+    
+    # Otherwise, serve the SPA index.html for any route
     index_file = static_dir / "index.html"
     if index_file.exists():
-        return FileResponse(str(index_file))
+        return FileResponse(index_file)
+    
     return {"error": "Frontend not built"}

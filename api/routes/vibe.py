@@ -10,8 +10,10 @@ async def get_current():
     """Returns flat vibe state."""
     from api import api_server as server
     vibe_engine = getattr(server, 'vibe_engine', None)
+    player = getattr(server, 'player', None)
+    
     if vibe_engine:
-        return vibe_engine.get_state()
+        return vibe_engine.get_state(player=player)
     return {
         "status": "offline",
         "detected_group": "None",

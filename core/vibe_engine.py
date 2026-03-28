@@ -12,10 +12,15 @@ class VibeEngine:
     Manages the 'Vibe Journal' (history of detections), calculates the dominant audience,
     and handles the '95% Handover' logic for smooth transitions.
     """
-    def __init__(self, history_len=50):
+    def __init__(self, history_len=50, consensus_threshold=20):
         # Rolling window of detected groups: ['youths', 'adults', 'kids', ...]
         self.journal = deque(maxlen=history_len)
         self.lock = threading.Lock()
+        
+        # Debounce/Consensus logic
+        self.consensus_threshold = consensus_threshold
+        self.temp_consensus = deque(maxlen=consensus_threshold)
+        self.last_consensus_vibe = "adults"
         
         # Current active state
         self.current_vibe = "adults" # Default
@@ -28,12 +33,25 @@ class VibeEngine:
         self.inv_map = {1: "kids", 2: "youths", 3: "adults", 4: "seniors"}
 
     def log_detection(self, group, age="..."):
-        """Logs a new detected group into the journal."""
+        """Logs a new detected group into the journal with consensus debounce."""
         if group not in self.group_map:
             return
 
         with self.lock:
-            self.journal.append(group)
+            # 1. Update temp consensus buffer
+            self.temp_consensus.append(group)
+            
+            # 2. Check for consensus (100% agreement in small window)
+            if len(self.temp_consensus) == self.consensus_threshold:
+                counts = Counter(self.temp_consensus)
+                most_common, count = counts.most_common(1)[0]
+                
+                if count >= self.consensus_threshold * 0.8: # 80% consensus
+                    if most_common != self.last_consensus_vibe:
+                        self.last_consensus_vibe = most_common
+                        # Add to long-term journal ONLY when consensus changes or every N frames
+                        self.journal.append(most_common)
+            
             self.current_age = str(age)
             
     def get_dominant_vibe(self):
@@ -65,25 +83,25 @@ class VibeEngine:
             self.next_vibe = None
         return self.current_vibe
 
-    def get_state(self) -> dict:
+    def get_state(self, player=None) -> dict:
         """Returns the full state for the UI/WebSocket. Strictly 11 keys."""
-        from api import api_server as server
-        
         dominant = self.get_dominant_vibe()
-        p = getattr(server, 'player', None)
         
         with self.lock:
+            # Get player status if provided
+            p_status = player.get_status() if player else {}
+            
             return {
                 "status":         self.status,
                 "detected_group": dominant,
                 "current_vibe":   dominant,   # alias for UI
                 "age":            str(self.current_age),
                 "journal_count":  len(self.journal),
-                "percent_pos":    float(p.get_status().get('percent', 0) if p else 0),
-                "is_playing":     bool(p.is_playing if p else False),
-                "paused":         bool(not p.is_playing if p else True),
-                "shuffle":        bool(p.shuffle_mode if p else True),
-                "current_song":   str(p.current_song if p else ""),
+                "percent_pos":    float(p_status.get('percent', 0)),
+                "is_playing":     bool(player.is_playing if player else False),
+                "paused":         bool(p_status.get('paused', True)),
+                "shuffle":        bool(p_status.get('shuffle', True)),
+                "current_song":   str(p_status.get('song', "")),
                 "next_vibe":      self.next_vibe,
             }
 
