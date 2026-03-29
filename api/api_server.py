@@ -54,27 +54,57 @@ manager = ConnectionManager()
 # --- VISION PROCESSING LOOP ---
 def processing_loop(loop):
     global pipeline, cam_pool, vibe_engine, face_vault, face_registry, player
+    faces_detected_count = 0
+    last_music_change = time.time()
+    
     while True:
         try:
             if not pipeline or not cam_pool:
                 time.sleep(1)
                 continue
-            item = frame_queue.get(timeout=1.0) 
+            item = frame_queue.get(timeout=1.0)
             cam_id = item["cam_id"]
             frame = item["frame"]
             detections = pipeline.process_frame(frame, cam_id)
+            
+            # Process each detection
             for det in detections:
-                if vibe_engine: vibe_engine.log_detection(det['group'], age=det['age'])
-                if player and player.get_pos() > 95:
-                    vibe_engine.prepare_handover()
-            # Draw debug and store for feed
+                faces_detected_count += 1
+                # Log detection to vibe engine (includes age tracking)
+                if vibe_engine:
+                    vibe_engine.log_detection(det['group'], age=det['age'])
+            
+            # If faces detected, trigger music playback based on detected age group
+            if detections and player:
+                current_time = time.time()
+                # Only change music every 10 seconds to avoid rapid switching
+                if current_time - last_music_change > 10:
+                    # Get the current vibe group based on all detections
+                    target_group = vibe_engine.get_current_group() if vibe_engine else "adults"
+                    
+                    # Check if we need to change the music
+                    current_status = player.get_status()
+                    current_group = current_status.get('group', 'adults')
+                    
+                    # Play music from the detected group's folder
+                    if target_group != current_group or current_status.get('song') == 'None':
+                        logger.info(f"Playing music for detected group: {target_group} (avg age: {vibe_engine.average_age if vibe_engine else 25})")
+                        player.next(target_group)
+                        last_music_change = current_time
+            
+            # Draw bounding boxes on detected faces
             for det in detections:
                 x1, y1, x2, y2 = det['bbox']
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                # Add age/group label
+                label = f"{det['age']} ({det['group']})"
+                cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            
+            # Encode and store frame for MJPEG stream
             ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
             if ret:
-                # Store raw bytes in pool for the MJPEG endpoint
                 cam_pool.latest_frames[cam_id] = buffer.tobytes()
+                
         except queue.Empty:
             continue
         except Exception as e:

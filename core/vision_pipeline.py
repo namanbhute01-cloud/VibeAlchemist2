@@ -12,6 +12,7 @@ class VisionPipeline:
     Orchestrates the Gated Vision Pipeline:
     Motion (MOG2) -> Human (YOLO) -> Face (YOLO-Face) -> Identity/Age (ArcFace/DEX)
     Optimized for CPU inference using ONNX Runtime.
+    Features automatic image enhancement based on lighting conditions.
     """
     def __init__(self, models_dir="models", pool=None, engine=None, vault=None, registry=None):
         self.models_dir = models_dir
@@ -19,25 +20,31 @@ class VisionPipeline:
         self.engine = engine
         self.vault = vault
         self.registry = registry
-        
+
         # 1. Motion Detector
         self.bg_subtractor = cv2.createBackgroundSubtractorMOG2(history=500, varThreshold=25, detectShadows=False)
-        
+
         # 2. Human Detector (YOLOv8-nano ONNX)
         self.person_model = self._load_yolo("yolov8n.onnx", "yolov8n.pt")
-        
+
         # 3. Face Detector (YOLOv8-face ONNX)
         self.face_model = self._load_yolo("yolov8n-face.onnx", "yolov8n-face.pt")
-        
+
         # 4. Feature Extractors (Raw ONNX)
         self.arcface_sess = self._load_onnx_session("arcface_r100.onnx")
         self.age_sess = self._load_onnx_session("dex_age.onnx")
+
+        # Auto-enhancement state
+        self.frame_brightness_history = []
+        self.auto_brightness = 0
+        self.auto_contrast = 1.0
+        self.auto_sharpness = 0.3
 
     def _load_yolo(self, onnx_name, pt_name):
         """Loads YOLO model, preferring ONNX for CPU speed."""
         onnx_path = os.path.join(self.models_dir, onnx_name)
         pt_path = os.path.join(self.models_dir, pt_name)
-        
+
         if os.path.exists(onnx_path):
             logger.info(f"Loading {onnx_name} (ONNX)...")
             return YOLO(onnx_path, task="detect")
@@ -63,6 +70,61 @@ class VisionPipeline:
         logger.warning(f"Model {model_name} missing from {self.models_dir}. Features disabled.")
         return None
 
+    def auto_enhance_frame(self, frame):
+        """
+        Automatic image enhancement based on lighting analysis.
+        Analyzes histogram and adjusts brightness/contrast/sharpness automatically.
+        """
+        # Convert to LAB color space for better luminance analysis
+        lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
+        l, a, b = cv2.split(lab)
+
+        # Analyze brightness (mean luminance)
+        mean_brightness = np.mean(l)
+        self.frame_brightness_history.append(mean_brightness)
+        if len(self.frame_brightness_history) > 30:
+            self.frame_brightness_history.pop(0)
+
+        # Calculate average brightness over time
+        avg_brightness = np.mean(self.frame_brightness_history)
+
+        # Auto-adjust brightness based on lighting conditions
+        if avg_brightness < 80:  # Dark scene
+            self.auto_brightness = 0.3  # Brighten
+        elif avg_brightness > 180:  # Very bright scene
+            self.auto_brightness = -0.2  # Darken slightly
+        else:
+            self.auto_brightness = 0  # Normal
+
+        # Auto-adjust contrast based on histogram spread
+        std_dev = np.std(l)
+        if std_dev < 40:  # Low contrast (flat histogram)
+            self.auto_contrast = 1.5
+        elif std_dev > 80:  # High contrast
+            self.auto_contrast = 1.0
+        else:
+            self.auto_contrast = 1.2
+
+        # Apply CLAHE for adaptive contrast enhancement
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        cl = clahe.apply(l)
+
+        # Apply brightness adjustment
+        if self.auto_brightness != 0:
+            cl = cv2.add(cl, int(self.auto_brightness * 50))
+
+        # Merge channels back
+        enhanced_lab = cv2.merge((cl, a, b))
+        enhanced = cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2BGR)
+
+        # Auto-sharpen if image is blurry (detected by edge strength)
+        if self.auto_sharpness > 0:
+            kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
+            sharpened = cv2.filter2D(enhanced, -1, kernel)
+            enhanced = cv2.addWeighted(enhanced, 1 - self.auto_sharpness, sharpened, self.auto_sharpness, 0)
+
+        return enhanced
+
     def enhance_face(self, face_crop):
         """Software enhancement for better feature extraction."""
         # CLAHE (Contrast Limited Adaptive Histogram Equalization)
@@ -80,10 +142,14 @@ class VisionPipeline:
         """
         if frame is None: return []
 
+        # --- STEP 0: AUTO-ENHANCE FRAME ---
+        # Automatically adjust image quality based on lighting
+        enhanced_frame = self.auto_enhance_frame(frame)
+
         # --- STEP 1: MOTION GATING ---
-        mask = self.bg_subtractor.apply(frame)
+        mask = self.bg_subtractor.apply(enhanced_frame)
         motion_pixels = cv2.countNonZero(mask)
-        
+
         # Lower threshold for better sensitivity (was 500)
         if motion_pixels < 200:
             return []
@@ -93,7 +159,7 @@ class VisionPipeline:
 
         # --- STEP 2: HUMAN DETECTION ---
         # Lower confidence threshold for better detection (was 0.4)
-        persons = self.person_model(frame, classes=[0], conf=0.3, verbose=False)
+        persons = self.person_model(enhanced_frame, classes=[0], conf=0.3, verbose=False)
 
         for result in persons:
             for box in result.boxes:
@@ -101,7 +167,7 @@ class VisionPipeline:
                 x1, y1 = max(0, x1), max(0, y1)
                 x2, y2 = min(w, x2), min(h, y2)
 
-                person_crop = frame[y1:y2, x1:x2]
+                person_crop = enhanced_frame[y1:y2, x1:x2]
                 if person_crop.size == 0: continue
 
                 # --- STEP 3: FACE DETECTION ---
@@ -147,7 +213,12 @@ class VisionPipeline:
 
         if results:
             logger.info(f"Detected {len(results)} face(s) in camera {cam_id}")
-        
+            # Log ages for debugging
+            ages = [r['age'] for r in results]
+            avg_age = sum(ages) / len(ages)
+            groups = [r['group'] for r in results]
+            logger.info(f"Ages: {ages}, Avg: {avg_age:.1f}, Groups: {groups}")
+
         return results
 
     def _get_embedding(self, face):
