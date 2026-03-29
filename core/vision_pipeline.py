@@ -82,41 +82,47 @@ class VisionPipeline:
 
         # --- STEP 1: MOTION GATING ---
         mask = self.bg_subtractor.apply(frame)
-        if cv2.countNonZero(mask) < 500: # Threshold for "significant motion"
+        motion_pixels = cv2.countNonZero(mask)
+        
+        # Lower threshold for better sensitivity (was 500)
+        if motion_pixels < 200:
             return []
 
         results = []
         h, w = frame.shape[:2]
 
         # --- STEP 2: HUMAN DETECTION ---
-        persons = self.person_model(frame, classes=[0], conf=0.4, verbose=False)
-        
+        # Lower confidence threshold for better detection (was 0.4)
+        persons = self.person_model(frame, classes=[0], conf=0.3, verbose=False)
+
         for result in persons:
             for box in result.boxes:
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
                 x1, y1 = max(0, x1), max(0, y1)
                 x2, y2 = min(w, x2), min(h, y2)
-                
+
                 person_crop = frame[y1:y2, x1:x2]
                 if person_crop.size == 0: continue
 
                 # --- STEP 3: FACE DETECTION ---
-                faces = self.face_model(person_crop, conf=0.5, verbose=False)
+                # Lower confidence for face detection (was 0.5)
+                faces = self.face_model(person_crop, conf=0.3, verbose=False)
 
                 for fbox in faces[0].boxes:
                     fx1, fy1, fx2, fy2 = map(int, fbox.xyxy[0])
                     gx1, gy1 = x1 + fx1, y1 + fy1
                     gx2, gy2 = x1 + fx2, y1 + fy2
-                    
+
                     face_crop = person_crop[fy1:fy2, fx1:fx2]
-                    if face_crop.size < 400: continue
+                    # Lower minimum face size (was 400)
+                    if face_crop.size < 200: continue
 
                     # --- STEP 4: ENHANCEMENT & ANALYSIS ---
                     enhanced_face = self.enhance_face(face_crop)
                     embedding = self._get_embedding(enhanced_face)
                     age = self._predict_age(enhanced_face)
                     group = self._age_to_group(age)
-                    
+
                     # Deduplication
                     face_id = "unknown"
                     if embedding is not None and self.registry:
@@ -129,6 +135,7 @@ class VisionPipeline:
                             # Save new faces to vault
                             if self.vault:
                                 self.vault.save_face(enhanced_face, face_id, group)
+                                logger.info(f"Face saved to vault: {face_id} ({group})")
 
                     results.append({
                         'id': face_id,
@@ -138,6 +145,9 @@ class VisionPipeline:
                         'cam_id': cam_id
                     })
 
+        if results:
+            logger.info(f"Detected {len(results)} face(s) in camera {cam_id}")
+        
         return results
 
     def _get_embedding(self, face):
