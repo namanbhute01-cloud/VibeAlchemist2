@@ -1,305 +1,1049 @@
 --- VIBE ALCHEMIST V2 STARTING ON 0.0.0.0:8080 ---
+--- Press Ctrl+C to stop and cleanup temp_faces ---
 INFO:     Will watch for changes in these directories: ['/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2']
 INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
-INFO:     Started reloader process [139262] using StatReload
-INFO:     Started server process [139266]
+INFO:     Started reloader process [141774] using StatReload
+INFO:     Started server process [141778]
 INFO:     Waiting for application startup.
-2026-03-30 09:39:22,246 | INFO | Initializing Vibe Alchemist V2 Systems...
-2026-03-30 09:39:50,423 | INFO | MPV Engine Started.
-2026-03-30 09:39:50,424 | WARNING | Google Drive credentials not configured. Running in local-only mode.
-2026-03-30 09:39:50,429 | INFO | Loading yolov8n.onnx (ONNX)...
-2026-03-30 09:39:50,503 | INFO | Loading yolov8n-face.onnx (ONNX)...
-2026-03-30 09:39:50,652 | INFO | Haar cascade loaded as fallback
-2026-03-30 09:39:54,674 | INFO | Loaded arcface_r100.onnx successfully.
-2026-03-30 09:39:54,809 | INFO | Loaded dex_age.onnx successfully.
-2026-03-30 09:39:54,809 | INFO | Starting CameraPool with 2 sources...
-2026-03-30 09:39:54,813 | INFO | [Cam 0] Connecting to source: 0
-2026-03-30 09:39:54,821 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-2026-03-30 09:39:54,836 | INFO | [STARTUP] All core modules initialized.
+2026-03-30 10:26:49,630 | INFO | Initializing Vibe Alchemist V2 Systems...
+2026-03-30 10:26:54,404 | INFO | MPV Engine Started.
+2026-03-30 10:26:54,404 | WARNING | Google Drive credentials not configured. Running in local-only mode.
+2026-03-30 10:26:54,404 | INFO | Loading yolov8n.onnx (ONNX)...
+2026-03-30 10:26:54,407 | INFO | Loading yolov8n-face.onnx (ONNX)...
+2026-03-30 10:26:54,430 | INFO | Haar cascade loaded as fallback
+2026-03-30 10:26:55,297 | INFO | Loaded arcface_r100.onnx successfully.
+2026-03-30 10:26:55,310 | INFO | Loaded dex_age.onnx successfully.
+2026-03-30 10:26:55,310 | INFO | Starting CameraPool with 2 sources...
+2026-03-30 10:26:55,310 | INFO | [Cam 0] Connecting to source: 0
+2026-03-30 10:26:55,311 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+2026-03-30 10:26:55,312 | INFO | [STARTUP] All core modules initialized.
 INFO:     Application startup complete.
-INFO:     127.0.0.1:49586 - "GET /api/cameras HTTP/1.1" 200 OK
-Loading models/yolov8n.onnx for ONNX Runtime inference...
-Using ONNX Runtime 1.24.4 with CPUExecutionProvider
-[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 09:40:00,176 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-30 09:40:05,186 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-Loading models/yolov8n-face.onnx for ONNX Runtime inference...
-Using ONNX Runtime 1.24.4 with CPUExecutionProvider
-[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 09:40:11,826 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-30 09:40:16,834 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:50552 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50564 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50580 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50588 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50602 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50614 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 09:40:21,904 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:50620 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50622 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50628 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50644 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50658 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50672 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-30 09:40:26,905 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 09:40:31,993 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:42604 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42606 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42622 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-30 09:40:36,994 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 09:40:42,015 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-30 09:40:47,016 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 09:40:52,052 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-30 09:40:52,086 | INFO | New Identity Registered: face_1_1774843852 (Group: youths, Cam: 0)
-2026-03-30 09:40:52,096 | INFO | Saved face: temp_faces/youths_face_1_1774843852_1774843852.png (100x70)
-2026-03-30 09:40:52,128 | INFO | Face saved to vault: face_1_1774843852 (youths)
-2026-03-30 09:40:57,055 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 09:41:02,075 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-30 09:41:07,181 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-2026-03-30 09:41:07,367 | INFO | Detected 3 face(s) in camera 0
-2026-03-30 09:41:07,368 | INFO | Ages: [22, 31, 21], Avg: 24.7, Groups: ['youths', 'adults', 'youths']
-2026-03-30 09:41:07,370 | INFO | Playing music for detected group: youths (avg age: 24)
-2026-03-30 09:41:07,375 | INFO | Now Playing: Divine
-INFO:     127.0.0.1:36550 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36558 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36572 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36576 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36580 - "GET /feed/0?t=1774843839547 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36594 - "GET /feed/1?t=1774843839547 HTTP/1.1" 200 OK
-[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 09:41:12,365 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-30 09:41:17,366 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:49272 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49282 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49296 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49306 - "GET /api/playback/library HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49310 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49326 - "WebSocket /ws" [accepted]
+[ WARN:0@6.135] global cap_v4l.cpp:914 open VIDEOIO(V4L2:/dev/video0): can't open camera by index
+INFO:     127.0.0.1:37200 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37206 - "GET /api/playback/status HTTP/1.1" 200 OK
+[tcp @ 0x7cbbc4004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:27:00,329 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+[video4linux2,v4l2 @ 0x7cbbc0001a00] ioctl(VIDIOC_G_INPUT): Inappropriate ioctl for device
+[ERROR:0@11.133] global obsensor_uvc_stream_channel.cpp:163 getStreamChannelGroup Camera index out of range
+2026-03-30 10:27:00,330 | WARNING | [Cam 0] Connection lost. Retrying in 5s...
+2026-03-30 10:27:05,329 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+2026-03-30 10:27:05,331 | INFO | [Cam 0] Connecting to source: 0
+[ WARN:0@16.151] global cap_v4l.cpp:914 open VIDEOIO(V4L2:/dev/video0): can't open camera by index
+INFO:     127.0.0.1:39616 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39618 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39628 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39642 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39652 - "GET /api/playback/library HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39654 - "WebSocket /ws" [accepted]
 INFO:     connection open
-INFO:     127.0.0.1:49336 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49342 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49350 - "WebSocket /ws" [accepted]
+INFO:     127.0.0.1:39664 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39666 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39680 - "WebSocket /ws" [accepted]
 INFO:     connection open
-INFO:     127.0.0.1:49352 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49354 - "GET /feed/1?t=1774843881446 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49356 - "GET /feed/0?t=1774843881446 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49358 - "WebSocket /ws" [accepted]
+INFO:     127.0.0.1:39696 - "GET /feed/0?t=1774846626710 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39712 - "GET /feed/1?t=1774846626710 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39714 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39722 - "WebSocket /ws" [accepted]
 INFO:     connection open
-INFO:     127.0.0.1:49362 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 09:41:23,449 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:49364 - "WebSocket /ws" [accepted]
+INFO:     127.0.0.1:39738 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39744 - "WebSocket /ws" [accepted]
 INFO:     connection open
-INFO:     127.0.0.1:60912 - "WebSocket /ws" [accepted]
+INFO:     127.0.0.1:39758 - "WebSocket /ws" [accepted]
 INFO:     connection open
-2026-03-30 09:41:28,450 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:60918 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60932 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60934 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60946 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60958 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60970 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60984 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 09:41:33,470 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-30 09:41:34,576 | INFO | Detected 2 face(s) in camera 0
-2026-03-30 09:41:34,578 | INFO | Ages: [24, 20], Avg: 22.0, Groups: ['youths', 'youths']
-INFO:     127.0.0.1:60988 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34390 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34402 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34410 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34418 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34434 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34440 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34452 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34456 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34466 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34472 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-30 09:41:38,473 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:34478 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34480 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34482 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34492 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34508 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34516 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34526 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34528 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34544 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34556 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34566 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34568 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 09:41:44,063 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:34580 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34594 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52840 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52842 - "POST /api/playback/play HTTP/1.1" 200 OK
-2026-03-30 09:41:49,063 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:52856 - "POST /api/playback/play HTTP/1.1" 200 OK
-[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 09:41:54,085 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:46332 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46342 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46350 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46354 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46358 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46360 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46376 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46382 - "POST /api/playback/pause HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46398 - "POST /api/playback/pause HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46412 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46418 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46420 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46432 - "GET /feed/1?t=1774843916717 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46448 - "GET /feed/0?t=1774843916717 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46454 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46464 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-30 09:41:59,085 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:46474 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46476 - "POST /api/playback/volume HTTP/1.1" 200 OK
-[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 09:42:04,098 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:46480 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46484 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42572 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42574 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42580 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42594 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42610 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42614 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42622 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42626 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42636 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42640 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42656 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42664 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42678 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42688 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42696 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42710 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42718 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42730 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42740 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42744 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42758 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-30 09:42:09,104 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:42768 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42780 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42796 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42808 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42820 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42828 - "POST /api/playback/volume HTTP/1.1" 200 OK
-2026-03-30 09:42:13,276 | INFO | Now Playing: Divine
-INFO:     127.0.0.1:42842 - "POST /api/playback/prev HTTP/1.1" 200 OK
-[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 09:42:14,116 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-30 09:42:19,116 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:52130 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52146 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52162 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52164 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52172 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52180 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52182 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-30 09:42:21,459 | INFO | Detected 1 face(s) in camera 0
-2026-03-30 09:42:21,459 | INFO | Ages: [19], Avg: 19.0, Groups: ['youths']
-[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 09:42:24,139 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-30 09:42:29,140 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:43282 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43288 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43304 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43320 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43326 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43332 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43340 - "GET /feed/0?t=1774843951712 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43362 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43350 - "GET /feed/1?t=1774843951712 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43370 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43372 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43376 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 09:42:34,199 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:45082 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45092 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45108 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45120 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45134 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45140 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45156 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45168 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45174 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45180 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45186 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45196 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45198 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-30 09:42:39,201 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:45212 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45214 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45220 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45232 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45236 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45244 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45248 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45260 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45276 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 09:42:44,353 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:37448 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37456 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37472 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37482 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37488 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37496 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:37510 - "GET /api/faces HTTP/1.1" 200 OK
-2026-03-30 09:42:49,356 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 09:42:54,377 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-30 09:42:59,378 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:51448 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-30 09:43:03,820 | INFO | Detected 1 face(s) in camera 0
-2026-03-30 09:43:03,820 | INFO | Ages: [23], Avg: 23.0, Groups: ['youths']
-[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 09:43:05,049 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-30 09:43:10,052 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:42812 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 09:43:15,261 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:45308 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45318 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45328 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45340 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45356 - "GET /feed/0?t=1774843995662 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45372 - "GET /feed/1?t=1774843995662 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45376 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45384 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45394 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45398 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-30 09:43:20,270 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+INFO:     127.0.0.1:39772 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39778 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39790 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39806 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39814 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39818 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39822 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39828 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39832 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39834 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39842 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39844 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39856 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39860 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39862 - "GET /api/playback/status HTTP/1.1" 200 OK
+[tcp @ 0x7cbbc4004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+[video4linux2,v4l2 @ 0x7cbbc0001a00] ioctl(VIDIOC_G_INPUT): Inappropriate ioctl for device
+2026-03-30 10:27:10,493 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+[ERROR:0@21.298] global obsensor_uvc_stream_channel.cpp:163 getStreamChannelGroup Camera index out of range
+2026-03-30 10:27:10,495 | WARNING | [Cam 0] Connection lost. Retrying in 5s...
+INFO:     127.0.0.1:39866 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39868 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39878 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39886 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39896 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39910 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39918 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39920 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39926 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39942 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39956 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39970 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39982 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39986 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39988 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40002 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40018 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40024 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40032 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40048 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44314 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44322 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44338 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-03-30 10:27:15,495 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+2026-03-30 10:27:15,496 | INFO | [Cam 0] Connecting to source: 0
+[ WARN:0@26.317] global cap_v4l.cpp:914 open VIDEOIO(V4L2:/dev/video0): can't open camera by index
+INFO:     127.0.0.1:44342 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44348 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44356 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44370 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44380 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44404 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44410 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44420 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44436 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44450 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44466 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44470 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44474 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44480 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44486 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44490 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44492 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44506 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44514 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44524 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44528 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44530 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44542 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44556 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44570 - "GET /api/playback/status HTTP/1.1" 200 OK
+[tcp @ 0x7cbbc4004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:27:20,511 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+[video4linux2,v4l2 @ 0x7cbbc0001a00] ioctl(VIDIOC_G_INPUT): Inappropriate ioctl for device
+[ERROR:0@31.315] global obsensor_uvc_stream_channel.cpp:163 getStreamChannelGroup Camera index out of range
+2026-03-30 10:27:20,515 | WARNING | [Cam 0] Connection lost. Retrying in 5s...
+INFO:     127.0.0.1:44576 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44582 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44594 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44602 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44612 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44622 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44636 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44638 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44640 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44646 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44662 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44672 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44680 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44684 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44696 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44704 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44718 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44728 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44736 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44740 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44756 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44764 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44774 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44780 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44784 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38606 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-03-30 10:27:25,514 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+2026-03-30 10:27:25,519 | INFO | [Cam 0] Connecting to source: 0
+[ WARN:0@36.338] global cap_v4l.cpp:914 open VIDEOIO(V4L2:/dev/video0): can't open camera by index
+INFO:     127.0.0.1:38610 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38624 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38636 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38642 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38654 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38668 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38670 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38678 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38682 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38690 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38700 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38706 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38716 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38718 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38734 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38744 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38746 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38750 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38760 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38776 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38790 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38794 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38806 - "GET /api/playback/status HTTP/1.1" 200 OK
+[tcp @ 0x7cbbc4004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:27:30,551 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+[video4linux2,v4l2 @ 0x7cbbc0001a00] ioctl(VIDIOC_G_INPUT): Inappropriate ioctl for device
+[ERROR:0@41.355] global obsensor_uvc_stream_channel.cpp:163 getStreamChannelGroup Camera index out of range
+2026-03-30 10:27:30,553 | WARNING | [Cam 0] Connection lost. Retrying in 5s...
+INFO:     127.0.0.1:38814 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38816 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38818 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38830 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38840 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38848 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38860 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38864 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38878 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38892 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38898 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38910 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38918 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38922 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38928 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38930 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38942 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38956 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38962 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38978 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38992 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:39004 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54438 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54442 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54444 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54454 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-03-30 10:27:35,552 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+2026-03-30 10:27:35,554 | INFO | [Cam 0] Connecting to source: 0
+[ WARN:0@46.374] global cap_v4l.cpp:914 open VIDEOIO(V4L2:/dev/video0): can't open camera by index
+INFO:     127.0.0.1:54460 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54468 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54482 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54490 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54500 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54506 - "GET /feed/0?t=1774846656727 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54522 - "GET /feed/1?t=1774846656727 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54528 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54542 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54548 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54556 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54564 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54566 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54582 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54598 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54602 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54618 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54624 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54638 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54642 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54648 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54652 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54664 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54670 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54674 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54682 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54692 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54694 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54702 - "GET /api/playback/status HTTP/1.1" 200 OK
+[tcp @ 0x7cbbc4004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+[video4linux2,v4l2 @ 0x7cbbc0001a00] ioctl(VIDIOC_G_INPUT): Inappropriate ioctl for device
+[ERROR:0@51.411] global obsensor_uvc_stream_channel.cpp:163 getStreamChannelGroup Camera index out of range
+2026-03-30 10:27:40,609 | WARNING | [Cam 0] Connection lost. Retrying in 5s...
+2026-03-30 10:27:40,612 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+INFO:     127.0.0.1:54706 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54718 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54724 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54738 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54742 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54752 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54764 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54768 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54774 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54776 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54782 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54796 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54812 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54828 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54832 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54838 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54846 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54860 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53376 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53382 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53396 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53410 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-03-30 10:27:45,610 | INFO | [Cam 0] Connecting to source: 0
+2026-03-30 10:27:45,613 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[ WARN:0@56.431] global cap_v4l.cpp:914 open VIDEOIO(V4L2:/dev/video0): can't open camera by index
+INFO:     127.0.0.1:53422 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53434 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53448 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53456 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53472 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53478 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53490 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     connection closed
+INFO:     connection closed
+INFO:     connection closed
+INFO:     connection closed
+INFO:     connection closed
 INFO:     Shutting down
-INFO:     connection closed
-INFO:     connection closed
-INFO:     connection closed
-INFO:     connection closed
-INFO:     connection closed
-INFO:     Waiting for connections to close. (CTRL+C to force quit)
 INFO:     Waiting for background tasks to complete. (CTRL+C to force quit)
+INFO:     Finished server process [141778]
+ERROR:    Traceback (most recent call last):
+  File "/usr/lib/python3.13/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "/usr/lib/python3.13/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/usr/lib/python3.13/asyncio/base_events.py", line 712, in run_until_complete
+    self.run_forever()
+    ~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/asyncio/base_events.py", line 683, in run_forever
+    self._run_once()
+    ~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/asyncio/base_events.py", line 2050, in _run_once
+    handle._run()
+    ~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/asyncio/events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/server.py", line 78, in serve
+    with self.capture_signals():
+         ~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/server.py", line 339, in capture_signals
+    signal.raise_signal(captured_signal)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/main.py", line 33, in cleanup_temp_faces
+    sys.exit(0)
+    ~~~~~~~~^^^
+SystemExit: 0
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/routing.py", line 645, in lifespan
+    await receive()
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/lifespan/on.py", line 137, in receive
+    return await self.receive_queue.get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.13/asyncio/queues.py", line 186, in get
+    await getter
+asyncio.exceptions.CancelledError
+
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/usr/lib/python3.13/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "/usr/lib/python3.13/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/usr/lib/python3.13/asyncio/base_events.py", line 712, in run_until_complete
+    self.run_forever()
+    ~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/asyncio/base_events.py", line 683, in run_forever
+    self._run_once()
+    ~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/asyncio/base_events.py", line 2050, in _run_once
+    handle._run()
+    ~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/asyncio/events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/server.py", line 78, in serve
+    with self.capture_signals():
+         ~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/server.py", line 339, in capture_signals
+    signal.raise_signal(captured_signal)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/main.py", line 33, in cleanup_temp_faces
+    sys.exit(0)
+    ~~~~~~~~^^^
+SystemExit: 0
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/protocols/http/h11_impl.py", line 410, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/routing.py", line 121, in app
+    await response(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/responses.py", line 274, in __call__
+    async with anyio.create_task_group() as task_group:
+               ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 803, in __aexit__
+    raise exc_val
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 771, in __aexit__
+    await self._on_completed_fut
+asyncio.exceptions.CancelledError
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/usr/lib/python3.13/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "/usr/lib/python3.13/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/usr/lib/python3.13/asyncio/base_events.py", line 712, in run_until_complete
+    self.run_forever()
+    ~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/asyncio/base_events.py", line 683, in run_forever
+    self._run_once()
+    ~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/asyncio/base_events.py", line 2050, in _run_once
+    handle._run()
+    ~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/asyncio/events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/server.py", line 78, in serve
+    with self.capture_signals():
+         ~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/server.py", line 339, in capture_signals
+    signal.raise_signal(captured_signal)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/main.py", line 33, in cleanup_temp_faces
+    sys.exit(0)
+    ~~~~~~~~^^^
+SystemExit: 0
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/protocols/http/h11_impl.py", line 410, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/routing.py", line 121, in app
+    await response(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/responses.py", line 274, in __call__
+    async with anyio.create_task_group() as task_group:
+               ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 803, in __aexit__
+    raise exc_val
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 771, in __aexit__
+    await self._on_completed_fut
+asyncio.exceptions.CancelledError
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/usr/lib/python3.13/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "/usr/lib/python3.13/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/usr/lib/python3.13/asyncio/base_events.py", line 712, in run_until_complete
+    self.run_forever()
+    ~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/asyncio/base_events.py", line 683, in run_forever
+    self._run_once()
+    ~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/asyncio/base_events.py", line 2050, in _run_once
+    handle._run()
+    ~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/asyncio/events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/server.py", line 78, in serve
+    with self.capture_signals():
+         ~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/server.py", line 339, in capture_signals
+    signal.raise_signal(captured_signal)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/main.py", line 33, in cleanup_temp_faces
+    sys.exit(0)
+    ~~~~~~~~^^^
+SystemExit: 0
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/protocols/http/h11_impl.py", line 410, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/routing.py", line 121, in app
+    await response(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/responses.py", line 274, in __call__
+    async with anyio.create_task_group() as task_group:
+               ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 803, in __aexit__
+    raise exc_val
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 771, in __aexit__
+    await self._on_completed_fut
+asyncio.exceptions.CancelledError
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/usr/lib/python3.13/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "/usr/lib/python3.13/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/usr/lib/python3.13/asyncio/base_events.py", line 712, in run_until_complete
+    self.run_forever()
+    ~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/asyncio/base_events.py", line 683, in run_forever
+    self._run_once()
+    ~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/asyncio/base_events.py", line 2050, in _run_once
+    handle._run()
+    ~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/asyncio/events.py", line 89, in _run
+    self._context.run(self._callback, *self._args)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/server.py", line 78, in serve
+    with self.capture_signals():
+         ~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.13/contextlib.py", line 148, in __exit__
+    next(self.gen)
+    ~~~~^^^^^^^^^^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/server.py", line 339, in capture_signals
+    signal.raise_signal(captured_signal)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/main.py", line 33, in cleanup_temp_faces
+    sys.exit(0)
+    ~~~~~~~~^^^
+SystemExit: 0
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/protocols/http/h11_impl.py", line 410, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 88, in __call__
+    await self.app(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/routing.py", line 121, in app
+    await response(scope, receive, send)
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/responses.py", line 274, in __call__
+    async with anyio.create_task_group() as task_group:
+               ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 803, in __aexit__
+    raise exc_val
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 771, in __aexit__
+    await self._on_completed_fut
+asyncio.exceptions.CancelledError
+Traceback (most recent call last):
+  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/main.py", line 33, in cleanup_temp_faces
+    sys.exit(0)
+SystemExit: 0
+
+✓ Cleaned up 1 face(s) from temp_faces
+INFO:     Stopping reloader process [141774]
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 [tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:26:51,153 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:26:56,153 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
 [tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 09:43:25,354 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-30 09:43:27,501 | INFO | Detected 1 face(s) in camera 0
-2026-03-30 09:43:27,502 | INFO | Ages: [23], Avg: 23.0, Groups: ['youths']
-2026-03-30 09:43:30,355 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+2026-03-30 10:27:01,177 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:27:06,185 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
 [tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 09:43:35,449 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-30 09:43:40,505 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+2026-03-30 10:27:11,232 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:27:16,233 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
 [tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 09:43:45,714 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-30 09:43:50,777 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+2026-03-30 10:27:21,303 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:27:26,321 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
 [tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 09:43:55,903 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-30 09:44:00,911 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+2026-03-30 10:27:31,453 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:27:36,453 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:27:41,472 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:27:46,475 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:27:51,513 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:27:56,514 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:28:01,526 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:28:06,527 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:28:11,538 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:28:16,539 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:28:21,552 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:28:26,552 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:28:31,570 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:28:36,570 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:28:41,582 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:28:46,583 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:28:51,602 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:28:56,602 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:29:01,613 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:29:06,613 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:29:11,629 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:29:16,630 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:29:21,641 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:29:26,641 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:29:31,655 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:29:36,655 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:29:41,669 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:29:46,670 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:29:51,683 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:29:56,684 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:30:01,702 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:30:06,703 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:30:11,726 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:30:16,726 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:30:21,740 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:30:26,741 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:30:31,755 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:30:36,756 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:30:41,771 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:30:46,771 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:30:51,802 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:30:56,802 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:31:01,825 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:31:06,826 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:31:11,848 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:31:16,848 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:31:21,866 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:31:26,868 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:31:31,884 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:31:36,885 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:31:41,899 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:31:46,899 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:31:51,918 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:31:56,919 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:32:01,934 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:32:06,934 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:32:11,945 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:32:16,945 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:32:21,958 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:32:26,959 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:32:31,972 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:32:36,972 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:32:41,986 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:32:46,986 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:32:52,004 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:32:57,005 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:33:02,022 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:33:07,023 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:33:12,044 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:33:17,045 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:33:22,058 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:33:27,058 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:33:32,076 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:33:37,076 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:33:42,090 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:33:47,091 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:33:52,109 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:33:57,109 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:34:02,122 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:34:07,123 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:34:12,135 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:34:17,135 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:34:22,151 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:34:27,152 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:34:32,168 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:34:37,169 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:34:42,188 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:34:47,188 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:34:52,209 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:34:57,209 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:35:02,226 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:35:07,226 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:35:12,238 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:35:17,238 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:35:22,254 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:35:27,255 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:35:32,271 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:35:37,272 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:35:42,289 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:35:47,289 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:35:52,305 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:35:57,305 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:36:02,345 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:36:07,345 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:36:12,362 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:36:17,363 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:36:22,379 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:36:27,380 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:36:32,399 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:36:37,399 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:36:42,418 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:36:47,418 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:36:52,433 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:36:57,435 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:37:02,447 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:37:07,447 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:37:12,460 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:37:17,461 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:37:22,477 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:37:27,478 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:37:32,499 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:37:37,501 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:37:42,517 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:37:47,517 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:37:52,537 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:37:57,539 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:38:02,562 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:38:07,562 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:38:12,582 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:38:17,582 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:38:22,600 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:38:27,603 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:38:32,616 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:38:37,616 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:38:42,635 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:38:47,636 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:38:52,654 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:38:57,654 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:39:02,668 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:39:07,668 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:39:12,683 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:39:17,684 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:39:22,698 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:39:27,699 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:39:32,714 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:39:37,715 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:39:42,728 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:39:47,729 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:39:52,751 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:39:57,752 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:40:02,767 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:40:07,769 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:40:12,782 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:40:17,783 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:40:22,794 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:40:27,794 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:40:32,819 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:40:37,819 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:40:42,835 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:40:47,836 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:40:52,854 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:40:57,855 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:41:02,871 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:41:07,872 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:41:12,889 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:41:17,890 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:41:22,907 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:41:27,907 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:41:32,922 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:41:37,925 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:41:42,939 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:41:47,940 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:41:52,964 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:41:57,964 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:42:02,979 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:42:07,979 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:42:12,992 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:42:17,993 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:42:23,010 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:42:28,011 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:42:33,025 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:42:38,026 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:42:43,040 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:42:48,041 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:42:53,059 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:42:58,060 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:43:03,072 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:43:08,073 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:43:13,087 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:43:18,087 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:43:23,102 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:43:28,103 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:43:33,117 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:43:38,118 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:43:43,131 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:43:48,131 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:43:53,149 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:43:58,150 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:44:03,166 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:44:08,167 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:44:13,181 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:44:18,181 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:44:23,193 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:44:28,193 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:44:33,206 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:44:38,207 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:44:43,221 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:44:48,222 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:44:53,244 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:44:58,245 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:45:03,260 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:45:08,260 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:45:13,275 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:45:18,276 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:45:23,294 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:45:28,295 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:45:33,311 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:45:38,311 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:45:43,365 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:45:48,368 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:45:53,493 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:45:58,494 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:46:03,509 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:46:08,510 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:46:13,525 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:46:18,525 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:46:23,539 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:46:28,540 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:46:33,552 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:46:38,553 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:46:43,570 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:46:48,571 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:46:53,583 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:46:58,584 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:47:03,751 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:47:08,751 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:47:13,765 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:47:18,766 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:47:23,783 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:47:28,784 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:47:33,798 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:47:38,801 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:47:43,873 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:47:48,874 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:47:53,907 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 10:47:58,907 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 10:48:03,922 | WARNING | [Cam 1] Connection lost. Retrying in 5s...

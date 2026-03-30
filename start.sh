@@ -31,11 +31,15 @@ FRONTEND_PID=""
 # Cleanup function
 # ═══════════════════════════════════════════════════════════════
 cleanup() {
-    echo -e "\n${YELLOW}[System] Stopping services...${NC}"
+    echo ""
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${YELLOW}  Shutting down Vibe Alchemist V2...${NC}"
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     
     if [ -n "$BACKEND_PID" ] && kill -0 "$BACKEND_PID" 2>/dev/null; then
         echo "  Stopping backend (PID: $BACKEND_PID)..."
         kill "$BACKEND_PID" 2>/dev/null || true
+        wait "$BACKEND_PID" 2>/dev/null || true
     fi
     
     if [ -n "$FRONTEND_PID" ] && kill -0 "$FRONTEND_PID" 2>/dev/null; then
@@ -47,11 +51,22 @@ cleanup() {
     pkill -f "python.*main.py" 2>/dev/null || true
     pkill -f "vite.*5173" 2>/dev/null || true
     
-    echo -e "${GREEN}✓ All services stopped${NC}"
+    # Cleanup temp_faces directory
+    TEMP_DIR="$SCRIPT_DIR/temp_faces"
+    if [ -d "$TEMP_DIR" ]; then
+        COUNT=$(find "$TEMP_DIR" -name "*.png" 2>/dev/null | wc -l)
+        if [ "$COUNT" -gt 0 ]; then
+            rm -f "$TEMP_DIR"/*.png
+            echo -e "${GREEN}  ✓ Cleaned up $COUNT face(s) from temp_faces${NC}"
+        fi
+    fi
+    
+    echo -e "${GREEN}  ✓ Shutdown complete${NC}"
+    echo ""
     exit 0
 }
 
-trap cleanup SIGINT SIGTERM EXIT
+trap cleanup SIGINT SIGTERM
 
 # ═══════════════════════════════════════════════════════════════
 # Helper functions
