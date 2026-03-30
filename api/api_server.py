@@ -207,12 +207,6 @@ app.add_middleware(
 # 2. API Routers
 from api.routes import cameras, playback, vibe, faces
 
-# Set global references for routes
-cameras.set_cam_pool(None)  # Will be set after initialization
-playback.set_refs(None, None)  # Will be set after initialization
-vibe.set_refs(None, None)  # Will be set after initialization
-faces.set_refs(None, None)  # Will be set after initialization
-
 app.include_router(cameras.router, prefix="/api")
 app.include_router(playback.router, prefix="/api")
 app.include_router(vibe.router, prefix="/api")

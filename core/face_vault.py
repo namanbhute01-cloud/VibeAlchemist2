@@ -4,6 +4,7 @@ import threading
 import logging
 import cv2
 import shutil
+import numpy as np
 from pathlib import Path
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
@@ -162,11 +163,6 @@ class FaceVault:
             "pending_count": pending,
             "uploads": self.upload_count
         }
-
-    def shutdown_push(self):
-        """Final sync before exit."""
-        logger.info("Final face sync before shutdown...")
-        self.sync_now()
 
     def stop(self):
         self.running = False
