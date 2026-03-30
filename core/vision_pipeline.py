@@ -10,7 +10,7 @@ logger = logging.getLogger("VisionPipeline")
 class VisionPipeline:
     """
     Orchestrates the Gated Vision Pipeline:
-    Motion (MOG2) -> Human (YOLO) -> Face (YOLO-Face) -> Identity/Age (ArcFace/DEX)
+    Motion (MOG2) -> Human (YOLO) -> Face (YOLO-Face + Haar Cascade fallback) -> Identity/Age (ArcFace/DEX)
     Optimized for CPU inference using ONNX Runtime.
     Features automatic image enhancement based on lighting conditions.
     """
@@ -27,8 +27,15 @@ class VisionPipeline:
         # 2. Human Detector (YOLOv8-nano ONNX)
         self.person_model = self._load_yolo("yolov8n.onnx", "yolov8n.pt")
 
-        # 3. Face Detector (YOLOv8-face ONNX)
+        # 3. Face Detector (YOLOv8-face ONNX with Haar Cascade fallback)
         self.face_model = self._load_yolo("yolov8n-face.onnx", "yolov8n-face.pt")
+        
+        # Haar Cascade fallback for face detection
+        self.haar_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        if self.haar_cascade.empty():
+            logger.warning("Haar cascade not loaded, face detection will be limited")
+        else:
+            logger.info("Haar cascade loaded as fallback")
 
         # 4. Feature Extractors (Raw ONNX)
         self.arcface_sess = self._load_onnx_session("arcface_r100.onnx")
@@ -135,6 +142,60 @@ class VisionPipeline:
         enhanced = cv2.merge((cl, a, b))
         return cv2.cvtColor(enhanced, cv2.COLOR_LAB2BGR)
 
+    def _detect_faces(self, person_crop, offset_x, offset_y):
+        """
+        Detect faces using YOLO-Face with Haar Cascade fallback.
+        Returns list of tuples: (x1, y1, x2, y2, is_yolo_detection)
+        """
+        faces = []
+        h, w = person_crop.shape[:2]
+        
+        # Try YOLO-Face first (more accurate)
+        if self.face_model:
+            try:
+                yolo_faces = self.face_model(person_crop, conf=0.15, verbose=False)
+                for box in yolo_faces[0].boxes:
+                    fx1, fy1, fx2, fy2 = map(int, box.xyxy[0])
+                    conf = float(box.conf[0])
+                    # Convert to global coordinates
+                    gx1, gy1 = offset_x + fx1, offset_y + fy1
+                    gx2, gy2 = offset_x + fx2, offset_y + fy2
+                    
+                    # Validate face crop has reasonable dimensions
+                    face_w = gx2 - gx1
+                    face_h = gy2 - gy1
+                    if face_w >= 30 and face_h >= 30:  # Minimum face size
+                        faces.append((gx1, gy1, gx2, gy2, True))
+                
+                if faces:
+                    logger.debug(f"YOLO detected {len(faces)} face(s)")
+                    return faces  # Return YOLO detections if found
+            except Exception as e:
+                logger.debug(f"YOLO face detection error: {e}")
+        
+        # Fallback to Haar Cascade only if YOLO found nothing
+        if self.haar_cascade is not None and not self.haar_cascade.empty():
+            try:
+                gray = cv2.cvtColor(person_crop, cv2.COLOR_BGR2GRAY)
+                haar_faces = self.haar_cascade.detectMultiScale(
+                    gray, 
+                    scaleFactor=1.1,  # More strict scale factor
+                    minNeighbors=3,   # Higher minNeighbors to reduce false positives
+                    minSize=(50, 50)  # Larger minimum size
+                )
+                for (fx, fy, fw, fh) in haar_faces:
+                    # Convert to global coordinates
+                    gx1, gy1 = offset_x + fx, offset_y + fy
+                    gx2, gy2 = offset_x + fx + fw, offset_y + fy + fh
+                    faces.append((gx1, gy1, gx2, gy2, False))
+                
+                if faces:
+                    logger.debug(f"Haar detected {len(faces)} face(s)")
+            except Exception as e:
+                logger.debug(f"Haar face detection error: {e}")
+        
+        return faces
+
     def process_frame(self, frame, cam_id):
         """
         Main pipeline entry point.
@@ -148,21 +209,24 @@ class VisionPipeline:
 
         # --- STEP 1: MOTION GATING ---
         mask = self.bg_subtractor.apply(enhanced_frame)
+        mask = cv2.threshold(mask, 200, 255, cv2.THRESH_BINARY)[0]  # Clean up noise
+        mask = cv2.dilate(mask, None, iterations=2)  # Fill gaps
         motion_pixels = cv2.countNonZero(mask)
 
-        # Lower threshold for better sensitivity (was 500)
-        if motion_pixels < 200:
-            return []
-
+        # Lower threshold for better sensitivity - also allow processing if this is first frame
+        motion_detected = motion_pixels > 100
+        
         results = []
         h, w = frame.shape[:2]
 
         # --- STEP 2: HUMAN DETECTION ---
-        # Lower confidence threshold for better detection (was 0.4)
-        persons = self.person_model(enhanced_frame, classes=[0], conf=0.3, verbose=False)
+        # Lower confidence threshold for better detection
+        persons = self.person_model(enhanced_frame, classes=[0], conf=0.25, verbose=False)
 
+        persons_detected = False
         for result in persons:
             for box in result.boxes:
+                persons_detected = True
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
                 x1, y1 = max(0, x1), max(0, y1)
                 x2, y2 = min(w, x2), min(h, y2)
@@ -170,18 +234,17 @@ class VisionPipeline:
                 person_crop = enhanced_frame[y1:y2, x1:x2]
                 if person_crop.size == 0: continue
 
-                # --- STEP 3: FACE DETECTION ---
-                # Lower confidence for face detection (was 0.5)
-                faces = self.face_model(person_crop, conf=0.3, verbose=False)
+                # --- STEP 3: FACE DETECTION (YOLO + Haar Cascade fallback) ---
+                faces = self._detect_faces(person_crop, x1, y1)
 
-                for fbox in faces[0].boxes:
-                    fx1, fy1, fx2, fy2 = map(int, fbox.xyxy[0])
-                    gx1, gy1 = x1 + fx1, y1 + fy1
-                    gx2, gy2 = x1 + fx2, y1 + fy2
+                for fbox in faces:
+                    fx1, fy1, fx2, fy2, is_yolo = fbox
+                    gx1, gy1 = fx1, fy1
+                    gx2, gy2 = fx2, fy2
 
-                    face_crop = person_crop[fy1:fy2, fx1:fx2]
-                    # Lower minimum face size (was 400)
-                    if face_crop.size < 200: continue
+                    face_crop = enhanced_frame[gy1:gy2, gx1:gx2]
+                    # Check minimum face dimensions (at least 40x40 pixels)
+                    if face_crop.shape[0] < 40 or face_crop.shape[1] < 40: continue
 
                     # --- STEP 4: ENHANCEMENT & ANALYSIS ---
                     enhanced_face = self.enhance_face(face_crop)
@@ -194,13 +257,17 @@ class VisionPipeline:
                     if embedding is not None and self.registry:
                         fid, sim = self.registry.is_known(embedding)
                         if fid:
+                            # Known face - update last seen
                             self.registry.update(fid, cam_id)
                             face_id = fid
                         else:
+                            # New face - register it
                             face_id = self.registry.register(embedding, group, cam_id)
-                            # Save new faces to vault
-                            if self.vault:
-                                self.vault.save_face(enhanced_face, face_id, group)
+                        
+                        # Save face to vault ONLY if it's a new face that hasn't been saved yet
+                        if self.vault and not self.registry.is_saved(face_id):
+                            if self.vault.save_face(enhanced_face, face_id, group):
+                                self.registry.mark_as_saved(face_id)
                                 logger.info(f"Face saved to vault: {face_id} ({group})")
 
                     results.append({
@@ -210,6 +277,44 @@ class VisionPipeline:
                         'bbox': [gx1, gy1, gx2, gy2],
                         'cam_id': cam_id
                     })
+
+        # FALLBACK: Direct face detection on full frame if no persons detected but motion detected
+        # OR if this might be a static scene (camera just started)
+        if not persons_detected:
+            logger.debug(f"No persons detected (motion={motion_pixels}), trying direct face detection")
+            direct_faces = self._detect_faces(enhanced_frame, 0, 0)
+            for fbox in direct_faces:
+                fx1, fy1, fx2, fy2, is_yolo = fbox
+                face_crop = enhanced_frame[fy1:fy2, fx1:fx2]
+                if face_crop.shape[0] < 40 or face_crop.shape[1] < 40: continue
+
+                enhanced_face = self.enhance_face(face_crop)
+                embedding = self._get_embedding(enhanced_face)
+                age = self._predict_age(enhanced_face)
+                group = self._age_to_group(age)
+
+                face_id = "unknown"
+                if embedding is not None and self.registry:
+                    fid, sim = self.registry.is_known(embedding)
+                    if fid:
+                        self.registry.update(fid, cam_id)
+                        face_id = fid
+                    else:
+                        face_id = self.registry.register(embedding, group, cam_id)
+                    
+                    # Save face to vault ONLY if it's a new face that hasn't been saved yet
+                    if self.vault and not self.registry.is_saved(face_id):
+                        if self.vault.save_face(enhanced_face, face_id, group):
+                            self.registry.mark_as_saved(face_id)
+                            logger.info(f"Face saved to vault: {face_id} ({group})")
+
+                results.append({
+                    'id': face_id,
+                    'age': age,
+                    'group': group,
+                    'bbox': [fx1, fy1, fx2, fy2],
+                    'cam_id': cam_id
+                })
 
         if results:
             logger.info(f"Detected {len(results)} face(s) in camera {cam_id}")
@@ -224,29 +329,54 @@ class VisionPipeline:
     def _get_embedding(self, face):
         """Runs ArcFace inference."""
         if not self.arcface_sess: return None
-        blob = cv2.resize(face, (112, 112)).transpose(2, 0, 1).astype(np.float32)
-        blob = np.expand_dims(blob, axis=0)
-        blob = (blob - 127.5) / 128.0
-        
         try:
-            outs = self.arcface_sess.run(None, {self.arcface_sess.get_inputs()[0].name: blob})
+            # ArcFace expects NHWC format: [batch, height, width, channels]
+            blob = cv2.resize(face, (112, 112)).astype(np.float32)
+            blob = (blob - 127.5) / 128.0
+            blob = np.expand_dims(blob, axis=0)  # Add batch dimension: (1, 112, 112, 3)
+            
+            input_name = self.arcface_sess.get_inputs()[0].name
+            outs = self.arcface_sess.run(None, {input_name: blob})
             return outs[0].flatten()
-        except:
+        except Exception as e:
+            logger.debug(f"ArcFace embedding error: {e}")
             return None
 
     def _predict_age(self, face):
         """Runs DEX Age inference."""
         if not self.age_sess: return 25
-        blob = cv2.resize(face, (224, 224)).transpose(2, 0, 1).astype(np.float32)
-        blob = np.expand_dims(blob, axis=0)
         
         try:
-            outs = self.age_sess.run(None, {self.age_sess.get_inputs()[0].name: blob})
+            # DEX Age model expects CHW format: [batch, channels, height, width]
+            blob = cv2.resize(face, (96, 96)).astype(np.float32)
+            blob = blob.transpose(2, 0, 1)  # HWC to CHW
+            blob = np.expand_dims(blob, axis=0)  # Add batch dimension
+
+            input_name = self.age_sess.get_inputs()[0].name
+            outs = self.age_sess.run(None, {input_name: blob})
+            
+            # Model outputs 3 values - interpret as age group logits
+            # [young, adult, senior] or similar classification
             logits = outs[0][0]
+            
+            # Use softmax to get probabilities
             probs = np.exp(logits) / np.sum(np.exp(logits))
-            age = np.sum(probs * np.arange(101))
-            return int(age)
-        except:
+            
+            # Map to age groups: 0=kids/teens, 1=young adult, 2=adult/senior
+            # Weighted average for continuous age estimate
+            age_estimate = np.argmax(probs)
+            
+            # Map to approximate ages based on dominant class
+            if age_estimate == 0:
+                age = int(15 + probs[0] * 10)  # 15-25
+            elif age_estimate == 1:
+                age = int(25 + probs[1] * 10)  # 25-35
+            else:
+                age = int(35 + probs[2] * 25)  # 35-60
+            
+            return min(60, max(15, age))
+        except Exception as e:
+            logger.error(f"Age prediction error: {e}")
             return 25
 
     def _age_to_group(self, age):

@@ -5,22 +5,29 @@ import logging
 router = APIRouter(prefix="/cameras", tags=["cameras"])
 logger = logging.getLogger("CamerasRoute")
 
+# Global reference to cam_pool - set by api_server during startup
+cam_pool_ref = {"pool": None}
+
+def set_cam_pool(pool):
+    """Set the camera pool reference (called by api_server during startup)."""
+    cam_pool_ref["pool"] = pool
+
 @router.get("")
 @router.get("/")
 async def list_cameras():
     """Returns flat list of cameras as per contract."""
-    from api import api_server as server
-
-    cam_pool = getattr(server, 'cam_pool', None)
+    cam_pool = cam_pool_ref.get("pool")
     sources = []
 
     if cam_pool is not None:
         sources = getattr(cam_pool, 'sources', [])
+        logger.debug(f"Cameras from pool: {sources}")
 
     if not sources:
         # Fallback to .env parsing
         env_sources = os.getenv("CAMERA_SOURCES", "0")
         sources = [s.strip() for s in env_sources.split(",") if s.strip()]
+        logger.debug(f"Cameras from env: {sources}")
 
     return [
         {
@@ -36,8 +43,7 @@ async def list_cameras():
 @router.post("/{cam_id}/settings")
 async def update_settings(cam_id: int, request: Request):
     """Updates camera settings."""
-    from api import api_server as server
-    cam_pool = getattr(server, 'cam_pool', None)
+    cam_pool = cam_pool_ref.get("pool")
 
     try:
         body = await request.json()

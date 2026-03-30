@@ -7,12 +7,19 @@ from typing import Optional
 router = APIRouter(prefix="/playback", tags=["playback"])
 logger = logging.getLogger("PlaybackRoute")
 
+# Global references - set by api_server during startup
+refs = {"player": None, "vibe_engine": None}
+
+def set_refs(player, vibe_engine):
+    """Set references (called by api_server during startup)."""
+    refs["player"] = player
+    refs["vibe_engine"] = vibe_engine
+
 @router.get("/library")
 async def get_library():
     """Returns the music library organized by age groups."""
-    from api import api_server as server
-    player = getattr(server, 'player', None)
-    
+    player = refs.get("player")
+
     if player and hasattr(player, 'music_root'):
         music_dir = Path(player.music_root)
         library = {}
@@ -24,14 +31,13 @@ async def get_library():
             else:
                 library[group] = []
         return library
-    
+
     return {"kids": [], "youths": [], "adults": [], "seniors": []}
 
 @router.get("/status")
 async def get_status():
     """Returns flat playback status."""
-    from api import api_server as server
-    player = getattr(server, 'player', None)
+    player = refs.get("player")
     if player:
         return player.get_status()
     return {
@@ -46,13 +52,12 @@ async def get_status():
 @router.post("/{action}")
 async def control_playback(action: str, request: Request):
     """Handles playback actions with flat JSON responses."""
-    from api import api_server as server
-    player = getattr(server, 'player', None)
-    vibe_engine = getattr(server, 'vibe_engine', None)
-    
+    player = refs.get("player")
+    vibe_engine = refs.get("vibe_engine")
+
     if not player:
         return {"ok": False, "error": "Player not initialized"}
-    
+
     body = {}
     try:
         body = await request.json()
@@ -60,7 +65,6 @@ async def control_playback(action: str, request: Request):
         pass
 
     if action == "pause" or action == "play":
-        # In the context of toggle_pause, we just call it
         player.toggle_pause()
     elif action == "next":
         group = body.get("group") or (vibe_engine.current_vibe if vibe_engine else "adults")
@@ -74,5 +78,11 @@ async def control_playback(action: str, request: Request):
         level = body.get("level") or body.get("vol") or 70
         player.set_volume(int(level))
         return {"ok": True}
-    
+    elif action == "mute":
+        player.set_volume(0)
+        return {"ok": True}
+    elif action == "unmute":
+        player.set_volume(70)  # Restore to default
+        return {"ok": True}
+
     return {"ok": True}

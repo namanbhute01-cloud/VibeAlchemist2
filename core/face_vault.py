@@ -48,17 +48,75 @@ class FaceVault:
             logger.error(f"Drive Authentication Failed: {e}")
             self.service = None
 
-    def save_face(self, face_img, face_id, group):
-        """Saves a face crop locally."""
-        if face_img is None or face_img.size == 0: return
+    def save_face(self, face_img, face_id, group, force_save=False):
+        """
+        Saves a face crop locally.
         
+        Args:
+            face_img: Face image to save
+            face_id: Unique face identifier
+            group: Age group (kids/youths/adults/seniors)
+            force_save: If True, save even if already exists (default False)
+        """
+        if face_img is None:
+            logger.warning(f"Cannot save face {face_id}: image is None")
+            return False
+        if face_img.size == 0:
+            logger.warning(f"Cannot save face {face_id}: image is empty")
+            return False
+
+        # Check if this face_id has already been saved (to prevent duplicates)
+        if not force_save:
+            existing = list(self.temp_dir.glob(f"*_{face_id}_*.png"))
+            if existing:
+                logger.debug(f"Face {face_id} already saved, skipping duplicate")
+                return False
+
         filename = f"{group}_{face_id}_{int(time.time())}.png"
         filepath = self.temp_dir / filename
-        
+
         try:
-            cv2.imwrite(str(filepath), face_img)
+            # Ensure face_img is contiguous in memory
+            if not face_img.flags['C_CONTIGUOUS']:
+                face_img = np.ascontiguousarray(face_img)
+
+            success = cv2.imwrite(str(filepath), face_img)
+            if success:
+                logger.info(f"Saved face: {filepath} ({face_img.shape[0]}x{face_img.shape[1]})")
+                return True
+            else:
+                logger.error(f"cv2.imwrite failed for {filepath}")
+                return False
         except Exception as e:
-            logger.error(f"Failed to save face locally: {e}")
+            logger.error(f"Failed to save face {face_id}: {e}")
+            return False
+
+    def cleanup(self):
+        """Delete all files in temp_faces directory. Call this on shutdown."""
+        if not self.temp_dir.exists():
+            return
+            
+        try:
+            files = list(self.temp_dir.glob("*.png"))
+            deleted = 0
+            for f in files:
+                try:
+                    f.unlink()
+                    deleted += 1
+                except Exception as e:
+                    logger.error(f"Failed to delete {f}: {e}")
+            
+            if deleted > 0:
+                logger.info(f"Cleaned up {deleted} face(s) from temp_faces")
+        except Exception as e:
+            logger.error(f"Cleanup failed: {e}")
+
+    def shutdown_push(self):
+        """Final sync before exit, then cleanup."""
+        logger.info("Final face sync before shutdown...")
+        self.sync_now()
+        # Note: We don't cleanup here because user might want to keep faces
+        # Call cleanup() explicitly if you want to delete on shutdown
 
     def _sync_loop(self):
         self.running = True

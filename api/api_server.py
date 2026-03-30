@@ -77,20 +77,39 @@ def processing_loop(loop):
             # If faces detected, trigger music playback based on detected age group
             if detections and player:
                 current_time = time.time()
-                # Only change music every 10 seconds to avoid rapid switching
-                if current_time - last_music_change > 10:
-                    # Get the current vibe group based on all detections
-                    target_group = vibe_engine.get_current_group() if vibe_engine else "adults"
-                    
-                    # Check if we need to change the music
-                    current_status = player.get_status()
-                    current_group = current_status.get('group', 'adults')
-                    
-                    # Play music from the detected group's folder
-                    if target_group != current_group or current_status.get('song') == 'None':
-                        logger.info(f"Playing music for detected group: {target_group} (avg age: {vibe_engine.average_age if vibe_engine else 25})")
-                        player.next(target_group)
-                        last_music_change = current_time
+                # Get the current vibe group based on all detections
+                target_group = vibe_engine.get_current_group() if vibe_engine else "adults"
+
+                # Check if we need to change the music
+                current_status = player.get_status()
+                current_group = current_status.get('group', 'adults')
+                current_song = current_status.get('song', 'None')
+                is_paused = current_status.get('paused', False)
+
+                # Play music from the detected group's folder
+                # Change music if: different group, no song playing, or it's been 15 seconds
+                should_change = (
+                    target_group != current_group or
+                    current_song == 'None' or
+                    (current_time - last_music_change > 15 and target_group == current_group)
+                )
+
+                if should_change and target_group != current_group:
+                    logger.info(f"Playing music for detected group: {target_group} (avg age: {vibe_engine.average_age if vibe_engine else 25})")
+                    player.next(target_group)
+                    # Ensure music is playing (not paused)
+                    if is_paused:
+                        player.toggle_pause()
+                    last_music_change = current_time
+                elif current_song == 'None':
+                    # Start playing immediately if nothing is playing
+                    logger.info(f"Starting music for detected group: {target_group}")
+                    player.next(target_group)
+                    last_music_change = current_time
+                elif is_paused and target_group == current_group:
+                    # If paused but same group, just resume playing
+                    logger.info(f"Resuming music for detected group: {target_group}")
+                    player.toggle_pause()
             
             # Draw bounding boxes on detected faces
             for det in detections:
@@ -139,15 +158,39 @@ async def lifespan(app: FastAPI):
         cam_pool = CameraPool(target_height=int(os.getenv("TARGET_HEIGHT", "720")), frame_queue=frame_queue)
         pipeline.pool = cam_pool
         cam_pool.start()
-        
+
         threading.Thread(target=processing_loop, args=(asyncio.get_event_loop(),), daemon=True).start()
         logger.info("[STARTUP] All core modules initialized.")
+        
+        # Set global references for API routes
+        cameras.set_cam_pool(cam_pool)
+        playback.set_refs(player, vibe_engine)
+        vibe.set_refs(vibe_engine, player, cam_pool, face_registry)
+        faces.set_refs(face_registry, face_vault)
     except Exception as e:
         logger.error(f"[STARTUP ERROR] {e}")
 
     yield
-    if cam_pool: cam_pool.stop_all()
-    if player: player.stop()
+    # Shutdown sequence
+    logger.info("Shutting down Vibe Alchemist V2...")
+    
+    if cam_pool: 
+        cam_pool.stop_all()
+    
+    if player: 
+        player.stop()
+    
+    # Sync and cleanup faces on shutdown
+    if face_vault:
+        # Optional: sync to Drive before cleanup (if credentials configured)
+        # face_vault.shutdown_push()
+        # Clean up temp_faces directory
+        face_vault.cleanup()
+    
+    if face_registry:
+        face_registry.clear()
+    
+    logger.info("Shutdown complete. temp_faces cleaned up.")
 
 # --- APP INIT ---
 app = FastAPI(title="Vibe Alchemist V2", lifespan=lifespan)
@@ -163,6 +206,13 @@ app.add_middleware(
 
 # 2. API Routers
 from api.routes import cameras, playback, vibe, faces
+
+# Set global references for routes
+cameras.set_cam_pool(None)  # Will be set after initialization
+playback.set_refs(None, None)  # Will be set after initialization
+vibe.set_refs(None, None)  # Will be set after initialization
+faces.set_refs(None, None)  # Will be set after initialization
+
 app.include_router(cameras.router, prefix="/api")
 app.include_router(playback.router, prefix="/api")
 app.include_router(vibe.router, prefix="/api")
@@ -179,12 +229,16 @@ async def websocket_endpoint(websocket: WebSocket):
                 # Fetch counts for real-time StatCards
                 cam_count = len(cam_pool.sources) if cam_pool else 0
                 face_count = face_registry.get_summary().get('total_unique', 0) if face_registry else 0
-                
+                saved_count = face_registry.get_saved_count() if face_registry else 0
+
                 state = vibe_engine.get_state(
-                    player=player, 
-                    camera_count=cam_count, 
+                    player=player,
+                    camera_count=cam_count,
                     face_count=face_count
                 )
+                # Override with actual saved faces count for UI
+                state['unique_faces'] = saved_count
+                state['active_cameras'] = cam_count
                 await websocket.send_json(state)
             await asyncio.sleep(0.5)
     except (WebSocketDisconnect, Exception):

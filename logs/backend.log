@@ -1,373 +1,305 @@
 --- VIBE ALCHEMIST V2 STARTING ON 0.0.0.0:8080 ---
 INFO:     Will watch for changes in these directories: ['/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2']
 INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
-INFO:     Started reloader process [32905] using StatReload
-INFO:     Started server process [32909]
+INFO:     Started reloader process [139262] using StatReload
+INFO:     Started server process [139266]
 INFO:     Waiting for application startup.
-2026-03-29 17:54:10,762 | INFO | Initializing Vibe Alchemist V2 Systems...
-2026-03-29 17:54:39,366 | INFO | MPV Engine Started.
-2026-03-29 17:54:39,366 | WARNING | Google Drive credentials not configured. Running in local-only mode.
-2026-03-29 17:54:39,367 | INFO | Loading yolov8n.onnx (ONNX)...
-2026-03-29 17:54:39,393 | INFO | Loading yolov8n-face.onnx (ONNX)...
-2026-03-29 17:54:43,454 | INFO | Loaded arcface_r100.onnx successfully.
-2026-03-29 17:54:43,665 | INFO | Loaded dex_age.onnx successfully.
-2026-03-29 17:54:43,666 | INFO | Starting CameraPool with 2 sources...
-2026-03-29 17:54:43,678 | INFO | [Cam 0] Connecting to source: 0
-2026-03-29 17:54:43,679 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-2026-03-29 17:54:43,682 | INFO | [STARTUP] All core modules initialized.
+2026-03-30 09:39:22,246 | INFO | Initializing Vibe Alchemist V2 Systems...
+2026-03-30 09:39:50,423 | INFO | MPV Engine Started.
+2026-03-30 09:39:50,424 | WARNING | Google Drive credentials not configured. Running in local-only mode.
+2026-03-30 09:39:50,429 | INFO | Loading yolov8n.onnx (ONNX)...
+2026-03-30 09:39:50,503 | INFO | Loading yolov8n-face.onnx (ONNX)...
+2026-03-30 09:39:50,652 | INFO | Haar cascade loaded as fallback
+2026-03-30 09:39:54,674 | INFO | Loaded arcface_r100.onnx successfully.
+2026-03-30 09:39:54,809 | INFO | Loaded dex_age.onnx successfully.
+2026-03-30 09:39:54,809 | INFO | Starting CameraPool with 2 sources...
+2026-03-30 09:39:54,813 | INFO | [Cam 0] Connecting to source: 0
+2026-03-30 09:39:54,821 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+2026-03-30 09:39:54,836 | INFO | [STARTUP] All core modules initialized.
 INFO:     Application startup complete.
+INFO:     127.0.0.1:49586 - "GET /api/cameras HTTP/1.1" 200 OK
 Loading models/yolov8n.onnx for ONNX Runtime inference...
 Using ONNX Runtime 1.24.4 with CPUExecutionProvider
-INFO:     127.0.0.1:55520 - "GET /api/cameras HTTP/1.1" 200 OK
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:54:49,131 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-29 17:54:54,223 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:54:59,510 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 09:40:00,176 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 09:40:05,186 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
 Loading models/yolov8n-face.onnx for ONNX Runtime inference...
 Using ONNX Runtime 1.24.4 with CPUExecutionProvider
-2026-03-29 17:55:04,511 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:55:09,529 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-29 17:55:14,531 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-2026-03-29 17:55:16,083 | INFO | Detected 1 face(s) in camera 0
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:55:19,552 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-29 17:55:24,553 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:51082 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51086 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51092 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51094 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51106 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51108 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51118 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51134 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60516 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60542 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:55:29,747 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:60528 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60552 - "GET /api/cameras HTTP/1.1" 200 OK
-2026-03-29 17:55:34,748 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:60566 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60580 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:60594 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:55:39,767 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-29 17:55:44,768 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:55:49,896 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:60602 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57692 - "GET /feed/0?t=1774787132535 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57706 - "GET /feed/1?t=1774787132535 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57720 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57730 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57736 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57738 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57752 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57766 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57776 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57780 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57786 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57792 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57800 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-29 17:55:54,896 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:57814 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-29 17:55:55,530 | INFO | Now Playing: Coke Studio Season 14 Pasoori Ali Sethi x Shae Gill
-INFO:     127.0.0.1:57820 - "POST /api/playback/next HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57836 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57848 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57860 - "GET /api/playback/library HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57870 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57882 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57898 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57902 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57916 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57920 - "GET /feed/0?t=1774787155394 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:57922 - "GET /feed/1?t=1774787155394 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:44940 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:56:00,288 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-29 17:56:02,363 | INFO | Detected 1 face(s) in camera 0
-INFO:     127.0.0.1:44944 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:44954 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:44960 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:44972 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:44978 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:44992 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:44998 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-29 17:56:05,289 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:45006 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53800 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53810 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53814 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53816 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53820 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53822 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53836 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53852 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53866 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53882 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:56:10,314 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:53896 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53900 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53908 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53918 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-29 17:56:14,526 | INFO | Detected 1 face(s) in camera 0
-2026-03-29 17:56:15,314 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:53928 - "WebSocket /ws" [accepted]
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 09:40:11,826 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 09:40:16,834 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+INFO:     127.0.0.1:50552 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50564 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50580 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50588 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50602 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50614 - "GET /api/playback/status HTTP/1.1" 200 OK
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 09:40:21,904 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+INFO:     127.0.0.1:50620 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50622 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50628 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50644 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50658 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50672 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-03-30 09:40:26,905 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 09:40:31,993 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+INFO:     127.0.0.1:42604 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42606 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42622 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-03-30 09:40:36,994 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 09:40:42,015 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 09:40:47,016 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 09:40:52,052 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 09:40:52,086 | INFO | New Identity Registered: face_1_1774843852 (Group: youths, Cam: 0)
+2026-03-30 09:40:52,096 | INFO | Saved face: temp_faces/youths_face_1_1774843852_1774843852.png (100x70)
+2026-03-30 09:40:52,128 | INFO | Face saved to vault: face_1_1774843852 (youths)
+2026-03-30 09:40:57,055 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 09:41:02,075 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 09:41:07,181 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+2026-03-30 09:41:07,367 | INFO | Detected 3 face(s) in camera 0
+2026-03-30 09:41:07,368 | INFO | Ages: [22, 31, 21], Avg: 24.7, Groups: ['youths', 'adults', 'youths']
+2026-03-30 09:41:07,370 | INFO | Playing music for detected group: youths (avg age: 24)
+2026-03-30 09:41:07,375 | INFO | Now Playing: Divine
+INFO:     127.0.0.1:36550 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36558 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36572 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36576 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36580 - "GET /feed/0?t=1774843839547 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36594 - "GET /feed/1?t=1774843839547 HTTP/1.1" 200 OK
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 09:41:12,365 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 09:41:17,366 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+INFO:     127.0.0.1:49272 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49282 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49296 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49306 - "GET /api/playback/library HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49310 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49326 - "WebSocket /ws" [accepted]
 INFO:     connection open
-INFO:     127.0.0.1:53938 - "WebSocket /ws" [accepted]
+INFO:     127.0.0.1:49336 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49342 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49350 - "WebSocket /ws" [accepted]
 INFO:     connection open
-INFO:     127.0.0.1:53946 - "WebSocket /ws" [accepted]
+INFO:     127.0.0.1:49352 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49354 - "GET /feed/1?t=1774843881446 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49356 - "GET /feed/0?t=1774843881446 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49358 - "WebSocket /ws" [accepted]
 INFO:     connection open
-INFO:     127.0.0.1:53958 - "WebSocket /ws" [accepted]
+INFO:     127.0.0.1:49362 - "GET /api/playback/status HTTP/1.1" 200 OK
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 09:41:23,449 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+INFO:     127.0.0.1:49364 - "WebSocket /ws" [accepted]
 INFO:     connection open
-INFO:     127.0.0.1:53972 - "WebSocket /ws" [accepted]
+INFO:     127.0.0.1:60912 - "WebSocket /ws" [accepted]
 INFO:     connection open
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:56:20,335 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:54804 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-29 17:56:25,336 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-2026-03-29 17:56:30,255 | INFO | Detected 1 face(s) in camera 0
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:56:30,526 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-29 17:56:35,527 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:34520 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
-INFO:     connection closed
-INFO:     connection closed
-INFO:     connection closed
-INFO:     connection closed
-INFO:     127.0.0.1:34524 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34534 - "GET /api/vibe/journal HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34550 - "WebSocket /ws" [accepted]
-INFO:     connection open
-INFO:     127.0.0.1:34554 - "WebSocket /ws" [accepted]
-INFO:     connection open
-INFO:     127.0.0.1:34558 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34562 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:56:40,542 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-29 17:56:40,929 | INFO | Detected 1 face(s) in camera 0
-INFO:     127.0.0.1:48144 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48148 - "GET /api/vibe/journal HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48162 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48170 - "WebSocket /ws" [accepted]
-INFO:     connection open
-INFO:     127.0.0.1:48172 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48174 - "WebSocket /ws" [accepted]
-INFO:     connection open
-INFO:     127.0.0.1:48182 - "WebSocket /ws" [accepted]
-INFO:     connection open
-INFO:     127.0.0.1:48190 - "WebSocket /ws" [accepted]
-INFO:     connection open
-INFO:     127.0.0.1:48204 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48220 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48236 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-29 17:56:45,543 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:48238 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48246 - "GET /api/vibe/journal HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48256 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:48260 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35574 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35590 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35592 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35594 - "GET /api/vibe/journal HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35600 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35606 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:56:50,559 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:35610 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35612 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35628 - "GET /api/vibe/journal HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35642 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35654 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35656 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-29 17:56:54,040 | INFO | Detected 1 face(s) in camera 0
-INFO:     127.0.0.1:35660 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35664 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-29 17:56:55,569 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:35666 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35680 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35682 - "GET /api/vibe/journal HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35684 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35690 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56792 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56800 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56808 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56822 - "GET /api/vibe/journal HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56832 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:57:00,788 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:56848 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56852 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56864 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56868 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56878 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56890 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56896 - "GET /api/vibe/journal HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56900 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56906 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56922 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:56926 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-29 17:57:05,789 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     connection closed
-INFO:     connection closed
-INFO:     127.0.0.1:36556 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36564 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36570 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36576 - "GET /api/playback/library HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36584 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36588 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36610 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:36598 - "WebSocket /ws" [accepted]
-INFO:     connection open
-INFO:     127.0.0.1:36614 - "WebSocket /ws" [accepted]
-INFO:     connection open
-INFO:     127.0.0.1:36628 - "WebSocket /ws" [accepted]
-INFO:     connection open
-INFO:     127.0.0.1:36640 - "WebSocket /ws" [accepted]
-INFO:     connection open
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:57:11,739 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-29 17:57:16,739 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:36644 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45402 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:57:21,788 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:45410 - "GET /feed/0?t=1774787227982 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45422 - "GET /feed/1?t=1774787227982 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45436 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45452 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45462 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45482 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45474 - "WebSocket /ws" [accepted]
-INFO:     connection open
-INFO:     127.0.0.1:45490 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45502 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45514 - "WebSocket /ws" [accepted]
-INFO:     connection open
-INFO:     127.0.0.1:45528 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45540 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45554 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45562 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:45568 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-29 17:57:24,811 | INFO | Detected 1 face(s) in camera 0
-2026-03-29 17:57:26,788 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:57:31,832 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-29 17:57:34,770 | INFO | Detected 1 face(s) in camera 0
-2026-03-29 17:57:36,839 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:46422 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59388 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:57:41,857 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-29 17:57:46,857 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-2026-03-29 17:57:47,838 | INFO | Detected 1 face(s) in camera 0
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:57:51,871 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:32844 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:32854 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:32856 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:32860 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:32864 - "GET /api/cameras HTTP/1.1" 200 OK
-2026-03-29 17:57:55,269 | INFO | Detected 1 face(s) in camera 0
-2026-03-29 17:57:56,871 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:58:01,895 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-29 17:58:04,972 | INFO | Detected 1 face(s) in camera 0
-2026-03-29 17:58:06,898 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:47210 - "POST /api/cameras/0/settings HTTP/1.1" 200 OK
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:58:12,304 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-29 17:58:17,279 | INFO | Detected 1 face(s) in camera 0
-2026-03-29 17:58:17,311 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:41758 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:58:23,169 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:41762 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:41774 - "GET /feed/0?t=1774787306093 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:41790 - "GET /feed/1?t=1774787306093 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:41804 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:41812 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:41824 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:41840 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51676 - "POST /api/cameras/0/settings HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51678 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-29 17:58:28,211 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:51682 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51692 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-29 17:58:29,631 | INFO | Detected 1 face(s) in camera 0
-INFO:     127.0.0.1:51702 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51716 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:51728 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:58:33,422 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-29 17:58:38,422 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:58:43,443 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:52860 - "POST /api/playback/play HTTP/1.1" 200 OK
-2026-03-29 17:58:48,444 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-2026-03-29 17:58:49,495 | INFO | Detected 1 face(s) in camera 0
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:58:53,473 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:59136 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59146 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-29 17:58:58,473 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:59504 - "POST /api/playback/play HTTP/1.1" 200 OK
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:59:03,491 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:59510 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59520 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59536 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-29 17:59:08,492 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:44416 - "POST /api/playback/play HTTP/1.1" 200 OK
-2026-03-29 17:59:10,365 | INFO | Detected 1 face(s) in camera 0
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:59:13,506 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:44424 - "POST /api/playback/play HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50358 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:50366 - "GET /api/faces HTTP/1.1" 200 OK
-2026-03-29 17:59:18,509 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:59:23,528 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-29 17:59:28,528 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:43732 - "POST /api/playback/pause HTTP/1.1" 200 OK
-2026-03-29 17:59:32,234 | INFO | Detected 1 face(s) in camera 0
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:59:33,555 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-29 17:59:38,556 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:59806 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:59:43,577 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     connection closed
-INFO:     connection closed
-INFO:     connection closed
-INFO:     connection closed
-INFO:     connection closed
-INFO:     connection closed
-INFO:     connection closed
-INFO:     connection closed
-INFO:     connection closed
-INFO:     connection closed
-INFO:     connection closed
-2026-03-29 17:59:48,578 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-2026-03-29 17:59:48,961 | INFO | Detected 1 face(s) in camera 0
+2026-03-30 09:41:28,450 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+INFO:     127.0.0.1:60918 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60932 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60934 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60946 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60958 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60970 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60984 - "GET /api/playback/status HTTP/1.1" 200 OK
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 09:41:33,470 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 09:41:34,576 | INFO | Detected 2 face(s) in camera 0
+2026-03-30 09:41:34,578 | INFO | Ages: [24, 20], Avg: 22.0, Groups: ['youths', 'youths']
+INFO:     127.0.0.1:60988 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34390 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34402 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34410 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34418 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34434 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34440 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34452 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34456 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34466 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34472 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-03-30 09:41:38,473 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+INFO:     127.0.0.1:34478 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34480 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34482 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34492 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34508 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34516 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34526 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34528 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34544 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34556 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34566 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34568 - "GET /api/playback/status HTTP/1.1" 200 OK
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 09:41:44,063 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+INFO:     127.0.0.1:34580 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34594 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52840 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52842 - "POST /api/playback/play HTTP/1.1" 200 OK
+2026-03-30 09:41:49,063 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+INFO:     127.0.0.1:52856 - "POST /api/playback/play HTTP/1.1" 200 OK
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 09:41:54,085 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+INFO:     127.0.0.1:46332 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46342 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46350 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46354 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46358 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46360 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46376 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46382 - "POST /api/playback/pause HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46398 - "POST /api/playback/pause HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46412 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46418 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46420 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46432 - "GET /feed/1?t=1774843916717 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46448 - "GET /feed/0?t=1774843916717 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46454 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46464 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-03-30 09:41:59,085 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+INFO:     127.0.0.1:46474 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46476 - "POST /api/playback/volume HTTP/1.1" 200 OK
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 09:42:04,098 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+INFO:     127.0.0.1:46480 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:46484 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42572 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42574 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42580 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42594 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42610 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42614 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42622 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42626 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42636 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42640 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42656 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42664 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42678 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42688 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42696 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42710 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42718 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42730 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42740 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42744 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42758 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-03-30 09:42:09,104 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+INFO:     127.0.0.1:42768 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42780 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42796 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42808 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42820 - "POST /api/playback/volume HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42828 - "POST /api/playback/volume HTTP/1.1" 200 OK
+2026-03-30 09:42:13,276 | INFO | Now Playing: Divine
+INFO:     127.0.0.1:42842 - "POST /api/playback/prev HTTP/1.1" 200 OK
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 09:42:14,116 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 09:42:19,116 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+INFO:     127.0.0.1:52130 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52146 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52162 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52164 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52172 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52180 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52182 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-03-30 09:42:21,459 | INFO | Detected 1 face(s) in camera 0
+2026-03-30 09:42:21,459 | INFO | Ages: [19], Avg: 19.0, Groups: ['youths']
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 09:42:24,139 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 09:42:29,140 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+INFO:     127.0.0.1:43282 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43288 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43304 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43320 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43326 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43332 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43340 - "GET /feed/0?t=1774843951712 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43362 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43350 - "GET /feed/1?t=1774843951712 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43370 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43372 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43376 - "GET /api/playback/status HTTP/1.1" 200 OK
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 09:42:34,199 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+INFO:     127.0.0.1:45082 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45092 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45108 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45120 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45134 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45140 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45156 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45168 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45174 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45180 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45186 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45196 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45198 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-03-30 09:42:39,201 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+INFO:     127.0.0.1:45212 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45214 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45220 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45232 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45236 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45244 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45248 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45260 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45276 - "GET /api/playback/status HTTP/1.1" 200 OK
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 09:42:44,353 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+INFO:     127.0.0.1:37448 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37456 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37472 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37482 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37488 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37496 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:37510 - "GET /api/faces HTTP/1.1" 200 OK
+2026-03-30 09:42:49,356 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 09:42:54,377 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 09:42:59,378 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+INFO:     127.0.0.1:51448 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-03-30 09:43:03,820 | INFO | Detected 1 face(s) in camera 0
+2026-03-30 09:43:03,820 | INFO | Ages: [23], Avg: 23.0, Groups: ['youths']
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 09:43:05,049 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 09:43:10,052 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+INFO:     127.0.0.1:42812 - "GET /api/playback/status HTTP/1.1" 200 OK
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 09:43:15,261 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+INFO:     127.0.0.1:45308 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45318 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45328 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45340 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45356 - "GET /feed/0?t=1774843995662 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45372 - "GET /feed/1?t=1774843995662 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45376 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45384 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45398 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-03-30 09:43:20,270 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
 INFO:     Shutting down
+INFO:     connection closed
+INFO:     connection closed
+INFO:     connection closed
+INFO:     connection closed
+INFO:     connection closed
+INFO:     Waiting for connections to close. (CTRL+C to force quit)
 INFO:     Waiting for background tasks to complete. (CTRL+C to force quit)
-2026-03-29 17:59:51,807 | INFO | Detected 1 face(s) in camera 0
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 17:59:53,588 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-29 17:59:54,247 | INFO | Detected 1 face(s) in camera 0
-2026-03-29 17:59:56,040 | INFO | Detected 1 face(s) in camera 0
-2026-03-29 17:59:57,940 | INFO | Detected 1 face(s) in camera 0
-2026-03-29 17:59:58,588 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-2026-03-29 17:59:59,628 | INFO | Detected 1 face(s) in camera 0
-2026-03-29 18:00:01,211 | INFO | Detected 1 face(s) in camera 0
-2026-03-29 18:00:02,807 | INFO | Detected 1 face(s) in camera 0
-[tcp @ 0x754b0c004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-29 18:00:03,598 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-29 18:00:04,497 | INFO | Detected 1 face(s) in camera 0
-2026-03-29 18:00:06,121 | INFO | Detected 1 face(s) in camera 0
-2026-03-29 18:00:07,708 | INFO | Detected 1 face(s) in camera 0
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 09:43:25,354 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 09:43:27,501 | INFO | Detected 1 face(s) in camera 0
+2026-03-30 09:43:27,502 | INFO | Ages: [23], Avg: 23.0, Groups: ['youths']
+2026-03-30 09:43:30,355 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 09:43:35,449 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 09:43:40,505 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 09:43:45,714 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 09:43:50,777 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
+[tcp @ 0x774504004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
+2026-03-30 09:43:55,903 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-03-30 09:44:00,911 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080

@@ -10,12 +10,15 @@ class FaceRegistry:
     """
     Manages known face identities using ArcFace embeddings.
     Prevents duplicate detection of the same person across frames and cameras.
+    Also tracks which faces have been saved to avoid duplicate saves.
     """
-    def __init__(self, threshold=0.65, prune_interval=3600):
-        self.threshold = threshold
+    def __init__(self, threshold=0.55, prune_interval=3600):
+        self.threshold = threshold  # Lowered from 0.65 to 0.55 for better matching
         self.prune_interval = prune_interval
         # id -> {'embedding': np.array, 'group': str, 'last_seen': float, 'cam_id': int}
         self.known_faces = {}
+        # Track which faces have been saved to vault (to avoid duplicates)
+        self.saved_faces = set()
         self.last_prune = time.time()
         self.lock = threading.Lock()
 
@@ -42,7 +45,7 @@ class FaceRegistry:
 
             if best_sim > self.threshold:
                 return best_id, best_sim
-            
+
             return None, 0.0
 
     def register(self, embedding, group, cam_id):
@@ -53,16 +56,30 @@ class FaceRegistry:
         with self.lock:
             # Simple ID generation
             new_id = f"face_{len(self.known_faces) + 1}_{int(time.time())}"
-            
+
             self.known_faces[new_id] = {
                 'embedding': embedding,
                 'group': group,
                 'last_seen': time.time(),
                 'cam_id': cam_id,
-                'first_seen': time.time()
+                'first_seen': time.time(),
+                'saved': False  # Track if this face has been saved
             }
             logger.info(f"New Identity Registered: {new_id} (Group: {group}, Cam: {cam_id})")
             return new_id
+
+    def mark_as_saved(self, face_id):
+        """Mark a face as saved to vault to prevent duplicate saves."""
+        with self.lock:
+            if face_id in self.known_faces:
+                self.known_faces[face_id]['saved'] = True
+                self.saved_faces.add(face_id)
+                logger.debug(f"Marked {face_id} as saved")
+
+    def is_saved(self, face_id):
+        """Check if a face has already been saved."""
+        with self.lock:
+            return face_id in self.saved_faces
 
     def update(self, face_id, cam_id=None):
         """Updates the last_seen timestamp for a known face."""
@@ -71,7 +88,7 @@ class FaceRegistry:
                 self.known_faces[face_id]['last_seen'] = time.time()
                 if cam_id is not None:
                     self.known_faces[face_id]['cam_id'] = cam_id
-                
+
                 # Prune old faces periodically
                 if time.time() - self.last_prune > 300:
                     self._prune()
@@ -87,6 +104,11 @@ class FaceRegistry:
                     by_group[g] += 1
             return {"total_unique": len(self.known_faces), "by_group": by_group}
 
+    def get_saved_count(self) -> int:
+        """Returns the count of faces saved to vault."""
+        with self.lock:
+            return len(self.saved_faces)
+
     def _prune(self):
         """Removes faces not seen for a long time."""
         now = time.time()
@@ -94,9 +116,17 @@ class FaceRegistry:
         for fid, data in self.known_faces.items():
             if now - data['last_seen'] > self.prune_interval:
                 to_remove.append(fid)
-        
+
         for fid in to_remove:
             del self.known_faces[fid]
+            self.saved_faces.discard(fid)
             logger.debug(f"Pruned stale identity: {fid}")
-        
+
         self.last_prune = now
+
+    def clear(self):
+        """Clear all registered faces (used on shutdown)."""
+        with self.lock:
+            self.known_faces.clear()
+            self.saved_faces.clear()
+            logger.info("Face registry cleared")
