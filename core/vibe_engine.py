@@ -97,9 +97,9 @@ class VibeEngine:
             # Fallback to age-based grouping
             if self.average_age < 13:
                 return "kids"
-            elif self.average_age < 25:
+            elif self.average_age < 20:
                 return "youths"
-            elif self.average_age < 60:
+            elif self.average_age < 50:
                 return "adults"
             else:
                 return "seniors"

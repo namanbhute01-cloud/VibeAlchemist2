@@ -57,77 +57,113 @@ def processing_loop(loop):
     faces_detected_count = 0
     last_music_change = time.time()
     
+    # Track last processing time per camera to ensure fair processing
+    camera_last_process = {}
+    min_process_interval = 0.2  # Minimum 200ms between processing same camera
+
     while True:
         try:
             if not pipeline or not cam_pool:
                 time.sleep(1)
                 continue
-            item = frame_queue.get(timeout=1.0)
+            
+            # Get frame from queue with timeout
+            try:
+                item = frame_queue.get(timeout=0.5)
+            except queue.Empty:
+                # If queue is empty, try to process latest frames from each camera
+                current_time = time.time()
+                for cam_id in range(len(cam_pool.sources)):
+                    # Check if enough time has passed since last processing
+                    last_process = camera_last_process.get(cam_id, 0)
+                    if current_time - last_process >= min_process_interval:
+                        frame = cam_pool.get_latest_frame(cam_id)
+                        if frame is not None:
+                            detections = pipeline.process_frame(frame, cam_id)
+                            process_detections(detections, cam_id, pipeline, vibe_engine, player, face_vault, face_registry)
+                            camera_last_process[cam_id] = current_time
+                            faces_detected_count += len(detections)
+                continue
+            
             cam_id = item["cam_id"]
             frame = item["frame"]
+            
+            # Check if we should process this camera or wait (rate limiting)
+            current_time = time.time()
+            last_process = camera_last_process.get(cam_id, 0)
+            if current_time - last_process < min_process_interval:
+                # Skip this frame, not enough time passed
+                continue
+            
+            camera_last_process[cam_id] = current_time
             detections = pipeline.process_frame(frame, cam_id)
-            
-            # Process each detection
-            for det in detections:
-                faces_detected_count += 1
-                # Log detection to vibe engine (includes age tracking)
-                if vibe_engine:
-                    vibe_engine.log_detection(det['group'], age=det['age'])
-            
-            # If faces detected, trigger music playback based on detected age group
-            if detections and player:
-                current_time = time.time()
-                # Get the current vibe group based on all detections
-                target_group = vibe_engine.get_current_group() if vibe_engine else "adults"
+            process_detections(detections, cam_id, pipeline, vibe_engine, player, face_vault, face_registry)
+            faces_detected_count += len(detections)
 
-                # Check if we need to change the music
-                current_status = player.get_status()
-                current_group = current_status.get('group', 'adults')
-                current_song = current_status.get('song', 'None')
-                is_paused = current_status.get('paused', False)
+        except Exception as e:
+            logger.error(f"Loop Error: {e}")
 
-                # Play music from the detected group's folder
-                # Change music if: different group, no song playing, or it's been 15 seconds
-                should_change = (
-                    target_group != current_group or
-                    current_song == 'None' or
-                    (current_time - last_music_change > 15 and target_group == current_group)
-                )
+def process_detections(detections, cam_id, pipeline, vibe_engine, player, face_vault, face_registry):
+    """Process detections from a single frame."""
+    global last_music_change
+    
+    for det in detections:
+        # Log detection to vibe engine (includes age tracking)
+        if vibe_engine:
+            vibe_engine.log_detection(det['group'], age=det['age'])
 
-                if should_change and target_group != current_group:
-                    logger.info(f"Playing music for detected group: {target_group} (avg age: {vibe_engine.average_age if vibe_engine else 25})")
-                    player.next(target_group)
-                    # Ensure music is playing (not paused)
-                    if is_paused:
-                        player.toggle_pause()
-                    last_music_change = current_time
-                elif current_song == 'None':
-                    # Start playing immediately if nothing is playing
-                    logger.info(f"Starting music for detected group: {target_group}")
-                    player.next(target_group)
-                    last_music_change = current_time
-                elif is_paused and target_group == current_group:
-                    # If paused but same group, just resume playing
-                    logger.info(f"Resuming music for detected group: {target_group}")
-                    player.toggle_pause()
-            
-            # Draw bounding boxes on detected faces
-            for det in detections:
-                x1, y1, x2, y2 = det['bbox']
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                # Add age/group label
-                label = f"{det['age']} ({det['group']})"
-                cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+    # If faces detected, trigger music playback based on detected age group
+    if detections and player:
+        current_time = time.time()
+        # Get the current vibe group based on all detections
+        target_group = vibe_engine.get_current_group() if vibe_engine else "adults"
+
+        # Check if we need to change the music
+        current_status = player.get_status()
+        current_group = current_status.get('group', 'adults')
+        current_song = current_status.get('song', 'None')
+        is_paused = current_status.get('paused', False)
+
+        # Play music from the detected group's folder
+        # Change music if: different group, no song playing, or it's been 15 seconds
+        should_change = (
+            target_group != current_group or
+            current_song == 'None' or
+            (current_time - last_music_change > 15 and target_group == current_group)
+        )
+
+        if should_change and target_group != current_group:
+            logger.info(f"Playing music for detected group: {target_group} (avg age: {vibe_engine.average_age if vibe_engine else 25})")
+            player.next(target_group)
+            # Ensure music is playing (not paused)
+            if is_paused:
+                player.toggle_pause()
+            last_music_change = current_time
+        elif current_song == 'None':
+            # Start playing immediately if nothing is playing
+            logger.info(f"Starting music for detected group: {target_group}")
+            player.next(target_group)
+            last_music_change = current_time
+        elif is_paused and target_group == current_group:
+            # If paused but same group, just resume playing
+            logger.info(f"Resuming music for detected group: {target_group}")
+            player.toggle_pause()
+
+    # Draw bounding boxes on detected faces
+    for det in detections:
+        x1, y1, x2, y2 = det['bbox']
+        # Get the latest frame for this camera
+        frame = pipeline.pool.get_latest_frame(cam_id)
+        if frame is not None and isinstance(frame, np.ndarray):
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            # Add age/group label
+            label = f"{det['age']} ({det['group']})"
+            cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
             
             # Encode and store frame for MJPEG stream
             ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
             if ret:
-                cam_pool.latest_frames[cam_id] = buffer.tobytes()
-                
-        except queue.Empty:
-            continue
-        except Exception as e:
-            logger.error(f"Loop Error: {e}")
+                pipeline.pool.latest_frames[cam_id] = buffer.tobytes()
 
 # --- LIFECYCLE ---
 @asynccontextmanager
@@ -198,7 +234,7 @@ app = FastAPI(title="Vibe Alchemist V2", lifespan=lifespan)
 # 1. CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:5173", "http://127.0.0.1:8080", "http://localhost:5173", "http://192.168.29.51:8080", "*"],
+    allow_origins=["http://127.0.0.1:5173", "http://127.0.0.1:8081", "http://localhost:5173", "http://localhost:8081", "http://192.168.29.51:8081", "*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -10,7 +10,7 @@ cd /path/to/vibe_alchemist_v2
 
 ### Access the Application
 - **Frontend:** http://localhost:5173
-- **Backend API:** http://localhost:8080
+- **Backend API:** http://localhost:8081
 - **Network Access:** http://YOUR_IP:5173
 
 ### Stop the System
@@ -151,26 +151,26 @@ OfflinePlayback/seniors/    # Music for 50+ age group
 ### Quick Test Commands
 ```bash
 # Get camera list
-curl http://localhost:8080/api/cameras/
+curl http://localhost:8081/api/cameras/
 
 # Get playback status
-curl http://localhost:8080/api/playback/status
+curl http://localhost:8081/api/playback/status
 
 # Get music library
-curl http://localhost:8080/api/playback/library
+curl http://localhost:8081/api/playback/library
 
 # Get current vibe
-curl http://localhost:8080/api/vibe/current
+curl http://localhost:8081/api/vibe/current
 
 # Get face statistics
-curl http://localhost:8080/api/faces
+curl http://localhost:8081/api/faces
 
 # Get vibe journal
-curl http://localhost:8080/api/vibe/journal
+curl http://localhost:8081/api/vibe/journal
 ```
 
 ### WebSocket Stream
-Connect to `ws://localhost:8080/ws` for real-time vibe updates (2Hz)
+Connect to `ws://localhost:8081/ws` for real-time vibe updates (2Hz)
 
 ---
 
@@ -240,7 +240,7 @@ DEBUG=true ./start.sh
 1. Check `INTEGRATION_REPORT.md` for detailed architecture
 2. Review backend logs in the terminal
 3. Open browser DevTools Console for frontend errors
-4. Verify all API endpoints respond: `curl http://localhost:8080/docs`
+4. Verify all API endpoints respond: `curl http://localhost:8081/docs`
 
 ---
 

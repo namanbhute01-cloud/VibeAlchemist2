@@ -33,12 +33,12 @@ After thorough inspection and testing, the following issues were identified and 
 # Play next track
 curl -X POST -H "Content-Type: application/json" \
      -d '{"group":"adults"}' \
-     http://localhost:8080/api/playback/next
+     http://localhost:8081/api/playback/next
 
 # Response: {"ok": true}
 
 # Check status
-curl http://localhost:8080/api/playback/status
+curl http://localhost:8081/api/playback/status
 
 # Response: {
 #   "song": "Coke Studio Season 14 Pasoori...",
@@ -205,7 +205,7 @@ useEffect(() => {
 
 **Status:** ✅ WORKING
 
-**Endpoint:** `ws://localhost:8080/ws`
+**Endpoint:** `ws://localhost:8081/ws`
 
 **Broadcast Data (2Hz):**
 ```json

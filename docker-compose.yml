@@ -1,0 +1,106 @@
+# ═══════════════════════════════════════════════════════════════
+# VIBE ALCHEMIST V2 - Docker Compose Configuration
+# For running alongside HRMS server
+# ═══════════════════════════════════════════════════════════════
+
+services:
+  vibe-alchemist:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vibe-alchemist-v2
+    restart: unless-stopped
+    
+    # Port mapping - change if HRMS uses 8080
+    # Format: "HOST_PORT:CONTAINER_PORT"
+    # Default: 8081 (to avoid conflict with HRMS on port 5000)
+    ports:
+      - "${API_PORT:-8081}:8080"
+    
+    environment:
+      # Core settings
+      - API_HOST=0.0.0.0
+      - API_PORT=8080
+      - DEBUG=false
+      
+      # Camera configuration
+      - CAMERA_SOURCES=${CAMERA_SOURCES:-0}
+      - TARGET_HEIGHT=${TARGET_HEIGHT:-720}
+      - FRAME_RATE_LIMIT=${FRAME_RATE_LIMIT:-15}
+      
+      # Vision settings
+      - FACE_DETECTION_CONF=${FACE_DETECTION_CONF:-0.5}
+      - PERSON_DETECTION_CONF=${PERSON_DETECTION_CONF:-0.4}
+      - FACE_SIMILARITY_THRESHOLD=${FACE_SIMILARITY_THRESHOLD:-0.65}
+      
+      # Storage
+      - FACE_TEMP_DIR=/app/temp_faces
+      - GDRIVE_FOLDER_ID=${GDRIVE_FOLDER_ID:-}
+      - DRIVE_UPLOAD_INTERVAL=${DRIVE_UPLOAD_INTERVAL:-900}
+      
+      # Music
+      - ROOT_MUSIC_DIR=/app/OfflinePlayback
+      - DEFAULT_VOLUME=${DEFAULT_VOLUME:-70}
+      - SHUFFLE_MODE=${SHUFFLE_MODE:-true}
+      
+      # Performance
+      - OMP_NUM_THREADS=1
+      - NNPACK_LIMIT=0
+    
+    volumes:
+      # Persist face temp data
+      - vibe_temp_faces:/app/temp_faces
+      
+      # Mount music directory (adjust path to your music location)
+      - ./OfflinePlayback:/app/OfflinePlayback:ro
+      
+      # Mount models (optional, if you want to update without rebuild)
+      - ./models:/app/models:ro
+      
+      # Logs
+      - ./logs:/app/logs
+    
+    # Resource limits (adjust based on your server capacity)
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # Network
+    networks:
+      - vibe-network
+    
+  # Optional: Nginx reverse proxy (uncomment if you want a unified domain)
+  # nginx-proxy:
+  #   image: nginx:alpine
+  #   container_name: vibe-nginx
+  #   restart: unless-stopped
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #   depends_on:
+  #     - vibe-alchemist
+  #   networks:
+  #     - vibe-network
+
+# Named volumes
+volumes:
+  vibe_temp_faces:
+    driver: local
+
+# Network
+networks:
+  vibe-network:
+    driver: bridge

@@ -77,7 +77,7 @@ User clicks Play → usePlayback.play() → POST /api/playback/play
 **Backend:** `/ws` (WebSocket), `/api/faces`, `/api/vibe/journal`
 
 **Real-time WebSocket Stream:**
-- Connects to `ws://localhost:8080/ws`
+- Connects to `ws://localhost:8081/ws`
 - Receives vibe state updates at 2Hz
 - Displays: detected_group, current_vibe, age, journal_count
 
@@ -234,23 +234,23 @@ WS  /ws                         → Continuous VibeState stream (2Hz)
 
 ### Backend API Tests
 ```bash
-$ curl http://localhost:8080/api/cameras/
+$ curl http://localhost:8081/api/cameras/
 [{"id":0,"source":"0","status":"online","name":"Camera 0","feed_url":"/feed/0"}]
 ✅ PASS
 
-$ curl http://localhost:8080/api/playback/status
+$ curl http://localhost:8081/api/playback/status
 {"song":"None","percent":0.0,"paused":false,"shuffle":true,"group":"adults","volume":70}
 ✅ PASS
 
-$ curl http://localhost:8080/api/playback/library
+$ curl http://localhost:8081/api/playback/library
 {"kids":["Coke Studio...mp3"],"youths":["Divine.mp3"],"adults":[...],"seniors":[...]}
 ✅ PASS
 
-$ curl http://localhost:8080/api/vibe/current
+$ curl http://localhost:8081/api/vibe/current
 {"status":"VIBING","detected_group":"adults","current_vibe":"adults",...}
 ✅ PASS
 
-$ curl http://localhost:8080/api/faces
+$ curl http://localhost:8081/api/faces
 {"total_unique":0,"by_group":{"kids":0,"youths":0,"adults":0,"seniors":0}}
 ✅ PASS
 ```
@@ -292,7 +292,7 @@ cd /path/to/vibe_alchemist_v2
 
 **Access Points:**
 - Frontend: http://localhost:5173
-- Backend API: http://localhost:8080
+- Backend API: http://localhost:8081
 - Network Access: http://YOUR_IP:5173
 
 ### System Requirements

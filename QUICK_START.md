@@ -14,7 +14,7 @@ cd "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2"
 **Access Points:**
 - Frontend: http://localhost:5173
 - Network Access: http://YOUR_IP:5173 (e.g., http://10.253.109.95:5173)
-- Backend API: http://localhost:8080/api
+- Backend API: http://localhost:8081/api
 
 **Stop all services:**
 ```bash
@@ -102,7 +102,7 @@ Common issues:
    ```bash
    curl -X POST -H "Content-Type: application/json" \
         -d '{"group":"adults"}' \
-        http://localhost:8080/api/playback/next
+        http://localhost:8081/api/playback/next
    ```
 
 ---
@@ -151,8 +151,8 @@ WS /ws  # Real-time vibe state updates (2Hz)
 ### Quick Health Check
 ```bash
 # Backend
-curl http://localhost:8080/api/cameras
-curl http://localhost:8080/api/playback/status
+curl http://localhost:8081/api/cameras
+curl http://localhost:8081/api/playback/status
 
 # Frontend
 curl http://localhost:5173 | grep "alchemist"
@@ -163,10 +163,10 @@ curl http://localhost:5173 | grep "alchemist"
 # Play next song
 curl -X POST -H "Content-Type: application/json" \
      -d '{"group":"adults"}' \
-     http://localhost:8080/api/playback/next
+     http://localhost:8081/api/playback/next
 
 # Check status
-curl http://localhost:8080/api/playback/status
+curl http://localhost:8081/api/playback/status
 ```
 
 ---

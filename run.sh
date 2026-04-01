@@ -75,7 +75,7 @@ if [ ! -d "$FRONTEND_DIR/node_modules" ]; then
 fi
 
 echo -e "${GREEN}✓ Starting Backend...${NC}"
-echo -e "  ${BLUE}→${NC} API will be available at: http://localhost:8080"
+echo -e "  ${BLUE}→${NC} API will be available at: http://localhost:8081"
 echo ""
 
 # Activate virtual environment and start backend
@@ -101,7 +101,7 @@ echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━
 echo -e "${GREEN}  ✓ Vibe Alchemist V2 is running!${NC}"
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
-echo -e "  ${BLUE}→${NC} Backend: http://localhost:8080"
+echo -e "  ${BLUE}→${NC} Backend: http://localhost:8081"
 echo -e "  ${BLUE}→${NC} Frontend: http://localhost:5173"
 echo ""
 echo -e "  ${YELLOW}Press Ctrl+C to stop both servers${NC}"

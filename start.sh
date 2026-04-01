@@ -147,7 +147,7 @@ mkdir -p "$LOG_DIR"
 
 # Step 1: Free up ports
 log_info "Checking ports..."
-free_port 8080
+free_port 8081
 free_port 5173
 log_success "Ports cleared"
 
@@ -167,7 +167,7 @@ fi
 
 # Step 4: Start Backend
 echo -e ""
-log_info "Starting Backend (FastAPI on port 8080)..."
+log_info "Starting Backend (FastAPI on port 8081)..."
 echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 
 cd "$SCRIPT_DIR"
@@ -180,7 +180,7 @@ BACKEND_PID=$!
 log_info "Backend PID: $BACKEND_PID"
 
 # Wait for backend to be ready (models take time to load)
-if ! wait_for_service "http://localhost:8080/api/cameras" "Backend API" 90; then
+if ! wait_for_service "http://localhost:8081/api/cameras" "Backend API" 90; then
     log_error "Backend failed to start. Check logs:"
     echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     tail -50 "$LOG_DIR/backend.log"
@@ -190,9 +190,9 @@ fi
 # Show backend status
 echo -e ""
 log_success "Backend is running!"
-echo -e "  ${CYAN}API:${NC}      http://localhost:8080/api"
-echo -e "  ${CYAN}WebSocket:${NC} ws://localhost:8080/ws"
-echo -e "  ${CYAN}Camera Feed:${NC} http://localhost:8080/feed/0"
+echo -e "  ${CYAN}API:${NC}      http://localhost:8081/api"
+echo -e "  ${CYAN}WebSocket:${NC} ws://localhost:8081/ws"
+echo -e "  ${CYAN}Camera Feed:${NC} http://localhost:8081/feed/0"
 echo -e ""
 
 # Step 5: Start Frontend
@@ -227,7 +227,7 @@ echo -e "${GREEN}╚════════════════════
 echo -e ""
 echo -e "  ${CYAN}Frontend:${NC}  http://localhost:5173"
 echo -e "  ${CYAN}Network:${NC}   http://$NETWORK_IP:5173"
-echo -e "  ${CYAN}Backend:${NC}   http://localhost:8080/api"
+echo -e "  ${CYAN}Backend:${NC}   http://localhost:8081/api"
 echo -e ""
 echo -e "  ${YELLOW}Quick Links:${NC}"
 echo -e "    • Dashboard:  http://localhost:5173/"
@@ -250,7 +250,7 @@ echo -e ""
 log_info "Running health checks..."
 
 # Check backend
-if curl -s http://localhost:8080/api/playback/status | grep -q "song"; then
+if curl -s http://localhost:8081/api/playback/status | grep -q "song"; then
     log_success "Backend API: OK"
 else
     log_warning "Backend API: Response unexpected"

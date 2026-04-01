@@ -252,27 +252,33 @@ class VisionPipeline:
                     age = self._predict_age(enhanced_face)
                     group = self._age_to_group(age)
 
-                    # Deduplication
+                    # Deduplication - now with cross-camera support
                     face_id = "unknown"
+                    face_age = age  # Store age for registry
                     if embedding is not None and self.registry:
-                        fid, sim = self.registry.is_known(embedding)
+                        fid, sim, registered_age = self.registry.is_known(embedding, age=face_age)
                         if fid:
-                            # Known face - update last seen
+                            # Known face - update last seen and add this camera
                             self.registry.update(fid, cam_id)
                             face_id = fid
+                            # Use the registered age if available
+                            if registered_age is not None:
+                                face_age = registered_age
+                                # Update the group based on registered age
+                                group = self._age_to_group(face_age)
                         else:
-                            # New face - register it
-                            face_id = self.registry.register(embedding, group, cam_id)
-                        
+                            # New face - register it with age
+                            face_id = self.registry.register(embedding, group, cam_id, age=face_age)
+
                         # Save face to vault ONLY if it's a new face that hasn't been saved yet
                         if self.vault and not self.registry.is_saved(face_id):
                             if self.vault.save_face(enhanced_face, face_id, group):
                                 self.registry.mark_as_saved(face_id)
-                                logger.info(f"Face saved to vault: {face_id} ({group})")
+                                logger.info(f"Face saved to vault: {face_id} (Group: {group}, Age: {face_age})")
 
                     results.append({
                         'id': face_id,
-                        'age': age,
+                        'age': face_age,
                         'group': group,
                         'bbox': [gx1, gy1, gx2, gy2],
                         'cam_id': cam_id
@@ -294,23 +300,29 @@ class VisionPipeline:
                 group = self._age_to_group(age)
 
                 face_id = "unknown"
+                face_age = age  # Store age for registry
                 if embedding is not None and self.registry:
-                    fid, sim = self.registry.is_known(embedding)
+                    fid, sim, registered_age = self.registry.is_known(embedding, age=face_age)
                     if fid:
+                        # Known face - update last seen and add this camera
                         self.registry.update(fid, cam_id)
                         face_id = fid
+                        if registered_age is not None:
+                            face_age = registered_age
+                            group = self._age_to_group(face_age)
                     else:
-                        face_id = self.registry.register(embedding, group, cam_id)
-                    
+                        # New face - register it with age
+                        face_id = self.registry.register(embedding, group, cam_id, age=face_age)
+
                     # Save face to vault ONLY if it's a new face that hasn't been saved yet
                     if self.vault and not self.registry.is_saved(face_id):
                         if self.vault.save_face(enhanced_face, face_id, group):
                             self.registry.mark_as_saved(face_id)
-                            logger.info(f"Face saved to vault: {face_id} ({group})")
+                            logger.info(f"Face saved to vault: {face_id} (Group: {group}, Age: {face_age})")
 
                 results.append({
                     'id': face_id,
-                    'age': age,
+                    'age': face_age,
                     'group': group,
                     'bbox': [fx1, fy1, fx2, fy2],
                     'cam_id': cam_id
@@ -322,7 +334,14 @@ class VisionPipeline:
             ages = [r['age'] for r in results]
             avg_age = sum(ages) / len(ages)
             groups = [r['group'] for r in results]
-            logger.info(f"Ages: {ages}, Avg: {avg_age:.1f}, Groups: {groups}")
+            face_ids = [r['id'] for r in results]
+            logger.info(f"Camera {cam_id} - Ages: {ages}, Avg: {avg_age:.1f}, Groups: {groups}")
+            logger.info(f"Face IDs: {face_ids}")
+            
+            # Log cross-camera tracking info
+            unique_faces = len(set(face_ids))
+            if unique_faces < len(results):
+                logger.info(f"Cross-camera deduplication: {len(results)} detections -> {unique_faces} unique face(s)")
 
         return results
 
@@ -343,9 +362,9 @@ class VisionPipeline:
             return None
 
     def _predict_age(self, face):
-        """Runs DEX Age inference."""
+        """Runs DEX Age inference. Model outputs 101 age probabilities (0-100)."""
         if not self.age_sess: return 25
-        
+
         try:
             # DEX Age model expects CHW format: [batch, channels, height, width]
             blob = cv2.resize(face, (96, 96)).astype(np.float32)
@@ -354,33 +373,34 @@ class VisionPipeline:
 
             input_name = self.age_sess.get_inputs()[0].name
             outs = self.age_sess.run(None, {input_name: blob})
+
+            # DEX outputs 101 probabilities for ages 0-100
+            # Get the output array (handle different output shapes)
+            age_probs = outs[0][0]  # Shape: (101,)
             
-            # Model outputs 3 values - interpret as age group logits
-            # [young, adult, senior] or similar classification
-            logits = outs[0][0]
+            # Ensure it's 1D array of 101 elements
+            if age_probs.ndim > 1:
+                age_probs = age_probs.flatten()
             
-            # Use softmax to get probabilities
-            probs = np.exp(logits) / np.sum(np.exp(logits))
+            # Normalize to ensure valid probability distribution
+            age_probs = np.clip(age_probs, 0, None)
+            total = np.sum(age_probs)
+            if total > 0:
+                age_probs = age_probs / total
             
-            # Map to age groups: 0=kids/teens, 1=young adult, 2=adult/senior
-            # Weighted average for continuous age estimate
-            age_estimate = np.argmax(probs)
+            # Calculate expected age (weighted average)
+            ages = np.arange(len(age_probs))
+            expected_age = int(np.sum(ages * age_probs))
             
-            # Map to approximate ages based on dominant class
-            if age_estimate == 0:
-                age = int(15 + probs[0] * 10)  # 15-25
-            elif age_estimate == 1:
-                age = int(25 + probs[1] * 10)  # 25-35
-            else:
-                age = int(35 + probs[2] * 25)  # 35-60
-            
-            return min(60, max(15, age))
+            # Clamp to reasonable range
+            return min(80, max(5, expected_age))
         except Exception as e:
             logger.error(f"Age prediction error: {e}")
             return 25
 
     def _age_to_group(self, age):
-        if age < 13: return "kids"
-        if age < 25: return "youths"
-        if age < 60: return "adults"
-        return "seniors"
+        """Convert age to music group based on typical music preferences."""
+        if age < 13: return "kids"       # Children
+        if age < 20: return "youths"     # Teens
+        if age < 50: return "adults"     # Young/Middle adults
+        return "seniors"                 # Seniors (50+)

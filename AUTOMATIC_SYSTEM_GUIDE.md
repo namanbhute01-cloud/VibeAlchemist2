@@ -409,7 +409,7 @@ All systems verified working:
 
 **Access Your System:**
 - **Frontend:** http://localhost:5173
-- **Backend API:** http://localhost:8080/api
-- **Camera Feed:** http://localhost:8080/feed/0
+- **Backend API:** http://localhost:8081/api
+- **Camera Feed:** http://localhost:8081/feed/0
 
 **Sit in front of the camera, and let the system do the rest!** 🎵✨

@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, UploadFile, File, Form
 import logging
 import os
+import shutil
 from pathlib import Path
 from typing import Optional
 
@@ -48,6 +49,86 @@ async def get_status():
         "group": "adults",
         "volume": 70
     }
+
+@router.post("/add-song")
+async def add_song(
+    file: Optional[UploadFile] = File(None),
+    group: str = Form("adults"),
+    url: Optional[str] = Form(None)
+):
+    """
+    Add a song to the music library.
+    Supports:
+    - File upload (multipart/form-data)
+    - URL download (YouTube, direct MP3, etc.)
+    
+    Args:
+        file: Audio file to upload (mp3, wav, flac, m4a, ogg)
+        group: Age group folder (kids, youths, adults, seniors)
+        url: Optional URL to download from
+    """
+    player = refs.get("player")
+    
+    if not player or not hasattr(player, 'music_root'):
+        return {"ok": False, "error": "Player not initialized"}
+    
+    # Validate group
+    valid_groups = ["kids", "youths", "adults", "seniors"]
+    if group not in valid_groups:
+        return {"ok": False, "error": f"Invalid group. Must be one of: {valid_groups}"}
+    
+    music_dir = Path(player.music_root) / group
+    music_dir.mkdir(parents=True, exist_ok=True)
+    
+    try:
+        filename = None
+        
+        # Handle file upload
+        if file and file.filename:
+            # Validate file extension
+            allowed_extensions = ['.mp3', '.wav', '.flac', '.m4a', '.ogg']
+            file_ext = Path(file.filename).suffix.lower()
+            if file_ext not in allowed_extensions:
+                return {"ok": False, "error": f"Invalid file type. Allowed: {allowed_extensions}"}
+            
+            # Save file
+            filename = file.filename
+            filepath = music_dir / filename
+            
+            # Handle duplicate filenames
+            counter = 1
+            while filepath.exists():
+                stem = Path(file.filename).stem
+                suffix = Path(file.filename).suffix
+                filename = f"{stem}_{counter}{suffix}"
+                filepath = music_dir / filename
+                counter += 1
+            
+            with open(filepath, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+            
+            logger.info(f"Uploaded song: {filename} to {group}")
+        
+        # Handle URL download (future enhancement - would need yt-dlp or similar)
+        elif url:
+            return {
+                "ok": False, 
+                "error": "URL download not yet implemented. Please upload file directly."
+            }
+        
+        else:
+            return {"ok": False, "error": "No file or URL provided"}
+        
+        return {
+            "ok": True, 
+            "filename": filename,
+            "group": group,
+            "path": str(music_dir / filename)
+        }
+    
+    except Exception as e:
+        logger.error(f"Error adding song: {e}")
+        return {"ok": False, "error": str(e)}
 
 @router.post("/{action}")
 async def control_playback(action: str, request: Request):

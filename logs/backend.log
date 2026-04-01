@@ -1,663 +1,534 @@
---- VIBE ALCHEMIST V2 STARTING ON 0.0.0.0:8080 ---
+--- VIBE ALCHEMIST V2 STARTING ON 0.0.0.0:8081 ---
 --- Press Ctrl+C to stop and cleanup temp_faces ---
 INFO:     Will watch for changes in these directories: ['/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2']
-INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
-INFO:     Started reloader process [8424] using StatReload
-INFO:     Started server process [8428]
+INFO:     Uvicorn running on http://0.0.0.0:8081 (Press CTRL+C to quit)
+INFO:     Started reloader process [52568] using StatReload
+INFO:     Started server process [52573]
 INFO:     Waiting for application startup.
-2026-03-30 14:20:42,497 | INFO | Initializing Vibe Alchemist V2 Systems...
-2026-03-30 14:20:46,904 | INFO | MPV Engine Started.
-2026-03-30 14:20:46,905 | WARNING | Google Drive credentials not configured. Running in local-only mode.
-2026-03-30 14:20:46,905 | INFO | Loading yolov8n.onnx (ONNX)...
-2026-03-30 14:20:46,907 | INFO | Loading yolov8n-face.onnx (ONNX)...
-2026-03-30 14:20:46,929 | INFO | Haar cascade loaded as fallback
-2026-03-30 14:20:47,654 | INFO | Loaded arcface_r100.onnx successfully.
-2026-03-30 14:20:47,665 | INFO | Loaded dex_age.onnx successfully.
-2026-03-30 14:20:47,666 | INFO | Starting CameraPool with 2 sources...
-2026-03-30 14:20:47,666 | INFO | [Cam 0] Connecting to source: 0
-2026-03-30 14:20:47,667 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-2026-03-30 14:20:47,667 | INFO | [STARTUP] All core modules initialized.
+2026-04-01 18:57:32,877 | INFO | Initializing Vibe Alchemist V2 Systems...
+2026-04-01 18:57:39,454 | INFO | MPV Engine Started.
+2026-04-01 18:57:39,454 | WARNING | Google Drive credentials not configured. Running in local-only mode.
+2026-04-01 18:57:39,455 | INFO | Loading yolov8n.onnx (ONNX)...
+2026-04-01 18:57:39,458 | INFO | Loading yolov8n-face.onnx (ONNX)...
+2026-04-01 18:57:39,490 | INFO | Haar cascade loaded as fallback
+2026-04-01 18:57:41,183 | INFO | Loaded arcface_r100.onnx successfully.
+2026-04-01 18:57:41,251 | INFO | Loaded dex_age.onnx successfully.
+2026-04-01 18:57:41,251 | INFO | Starting CameraPool with 3 sources...
+2026-04-01 18:57:41,253 | INFO | [Cam 0] Connecting to source: 0
+2026-04-01 18:57:41,257 | INFO | [Cam 1] Connecting to source: http://192.168.29.173:8080/video
+2026-04-01 18:57:41,258 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+2026-04-01 18:57:41,258 | INFO | [STARTUP] All core modules initialized.
 INFO:     Application startup complete.
-INFO:     127.0.0.1:60268 - "GET /api/cameras HTTP/1.1" 200 OK
+[tcp @ 0x7fbb5c004840] Connection to tcp://192.168.29.173:8080 failed: Connection refused
+2026-04-01 18:57:41,267 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
 Loading models/yolov8n.onnx for ONNX Runtime inference...
 Using ONNX Runtime 1.24.4 with CPUExecutionProvider
+INFO:     127.0.0.1:37772 - "GET /api/cameras HTTP/1.1" 200 OK
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 18:57:44,371 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
 Loading models/yolov8n-face.onnx for ONNX Runtime inference...
 Using ONNX Runtime 1.24.4 with CPUExecutionProvider
-[tcp @ 0x74ecd0004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 14:20:52,686 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-30 14:20:53,890 | INFO | New Identity Registered: face_1_1774860653 (Group: adults, Cam: 0)
-2026-03-30 14:20:53,901 | INFO | Saved face: temp_faces/adults_face_1_1774860653_1774860653.png (179x139)
-2026-03-30 14:20:53,901 | INFO | Face saved to vault: face_1_1774860653 (adults)
-2026-03-30 14:20:53,902 | INFO | Detected 1 face(s) in camera 0
-2026-03-30 14:20:53,902 | INFO | Ages: [30], Avg: 30.0, Groups: ['adults']
-2026-03-30 14:20:53,907 | INFO | Starting music for detected group: adults
-2026-03-30 14:20:53,910 | INFO | Now Playing: Coke Studio Season 14 Pasoori Ali Sethi x Shae Gill
-INFO:     127.0.0.1:53292 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-30 14:20:57,687 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-2026-03-30 14:21:00,367 | INFO | Detected 1 face(s) in camera 0
-2026-03-30 14:21:00,367 | INFO | Ages: [32], Avg: 32.0, Groups: ['adults']
-[tcp @ 0x74ecd0004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 14:21:02,751 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-30 14:21:06,880 | INFO | Detected 1 face(s) in camera 0
-2026-03-30 14:21:06,881 | INFO | Ages: [33], Avg: 33.0, Groups: ['adults']
-2026-03-30 14:21:07,752 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-2026-03-30 14:21:10,813 | INFO | Detected 1 face(s) in camera 0
-2026-03-30 14:21:10,813 | INFO | Ages: [34], Avg: 34.0, Groups: ['adults']
-[tcp @ 0x74ecd0004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 14:21:12,802 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-30 14:21:17,803 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-2026-03-30 14:21:21,102 | INFO | Detected 1 face(s) in camera 0
-2026-03-30 14:21:21,106 | INFO | Ages: [46], Avg: 46.0, Groups: ['adults']
-INFO:     127.0.0.1:59210 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59226 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59232 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59234 - "GET /api/playback/library HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59236 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59244 - "WebSocket /ws" [accepted]
+2026-04-01 18:57:46,269 | INFO | [Cam 1] Connecting to source: http://192.168.29.173:8080/video
+[tcp @ 0x7fbb5c004840] Connection to tcp://192.168.29.173:8080 failed: Connection refused
+2026-04-01 18:57:46,450 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-04-01 18:57:49,371 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+2026-04-01 18:57:51,451 | INFO | [Cam 1] Connecting to source: http://192.168.29.173:8080/video
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 18:57:52,435 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+[tcp @ 0x7fbb5c004840] Connection to tcp://192.168.29.173:8080 failed: Connection refused
+2026-04-01 18:57:52,439 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+INFO:     127.0.0.1:41336 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-04-01 18:57:57,435 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+2026-04-01 18:57:57,440 | INFO | [Cam 1] Connecting to source: http://192.168.29.173:8080/video
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 18:58:00,500 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+[tcp @ 0x7fbb5c004840] Connection to tcp://192.168.29.173:8080 failed: Connection refused
+2026-04-01 18:58:00,582 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-04-01 18:58:05,502 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+2026-04-01 18:58:05,592 | INFO | [Cam 1] Connecting to source: http://192.168.29.173:8080/video
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 18:58:08,670 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+[tcp @ 0x7fbb5c004840] Connection to tcp://192.168.29.173:8080 failed: Connection refused
+2026-04-01 18:58:08,873 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-04-01 18:58:13,672 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+2026-04-01 18:58:13,879 | INFO | [Cam 1] Connecting to source: http://192.168.29.173:8080/video
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 18:58:16,805 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+[tcp @ 0x7fbb5c004840] Connection to tcp://192.168.29.173:8080 failed: Connection refused
+2026-04-01 18:58:16,814 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-04-01 18:58:21,822 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+2026-04-01 18:58:21,829 | INFO | [Cam 1] Connecting to source: http://192.168.29.173:8080/video
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 18:58:24,884 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+[tcp @ 0x7fbb5c004840] Connection to tcp://192.168.29.173:8080 failed: Connection refused
+2026-04-01 18:58:24,956 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-04-01 18:58:29,884 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+2026-04-01 18:58:29,962 | INFO | [Cam 1] Connecting to source: http://192.168.29.173:8080/video
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 18:58:32,947 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+[tcp @ 0x7fbb5c004840] Connection to tcp://192.168.29.173:8080 failed: Connection refused
+2026-04-01 18:58:33,040 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-04-01 18:58:33,242 | INFO | New Identity Registered: kids_5_1 (Group: kids, Age: 5, Cam: 0)
+2026-04-01 18:58:33,250 | INFO | Saved face: temp_faces/kids_kids_5_1_1775050113.png (122x102)
+2026-04-01 18:58:33,250 | INFO | Face saved to vault: kids_5_1 (Group: kids, Age: 5)
+2026-04-01 18:58:33,250 | INFO | Detected 1 face(s) in camera 0
+2026-04-01 18:58:33,250 | INFO | Camera 0 - Ages: [5], Avg: 5.0, Groups: ['kids']
+2026-04-01 18:58:33,250 | INFO | Face IDs: ['kids_5_1']
+2026-04-01 18:58:33,251 | INFO | Playing music for detected group: kids (avg age: 5)
+2026-04-01 18:58:33,253 | INFO | Now Playing: Coke Studio Season 14 Pasoori Ali Sethi x Shae Gill
+2026-04-01 18:58:33,253 | ERROR | Loop Error: name 'np' is not defined
+2026-04-01 18:58:37,949 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+2026-04-01 18:58:38,040 | INFO | [Cam 1] Connecting to source: http://192.168.29.173:8080/video
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 18:58:41,019 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+[tcp @ 0x7fbb5c004840] Connection to tcp://192.168.29.173:8080 failed: Connection refused
+2026-04-01 18:58:41,160 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-04-01 18:58:46,022 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+2026-04-01 18:58:46,165 | INFO | [Cam 1] Connecting to source: http://192.168.29.173:8080/video
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 18:58:49,077 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+[tcp @ 0x7fbb5c004840] Connection to tcp://192.168.29.173:8080 failed: Connection refused
+2026-04-01 18:58:49,321 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-04-01 18:58:54,077 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+2026-04-01 18:58:54,376 | INFO | [Cam 1] Connecting to source: http://192.168.29.173:8080/video
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 18:58:57,141 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+[tcp @ 0x7fbb5c004840] Connection to tcp://192.168.29.173:8080 failed: Connection refused
+2026-04-01 18:58:57,309 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-04-01 18:59:02,141 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+2026-04-01 18:59:02,311 | INFO | [Cam 1] Connecting to source: http://192.168.29.173:8080/video
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 18:59:05,203 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+[tcp @ 0x7fbb5c004840] Connection to tcp://192.168.29.173:8080 failed: Connection refused
+2026-04-01 18:59:05,309 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+INFO:     127.0.0.1:34954 - "GET /api HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34954 - "GET /assets/index-D80l7-6V.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34966 - "GET /assets/index-8Oz8iY5A.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34966 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34966 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34982 - "WebSocket /ws" [accepted]
 INFO:     connection open
-INFO:     127.0.0.1:59252 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59268 - "GET /api/cameras HTTP/1.1" 200 OK
-[tcp @ 0x74ecd0004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 14:21:22,959 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:59272 - "WebSocket /ws" [accepted]
+INFO:     127.0.0.1:34966 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34966 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-04-01 18:59:10,203 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+2026-04-01 18:59:10,312 | INFO | [Cam 1] Connecting to source: http://192.168.29.173:8080/video
+INFO:     127.0.0.1:34966 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-04-01 18:59:10,828 | INFO | New Identity Registered: kids_5_2 (Group: kids, Age: 5, Cam: 0)
+2026-04-01 18:59:10,872 | INFO | Saved face: temp_faces/kids_kids_5_2_1775050150.png (221x221)
+2026-04-01 18:59:10,872 | INFO | Face saved to vault: kids_5_2 (Group: kids, Age: 5)
+2026-04-01 18:59:10,874 | INFO | Detected 1 face(s) in camera 0
+2026-04-01 18:59:10,876 | INFO | Camera 0 - Ages: [5], Avg: 5.0, Groups: ['kids']
+2026-04-01 18:59:10,880 | INFO | Face IDs: ['kids_5_2']
+2026-04-01 18:59:10,891 | ERROR | Loop Error: name 'np' is not defined
+INFO:     127.0.0.1:34966 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34966 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34986 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34966 - "GET / HTTP/1.1" 200 OK
+INFO:     connection closed
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 18:59:13,267 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+[tcp @ 0x7fbb5c004840] Connection to tcp://192.168.29.173:8080 failed: Connection refused
+2026-04-01 18:59:13,388 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+INFO:     127.0.0.1:34738 - "WebSocket /ws" [accepted]
 INFO:     connection open
-INFO:     127.0.0.1:59282 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59302 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59296 - "WebSocket /ws" [accepted]
+INFO:     127.0.0.1:34966 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34966 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34986 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34966 - "GET /api/playback/library HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34966 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34966 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34986 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34760 - "WebSocket /ws" [accepted]
 INFO:     connection open
-INFO:     127.0.0.1:59316 - "WebSocket /ws" [accepted]
+INFO:     127.0.0.1:34966 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-04-01 18:59:18,267 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+2026-04-01 18:59:18,389 | INFO | [Cam 1] Connecting to source: http://192.168.29.173:8080/video
+INFO:     127.0.0.1:34966 - "GET /feed/0?t=1775050154619 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34986 - "GET /feed/1?t=1775050154619 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34748 - "GET /feed/2?t=1775050154619 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34776 - "WebSocket /ws" [accepted]
 INFO:     connection open
-INFO:     127.0.0.1:59318 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59324 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:59340 - "WebSocket /ws" [accepted]
+INFO:     127.0.0.1:34780 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34780 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34790 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34780 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34790 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34802 - "WebSocket /ws" [accepted]
 INFO:     connection open
-INFO:     127.0.0.1:42856 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42858 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42872 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42860 - "GET /feed/0?t=1774860681423 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42870 - "GET /feed/1?t=1774860681423 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42876 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42878 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42894 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42904 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42912 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42928 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42930 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42942 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42958 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42970 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:42978 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-30 14:21:27,959 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:42988 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43002 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43008 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43020 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43034 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43050 - "GET /api/faces HTTP/1.1" 200 OK
-[tcp @ 0x74ecd0004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 14:21:32,974 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:43066 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43070 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43078 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43086 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:33920 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:33936 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:33944 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:33960 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:33966 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:33976 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:33988 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:33998 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34000 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34012 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34028 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34044 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34050 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34064 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-30 14:21:37,975 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:34066 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34082 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34090 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34100 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34108 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34114 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34120 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34130 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34144 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34160 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34176 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34180 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34190 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34194 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34200 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34204 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34220 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34232 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-30 14:21:42,594 | INFO | Detected 1 face(s) in camera 0
-2026-03-30 14:21:42,614 | INFO | Ages: [34], Avg: 34.0, Groups: ['adults']
-INFO:     127.0.0.1:34234 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34238 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34240 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34252 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34268 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x74ecd0004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 14:21:43,249 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:34276 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34286 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34290 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34292 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34302 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34310 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39362 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39364 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39376 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39384 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39390 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39396 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39402 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39418 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39430 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-30 14:21:48,319 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:39446 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39448 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39450 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39458 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39468 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39482 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39492 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39504 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39506 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39514 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39520 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39528 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39530 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39546 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39562 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39576 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39584 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39588 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39590 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39594 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39600 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39608 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39614 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39616 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39628 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39638 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39652 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39668 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39682 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39694 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39696 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39710 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39714 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39718 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39732 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39742 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39748 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39774 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39756 - "GET /feed/0?t=1774860712030 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39768 - "GET /feed/1?t=1774860712030 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39776 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39790 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39792 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39798 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39812 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39818 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39830 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39836 - "POST /api/playback/volume HTTP/1.1" 200 OK
-[tcp @ 0x74ecd0004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 14:21:53,644 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:39848 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39858 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39864 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39872 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39874 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39888 - "POST /api/playback/volume HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39896 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39902 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:39916 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35362 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35376 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35388 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35404 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35416 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35426 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35438 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35442 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35450 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35452 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35454 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35466 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35470 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35476 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35492 - "GET /api/cameras HTTP/1.1" 200 OK
-2026-03-30 14:21:58,649 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:35506 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35514 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35528 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35534 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35544 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35556 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35566 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35578 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35580 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35596 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35604 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35606 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35622 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35626 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35628 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35638 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35648 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35654 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35658 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35674 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x74ecd0004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 14:22:03,691 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:35678 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35684 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35700 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35712 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35728 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34116 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34128 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34136 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34150 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34154 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34162 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34168 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34180 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34190 - "GET /api/faces HTTP/1.1" 200 OK
-2026-03-30 14:22:07,015 | INFO | Now Playing: Coke Studio Season 14 Pasoori Ali Sethi x Shae Gill
-INFO:     127.0.0.1:34194 - "POST /api/playback/next HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34206 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34214 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34222 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34226 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34240 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-30 14:22:08,692 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:34252 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34266 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34282 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34298 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34310 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-30 14:22:10,860 | INFO | Now Playing: Coke Studio Season 14 Pasoori Ali Sethi x Shae Gill
-INFO:     127.0.0.1:34316 - "POST /api/playback/next HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34322 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34334 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34348 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34352 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34354 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34370 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34380 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34386 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34398 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34406 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34412 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34416 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34420 - "GET /api/cameras HTTP/1.1" 200 OK
-[tcp @ 0x74ecd0004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 14:22:13,843 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-30 14:22:14,227 | INFO | Now Playing: Coke Studio Season 14 Pasoori Ali Sethi x Shae Gill
-INFO:     127.0.0.1:34430 - "POST /api/playback/next HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34436 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34438 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34454 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34466 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:34482 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-30 14:22:15,208 | INFO | Detected 1 face(s) in camera 0
-2026-03-30 14:22:15,213 | INFO | Ages: [34], Avg: 34.0, Groups: ['adults']
-INFO:     127.0.0.1:46680 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46692 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46700 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46710 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46720 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46728 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46740 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46744 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46760 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46768 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46776 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46792 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46794 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46804 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46818 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46820 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-03-30 14:22:18,843 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-INFO:     127.0.0.1:46824 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46826 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46840 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46850 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46852 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46858 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46874 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46888 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46894 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46906 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46910 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46912 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46920 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46924 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46928 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46944 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46948 - "GET /feed/0?t=1774860742420 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46952 - "GET /feed/1?t=1774860742420 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46956 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46962 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46974 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x74ecd0004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 14:22:23,988 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     127.0.0.1:46982 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:46994 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:47008 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:47020 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:47034 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     Shutting down
+INFO:     127.0.0.1:34780 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34810 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:34780 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34780 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34780 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34780 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34780 - "GET /api/playback/status HTTP/1.1" 200 OK
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+[tcp @ 0x7fbb5c004840] Connection to tcp://192.168.29.173:8080 failed: Connection refused
+2026-04-01 18:59:21,413 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-04-01 18:59:21,414 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+INFO:     127.0.0.1:34780 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34780 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34780 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-04-01 18:59:26,415 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+2026-04-01 18:59:26,497 | INFO | [Cam 1] Connecting to source: http://192.168.29.173:8080/video
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 18:59:29,523 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+[tcp @ 0x7fbb5c004840] Connection to tcp://192.168.29.173:8080 failed: Connection refused
+2026-04-01 18:59:29,751 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57402 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57410 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57402 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-04-01 18:59:34,523 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+2026-04-01 18:59:34,752 | INFO | [Cam 1] Connecting to source: http://192.168.29.173:8080/video
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57402 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57402 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57402 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57402 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57402 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57410 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57402 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57402 - "GET /api/playback/status HTTP/1.1" 200 OK
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 18:59:37,635 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+[tcp @ 0x7fbb5c004840] Connection to tcp://192.168.29.173:8080 failed: Connection refused
+2026-04-01 18:59:37,758 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57402 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57402 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57402 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57402 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57402 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58280 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-04-01 18:59:42,772 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+2026-04-01 18:59:42,775 | INFO | [Cam 1] Connecting to source: http://192.168.29.173:8080/video
+INFO:     127.0.0.1:57402 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58280 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57402 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58280 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-04-01 18:59:44,825 | INFO | Detected 1 face(s) in camera 0
+2026-04-01 18:59:44,826 | INFO | Camera 0 - Ages: [5], Avg: 5.0, Groups: ['kids']
+2026-04-01 18:59:44,826 | INFO | Face IDs: ['kids_5_2']
+2026-04-01 18:59:44,827 | ERROR | Loop Error: name 'np' is not defined
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57402 - "GET /feed/0?t=1775050185178 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58280 - "GET /feed/1?t=1775050185178 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60694 - "GET /feed/2?t=1775050185178 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/cameras HTTP/1.1" 200 OK
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 18:59:45,843 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+[tcp @ 0x7fbb5c004840] Connection to tcp://192.168.29.173:8080 failed: Connection refused
+2026-04-01 18:59:45,855 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+INFO:     127.0.0.1:60698 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60702 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-04-01 18:59:50,845 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+2026-04-01 18:59:50,858 | INFO | [Cam 1] Connecting to source: http://192.168.29.173:8080/video
+2026-04-01 18:59:53,136 | INFO | Now Playing: Divine
+INFO:     127.0.0.1:57394 - "POST /api/playback/next HTTP/1.1" 200 OK
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 18:59:53,907 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+[tcp @ 0x7fbb5c004840] Connection to tcp://192.168.29.173:8080 failed: Connection refused
+2026-04-01 18:59:54,039 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
 INFO:     connection closed
 INFO:     connection closed
 INFO:     connection closed
 INFO:     connection closed
+INFO:     127.0.0.1:57394 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/library HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47184 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:47190 - "WebSocket /ws" [accepted]
+2026-04-01 18:59:58,909 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+INFO:     connection open
+2026-04-01 18:59:59,098 | INFO | [Cam 1] Connecting to source: http://192.168.29.173:8080/video
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 19:00:01,971 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+[tcp @ 0x7fbb5c004840] Connection to tcp://192.168.29.173:8080 failed: Connection refused
+2026-04-01 19:00:01,976 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47196 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47212 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:47220 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:47232 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-04-01 19:00:06,974 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+2026-04-01 19:00:06,979 | INFO | [Cam 1] Connecting to source: http://192.168.29.173:8080/video
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-04-01 19:00:08,812 | INFO | Detected 2 face(s) in camera 0
+2026-04-01 19:00:08,813 | INFO | Camera 0 - Ages: [5, 5], Avg: 5.0, Groups: ['kids', 'kids']
+2026-04-01 19:00:08,813 | INFO | Face IDs: ['kids_5_2', 'kids_5_1']
+2026-04-01 19:00:08,820 | INFO | Playing music for detected group: kids (avg age: 5)
+2026-04-01 19:00:08,827 | INFO | Now Playing: Coke Studio Season 14 Pasoori Ali Sethi x Shae Gill
+2026-04-01 19:00:08,828 | ERROR | Loop Error: name 'np' is not defined
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 19:00:10,035 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+[tcp @ 0x7fbb5c004840] Connection to tcp://192.168.29.173:8080 failed: Connection refused
+2026-04-01 19:00:10,180 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-04-01 19:00:15,039 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+2026-04-01 19:00:15,265 | INFO | [Cam 1] Connecting to source: http://192.168.29.173:8080/video
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 19:00:18,103 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+[tcp @ 0x7fbb5c004840] Connection to tcp://192.168.29.173:8080 failed: Connection refused
+2026-04-01 19:00:18,112 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-04-01 19:00:23,103 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+2026-04-01 19:00:23,112 | INFO | [Cam 1] Connecting to source: http://192.168.29.173:8080/video
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
 INFO:     connection closed
-INFO:     Waiting for connections to close. (CTRL+C to force quit)
-INFO:     Waiting for background tasks to complete. (CTRL+C to force quit)
-2026-03-30 14:22:29,008 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-[tcp @ 0x74ecd0004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 14:22:34,107 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-INFO:     Finished server process [8428]
-ERROR:    Traceback (most recent call last):
-  File "/usr/lib/python3.13/asyncio/runners.py", line 195, in run
-    return runner.run(main)
-           ~~~~~~~~~~^^^^^^
-  File "/usr/lib/python3.13/asyncio/runners.py", line 118, in run
-    return self._loop.run_until_complete(task)
-           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
-  File "/usr/lib/python3.13/asyncio/base_events.py", line 712, in run_until_complete
-    self.run_forever()
-    ~~~~~~~~~~~~~~~~^^
-  File "/usr/lib/python3.13/asyncio/base_events.py", line 683, in run_forever
-    self._run_once()
-    ~~~~~~~~~~~~~~^^
-  File "/usr/lib/python3.13/asyncio/base_events.py", line 2050, in _run_once
-    handle._run()
-    ~~~~~~~~~~~^^
-  File "/usr/lib/python3.13/asyncio/events.py", line 89, in _run
-    self._context.run(self._callback, *self._args)
-    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/server.py", line 78, in serve
-    with self.capture_signals():
-         ~~~~~~~~~~~~~~~~~~~~^^
-  File "/usr/lib/python3.13/contextlib.py", line 148, in __exit__
-    next(self.gen)
-    ~~~~^^^^^^^^^^
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/server.py", line 339, in capture_signals
-    signal.raise_signal(captured_signal)
-    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/main.py", line 33, in cleanup_temp_faces
-    sys.exit(0)
-    ~~~~~~~~^^^
-SystemExit: 0
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/routing.py", line 645, in lifespan
-    await receive()
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/lifespan/on.py", line 137, in receive
-    return await self.receive_queue.get()
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.13/asyncio/queues.py", line 186, in get
-    await getter
-asyncio.exceptions.CancelledError
-
-ERROR:    Exception in ASGI application
-Traceback (most recent call last):
-  File "/usr/lib/python3.13/asyncio/runners.py", line 195, in run
-    return runner.run(main)
-           ~~~~~~~~~~^^^^^^
-  File "/usr/lib/python3.13/asyncio/runners.py", line 118, in run
-    return self._loop.run_until_complete(task)
-           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
-  File "/usr/lib/python3.13/asyncio/base_events.py", line 712, in run_until_complete
-    self.run_forever()
-    ~~~~~~~~~~~~~~~~^^
-  File "/usr/lib/python3.13/asyncio/base_events.py", line 683, in run_forever
-    self._run_once()
-    ~~~~~~~~~~~~~~^^
-  File "/usr/lib/python3.13/asyncio/base_events.py", line 2050, in _run_once
-    handle._run()
-    ~~~~~~~~~~~^^
-  File "/usr/lib/python3.13/asyncio/events.py", line 89, in _run
-    self._context.run(self._callback, *self._args)
-    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/server.py", line 78, in serve
-    with self.capture_signals():
-         ~~~~~~~~~~~~~~~~~~~~^^
-  File "/usr/lib/python3.13/contextlib.py", line 148, in __exit__
-    next(self.gen)
-    ~~~~^^^^^^^^^^
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/server.py", line 339, in capture_signals
-    signal.raise_signal(captured_signal)
-    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/main.py", line 33, in cleanup_temp_faces
-    sys.exit(0)
-    ~~~~~~~~^^^
-SystemExit: 0
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/protocols/http/h11_impl.py", line 410, in run_asgi
-    result = await app(  # type: ignore[func-returns-value]
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        self.scope, self.receive, self.send
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    )
-    ^
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
-    return await self.app(scope, receive, send)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1159, in __call__
-    await super().__call__(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/applications.py", line 90, in __call__
-    await self.middleware_stack(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
-    await self.app(scope, receive, _send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 88, in __call__
-    await self.app(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
-    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
-    await app(scope, receive, sender)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
-    await self.app(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/routing.py", line 660, in __call__
-    await self.middleware_stack(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/routing.py", line 680, in app
-    await route.handle(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/routing.py", line 276, in handle
-    await self.app(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/routing.py", line 134, in app
-    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
-    await app(scope, receive, sender)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/routing.py", line 121, in app
-    await response(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/responses.py", line 274, in __call__
-    async with anyio.create_task_group() as task_group:
-               ~~~~~~~~~~~~~~~~~~~~~~~^^
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 803, in __aexit__
-    raise exc_val
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 771, in __aexit__
-    await self._on_completed_fut
-asyncio.exceptions.CancelledError
-ERROR:    Exception in ASGI application
-Traceback (most recent call last):
-  File "/usr/lib/python3.13/asyncio/runners.py", line 195, in run
-    return runner.run(main)
-           ~~~~~~~~~~^^^^^^
-  File "/usr/lib/python3.13/asyncio/runners.py", line 118, in run
-    return self._loop.run_until_complete(task)
-           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
-  File "/usr/lib/python3.13/asyncio/base_events.py", line 712, in run_until_complete
-    self.run_forever()
-    ~~~~~~~~~~~~~~~~^^
-  File "/usr/lib/python3.13/asyncio/base_events.py", line 683, in run_forever
-    self._run_once()
-    ~~~~~~~~~~~~~~^^
-  File "/usr/lib/python3.13/asyncio/base_events.py", line 2050, in _run_once
-    handle._run()
-    ~~~~~~~~~~~^^
-  File "/usr/lib/python3.13/asyncio/events.py", line 89, in _run
-    self._context.run(self._callback, *self._args)
-    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/server.py", line 78, in serve
-    with self.capture_signals():
-         ~~~~~~~~~~~~~~~~~~~~^^
-  File "/usr/lib/python3.13/contextlib.py", line 148, in __exit__
-    next(self.gen)
-    ~~~~^^^^^^^^^^
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/server.py", line 339, in capture_signals
-    signal.raise_signal(captured_signal)
-    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/main.py", line 33, in cleanup_temp_faces
-    sys.exit(0)
-    ~~~~~~~~^^^
-SystemExit: 0
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/protocols/http/h11_impl.py", line 410, in run_asgi
-    result = await app(  # type: ignore[func-returns-value]
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        self.scope, self.receive, self.send
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    )
-    ^
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
-    return await self.app(scope, receive, send)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1159, in __call__
-    await super().__call__(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/applications.py", line 90, in __call__
-    await self.middleware_stack(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
-    await self.app(scope, receive, _send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 88, in __call__
-    await self.app(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
-    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
-    await app(scope, receive, sender)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
-    await self.app(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/routing.py", line 660, in __call__
-    await self.middleware_stack(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/routing.py", line 680, in app
-    await route.handle(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/routing.py", line 276, in handle
-    await self.app(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/routing.py", line 134, in app
-    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
-    await app(scope, receive, sender)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/routing.py", line 121, in app
-    await response(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/responses.py", line 274, in __call__
-    async with anyio.create_task_group() as task_group:
-               ~~~~~~~~~~~~~~~~~~~~~~~^^
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 803, in __aexit__
-    raise exc_val
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 771, in __aexit__
-    await self._on_completed_fut
-asyncio.exceptions.CancelledError
-ERROR:    Exception in ASGI application
-Traceback (most recent call last):
-  File "/usr/lib/python3.13/asyncio/runners.py", line 195, in run
-    return runner.run(main)
-           ~~~~~~~~~~^^^^^^
-  File "/usr/lib/python3.13/asyncio/runners.py", line 118, in run
-    return self._loop.run_until_complete(task)
-           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
-  File "/usr/lib/python3.13/asyncio/base_events.py", line 712, in run_until_complete
-    self.run_forever()
-    ~~~~~~~~~~~~~~~~^^
-  File "/usr/lib/python3.13/asyncio/base_events.py", line 683, in run_forever
-    self._run_once()
-    ~~~~~~~~~~~~~~^^
-  File "/usr/lib/python3.13/asyncio/base_events.py", line 2050, in _run_once
-    handle._run()
-    ~~~~~~~~~~~^^
-  File "/usr/lib/python3.13/asyncio/events.py", line 89, in _run
-    self._context.run(self._callback, *self._args)
-    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/server.py", line 78, in serve
-    with self.capture_signals():
-         ~~~~~~~~~~~~~~~~~~~~^^
-  File "/usr/lib/python3.13/contextlib.py", line 148, in __exit__
-    next(self.gen)
-    ~~~~^^^^^^^^^^
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/server.py", line 339, in capture_signals
-    signal.raise_signal(captured_signal)
-    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/main.py", line 33, in cleanup_temp_faces
-    sys.exit(0)
-    ~~~~~~~~^^^
-SystemExit: 0
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/protocols/http/h11_impl.py", line 410, in run_asgi
-    result = await app(  # type: ignore[func-returns-value]
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        self.scope, self.receive, self.send
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    )
-    ^
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
-    return await self.app(scope, receive, send)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/applications.py", line 1159, in __call__
-    await super().__call__(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/applications.py", line 90, in __call__
-    await self.middleware_stack(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/middleware/errors.py", line 164, in __call__
-    await self.app(scope, receive, _send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/middleware/cors.py", line 88, in __call__
-    await self.app(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
-    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
-    await app(scope, receive, sender)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
-    await self.app(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/routing.py", line 660, in __call__
-    await self.middleware_stack(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/routing.py", line 680, in app
-    await route.handle(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/routing.py", line 276, in handle
-    await self.app(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/routing.py", line 134, in app
-    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
-    await app(scope, receive, sender)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/fastapi/routing.py", line 121, in app
-    await response(scope, receive, send)
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/starlette/responses.py", line 274, in __call__
-    async with anyio.create_task_group() as task_group:
-               ~~~~~~~~~~~~~~~~~~~~~~~^^
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 803, in __aexit__
-    raise exc_val
-  File "/home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/venv/lib/python3.13/site-packages/anyio/_backends/_asyncio.py", line 771, in __aexit__
-    await self._on_completed_fut
-asyncio.exceptions.CancelledError
-2026-03-30 14:22:39,108 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-2026-03-30 14:22:40,895 | INFO | Detected 1 face(s) in camera 0
-2026-03-30 14:22:40,896 | INFO | Ages: [33], Avg: 33.0, Groups: ['adults']
-[tcp @ 0x74ecd0004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 14:22:44,130 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
-2026-03-30 14:22:49,130 | INFO | [Cam 1] Connecting to source: https://192.168.29.173:8080
-[tcp @ 0x74ecd0004d00] Connection to tcp://192.168.29.173:8080 failed: Connection timed out
-2026-03-30 14:22:54,165 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+INFO:     connection closed
+INFO:     127.0.0.1:60698 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60698 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49600 - "WebSocket /ws" [accepted]
+INFO:     127.0.0.1:60698 - "GET /feed/0?t=1775050224817 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49592 - "GET /feed/1?t=1775050224817 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     connection open
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 19:00:26,163 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+[tcp @ 0x7fbb5c004840] Connection to tcp://192.168.29.173:8080 failed: Connection refused
+2026-04-01 19:00:26,342 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+INFO:     127.0.0.1:57394 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49602 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:57394 - "GET /feed/2?t=1775050224817 HTTP/1.1" 200 OK
+2026-04-01 19:00:31,175 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+2026-04-01 19:00:31,346 | INFO | [Cam 1] Connecting to source: http://192.168.29.173:8080/video
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 19:00:34,235 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+[tcp @ 0x7fbb5c004840] Connection to tcp://192.168.29.173:8080 failed: Connection refused
+2026-04-01 19:00:34,244 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+2026-04-01 19:00:39,235 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+2026-04-01 19:00:39,246 | INFO | [Cam 1] Connecting to source: http://192.168.29.173:8080/video
+2026-04-01 19:00:40,326 | INFO | Detected 2 face(s) in camera 0
+2026-04-01 19:00:40,339 | INFO | Camera 0 - Ages: [5, 5], Avg: 5.0, Groups: ['kids', 'kids']
+2026-04-01 19:00:40,340 | INFO | Face IDs: ['kids_5_2', 'kids_5_2']
+2026-04-01 19:00:40,340 | INFO | Cross-camera deduplication: 2 detections -> 1 unique face(s)
+2026-04-01 19:00:40,349 | ERROR | Loop Error: name 'np' is not defined
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 19:00:42,291 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+2026-04-01 19:00:47,292 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+INFO:     127.0.0.1:38714 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:38716 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:38720 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38728 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38728 - "GET /feed/0?t=1775050255128 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38720 - "GET /feed/1?t=1775050255128 HTTP/1.1" 200 OK
+INFO:     connection closed
+INFO:     127.0.0.1:38744 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:38754 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38754 - "GET /feed/2?t=1775050255128 HTTP/1.1" 200 OK
+2026-04-01 19:01:03,149 | INFO | Detected 2 face(s) in camera 0
+2026-04-01 19:01:03,149 | INFO | Camera 0 - Ages: [5, 5], Avg: 5.0, Groups: ['kids', 'kids']
+2026-04-01 19:01:03,149 | INFO | Face IDs: ['kids_5_1', 'kids_5_1']
+2026-04-01 19:01:03,149 | INFO | Cross-camera deduplication: 2 detections -> 1 unique face(s)
+2026-04-01 19:01:03,150 | ERROR | Loop Error: name 'np' is not defined
+[ WARN:0@219.911] global cap_ffmpeg_impl.hpp:453 _opencv_ffmpeg_interrupt_callback Stream timeout triggered after 30012.151071 ms
+2026-04-01 19:01:12,304 | WARNING | [Cam 1] Connection lost. Retrying in 5s...
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 19:01:15,379 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+2026-04-01 19:01:17,304 | INFO | [Cam 1] Connecting to source: http://192.168.29.173:8080/video
+2026-04-01 19:01:18,223 | INFO | Detected 1 face(s) in camera 0
+2026-04-01 19:01:18,223 | INFO | Camera 0 - Ages: [5], Avg: 5.0, Groups: ['kids']
+2026-04-01 19:01:18,223 | INFO | Face IDs: ['kids_5_1']
+2026-04-01 19:01:18,227 | ERROR | Loop Error: name 'np' is not defined
+2026-04-01 19:01:20,379 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+INFO:     127.0.0.1:53578 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53564 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53578 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53564 - "GET /feed/0?t=1775050285911 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53578 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53578 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53578 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53578 - "GET /feed/1?t=1775050285911 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53582 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53582 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53582 - "GET /feed/2?t=1775050285911 HTTP/1.1" 200 OK
+2026-04-01 19:01:31,093 | INFO | Detected 1 face(s) in camera 0
+2026-04-01 19:01:31,093 | INFO | Camera 0 - Ages: [5], Avg: 5.0, Groups: ['kids']
+2026-04-01 19:01:31,093 | INFO | Face IDs: ['kids_5_1']
+2026-04-01 19:01:31,094 | ERROR | Loop Error: name 'np' is not defined
+2026-04-01 19:01:40,910 | INFO | Detected 1 face(s) in camera 0
+2026-04-01 19:01:40,910 | INFO | Camera 0 - Ages: [5], Avg: 5.0, Groups: ['kids']
+2026-04-01 19:01:40,910 | INFO | Face IDs: ['kids_5_1']
+2026-04-01 19:01:40,911 | ERROR | Loop Error: name 'np' is not defined
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 19:01:46,227 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+2026-04-01 19:01:51,227 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 19:01:54,291 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+2026-04-01 19:01:59,297 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 19:02:02,356 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+2026-04-01 19:02:07,356 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 19:02:10,419 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+2026-04-01 19:02:15,445 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+2026-04-01 19:02:17,174 | INFO | Detected 1 face(s) in camera 0
+2026-04-01 19:02:17,186 | INFO | Camera 0 - Ages: [5], Avg: 5.0, Groups: ['kids']
+2026-04-01 19:02:17,186 | INFO | Face IDs: ['kids_5_2']
+2026-04-01 19:02:17,246 | ERROR | Loop Error: name 'np' is not defined
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 19:02:18,584 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+2026-04-01 19:02:23,738 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 19:02:28,906 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+2026-04-01 19:02:35,627 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 19:02:40,306 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+2026-04-01 19:02:45,831 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+WARNING ⚠️ NMS time limit 2.050s exceeded
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 19:02:50,317 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+2026-04-01 19:02:58,549 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
+[tcp @ 0x7fbb50004840] Connection to tcp://192.168.29.101:5000 failed: No route to host
+2026-04-01 19:03:04,256 | WARNING | [Cam 2] Connection lost. Retrying in 5s...
+2026-04-01 19:03:21,170 | INFO | [Cam 2] Connecting to source: http://192.168.29.101:5000/video
