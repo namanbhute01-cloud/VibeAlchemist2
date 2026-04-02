@@ -146,60 +146,77 @@ class VisionPipeline:
         """
         Detect faces using YOLO-Face with Haar Cascade fallback.
         Returns list of tuples: (x1, y1, x2, y2, is_yolo_detection)
+        Enhanced for better accuracy with multi-scale detection.
         """
         faces = []
         h, w = person_crop.shape[:2]
-        
+
         # Try YOLO-Face first (more accurate)
         if self.face_model:
             try:
-                yolo_faces = self.face_model(person_crop, conf=0.15, verbose=False)
+                # Lower confidence threshold for better detection sensitivity
+                # Use multi-scale inference for better accuracy
+                yolo_faces = self.face_model(person_crop, conf=0.12, iou=0.45, verbose=False)
                 for box in yolo_faces[0].boxes:
                     fx1, fy1, fx2, fy2 = map(int, box.xyxy[0])
                     conf = float(box.conf[0])
                     # Convert to global coordinates
                     gx1, gy1 = offset_x + fx1, offset_y + fy1
                     gx2, gy2 = offset_x + fx2, offset_y + fy2
-                    
+
                     # Validate face crop has reasonable dimensions
                     face_w = gx2 - gx1
                     face_h = gy2 - gy1
-                    if face_w >= 30 and face_h >= 30:  # Minimum face size
+                    if face_w >= 25 and face_h >= 25:  # Minimum face size (reduced for better detection)
                         faces.append((gx1, gy1, gx2, gy2, True))
-                
+
                 if faces:
                     logger.debug(f"YOLO detected {len(faces)} face(s)")
                     return faces  # Return YOLO detections if found
             except Exception as e:
                 logger.debug(f"YOLO face detection error: {e}")
-        
-        # Fallback to Haar Cascade only if YOLO found nothing
+
+        # Fallback to Haar Cascade with multiple scales for better detection
         if self.haar_cascade is not None and not self.haar_cascade.empty():
             try:
                 gray = cv2.cvtColor(person_crop, cv2.COLOR_BGR2GRAY)
+                
+                # Multi-scale detection with different parameters
+                # First pass: Standard detection
                 haar_faces = self.haar_cascade.detectMultiScale(
-                    gray, 
-                    scaleFactor=1.1,  # More strict scale factor
-                    minNeighbors=3,   # Higher minNeighbors to reduce false positives
-                    minSize=(50, 50)  # Larger minimum size
+                    gray,
+                    scaleFactor=1.05,  # More precise scale factor
+                    minNeighbors=2,    # Lower minNeighbors for better sensitivity
+                    minSize=(40, 40)   # Smaller minimum size
                 )
+                
+                # Second pass: More aggressive detection if nothing found
+                if len(haar_faces) == 0:
+                    haar_faces = self.haar_cascade.detectMultiScale(
+                        gray,
+                        scaleFactor=1.1,
+                        minNeighbors=1,  # Even more sensitive
+                        minSize=(35, 35)
+                    )
+                
                 for (fx, fy, fw, fh) in haar_faces:
                     # Convert to global coordinates
                     gx1, gy1 = offset_x + fx, offset_y + fy
                     gx2, gy2 = offset_x + fx + fw, offset_y + fy + fh
                     faces.append((gx1, gy1, gx2, gy2, False))
-                
+
                 if faces:
                     logger.debug(f"Haar detected {len(faces)} face(s)")
             except Exception as e:
                 logger.debug(f"Haar face detection error: {e}")
-        
+
         return faces
 
     def process_frame(self, frame, cam_id):
         """
         Main pipeline entry point.
         Returns a list of detections: [{'id': 'face_1', 'age': 25, 'group': 'youths', 'bbox': ...}]
+        Enhanced for better multi-camera face detection.
         """
         if frame is None: return []
 
@@ -209,19 +226,19 @@ class VisionPipeline:
 
         # --- STEP 1: MOTION GATING ---
         mask = self.bg_subtractor.apply(enhanced_frame)
-        mask = cv2.threshold(mask, 200, 255, cv2.THRESH_BINARY)[0]  # Clean up noise
+        mask = cv2.threshold(mask, 180, 255, cv2.THRESH_BINARY)[0]  # Lower threshold for better sensitivity
         mask = cv2.dilate(mask, None, iterations=2)  # Fill gaps
         motion_pixels = cv2.countNonZero(mask)
 
-        # Lower threshold for better sensitivity - also allow processing if this is first frame
-        motion_detected = motion_pixels > 100
-        
+        # Lower threshold for better sensitivity - detect even small movements
+        motion_detected = motion_pixels > 80
+
         results = []
         h, w = frame.shape[:2]
 
         # --- STEP 2: HUMAN DETECTION ---
-        # Lower confidence threshold for better detection
-        persons = self.person_model(enhanced_frame, classes=[0], conf=0.25, verbose=False)
+        # Lower confidence threshold for better detection sensitivity
+        persons = self.person_model(enhanced_frame, classes=[0], conf=0.20, verbose=False)
 
         persons_detected = False
         for result in persons:
@@ -243,8 +260,8 @@ class VisionPipeline:
                     gx2, gy2 = fx2, fy2
 
                     face_crop = enhanced_frame[gy1:gy2, gx1:gx2]
-                    # Check minimum face dimensions (at least 40x40 pixels)
-                    if face_crop.shape[0] < 40 or face_crop.shape[1] < 40: continue
+                    # Check minimum face dimensions (at least 35x35 pixels for better sensitivity)
+                    if face_crop.shape[0] < 35 or face_crop.shape[1] < 35: continue
 
                     # --- STEP 4: ENHANCEMENT & ANALYSIS ---
                     enhanced_face = self.enhance_face(face_crop)
@@ -286,13 +303,14 @@ class VisionPipeline:
 
         # FALLBACK: Direct face detection on full frame if no persons detected but motion detected
         # OR if this might be a static scene (camera just started)
-        if not persons_detected:
-            logger.debug(f"No persons detected (motion={motion_pixels}), trying direct face detection")
+        # This ensures faces are detected even when person detection fails
+        if not persons_detected or motion_detected:
+            logger.debug(f"Direct face detection (motion={motion_pixels}, persons={persons_detected})")
             direct_faces = self._detect_faces(enhanced_frame, 0, 0)
             for fbox in direct_faces:
                 fx1, fy1, fx2, fy2, is_yolo = fbox
                 face_crop = enhanced_frame[fy1:fy2, fx1:fx2]
-                if face_crop.shape[0] < 40 or face_crop.shape[1] < 40: continue
+                if face_crop.shape[0] < 35 or face_crop.shape[1] < 35: continue
 
                 enhanced_face = self.enhance_face(face_crop)
                 embedding = self._get_embedding(enhanced_face)
@@ -337,7 +355,7 @@ class VisionPipeline:
             face_ids = [r['id'] for r in results]
             logger.info(f"Camera {cam_id} - Ages: {ages}, Avg: {avg_age:.1f}, Groups: {groups}")
             logger.info(f"Face IDs: {face_ids}")
-            
+
             # Log cross-camera tracking info
             unique_faces = len(set(face_ids))
             if unique_faces < len(results):

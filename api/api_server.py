@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 import time
 import asyncio
 import json
@@ -56,17 +57,17 @@ def processing_loop(loop):
     global pipeline, cam_pool, vibe_engine, face_vault, face_registry, player
     faces_detected_count = 0
     last_music_change = time.time()
-    
+
     # Track last processing time per camera to ensure fair processing
     camera_last_process = {}
-    min_process_interval = 0.2  # Minimum 200ms between processing same camera
+    min_process_interval = 0.15  # Minimum 150ms between processing same camera (faster for better real-time)
 
     while True:
         try:
             if not pipeline or not cam_pool:
                 time.sleep(1)
                 continue
-            
+
             # Get frame from queue with timeout
             try:
                 item = frame_queue.get(timeout=0.5)
@@ -84,17 +85,17 @@ def processing_loop(loop):
                             camera_last_process[cam_id] = current_time
                             faces_detected_count += len(detections)
                 continue
-            
+
             cam_id = item["cam_id"]
             frame = item["frame"]
-            
+
             # Check if we should process this camera or wait (rate limiting)
             current_time = time.time()
             last_process = camera_last_process.get(cam_id, 0)
             if current_time - last_process < min_process_interval:
                 # Skip this frame, not enough time passed
                 continue
-            
+
             camera_last_process[cam_id] = current_time
             detections = pipeline.process_frame(frame, cam_id)
             process_detections(detections, cam_id, pipeline, vibe_engine, player, face_vault, face_registry)
@@ -104,9 +105,9 @@ def processing_loop(loop):
             logger.error(f"Loop Error: {e}")
 
 def process_detections(detections, cam_id, pipeline, vibe_engine, player, face_vault, face_registry):
-    """Process detections from a single frame."""
+    """Process detections from a single frame and draw bounding boxes."""
     global last_music_change
-    
+
     for det in detections:
         # Log detection to vibe engine (includes age tracking)
         if vibe_engine:
@@ -149,19 +150,27 @@ def process_detections(detections, cam_id, pipeline, vibe_engine, player, face_v
             logger.info(f"Resuming music for detected group: {target_group}")
             player.toggle_pause()
 
-    # Draw bounding boxes on detected faces
+    # Draw bounding boxes on detected faces on the latest frame
     for det in detections:
         x1, y1, x2, y2 = det['bbox']
         # Get the latest frame for this camera
         frame = pipeline.pool.get_latest_frame(cam_id)
         if frame is not None and isinstance(frame, np.ndarray):
+            # Draw rectangle around face (green box, 2px thick)
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            # Add age/group label
-            label = f"{det['age']} ({det['group']})"
-            cv2.putText(frame, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
             
+            # Add age/group label with background
+            label = f"{det['age']} ({det['group']})"
+            (label_w, label_h), baseline = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
+            
+            # Draw label background
+            cv2.rectangle(frame, (x1, y1 - label_h - baseline - 5), (x1 + label_w, y1), (0, 255, 0), -1)
+            
+            # Add text
+            cv2.putText(frame, label, (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
+
             # Encode and store frame for MJPEG stream
-            ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
+            ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 75])
             if ret:
                 pipeline.pool.latest_frames[cam_id] = buffer.tobytes()
 
@@ -234,19 +243,20 @@ app = FastAPI(title="Vibe Alchemist V2", lifespan=lifespan)
 # 1. CORSMiddleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:5173", "http://127.0.0.1:8081", "http://localhost:5173", "http://localhost:8081", "http://192.168.29.51:8081", "*"],
+    allow_origins=["http://127.0.0.1:5173", "http://127.0.0.1:8000", "http://localhost:5173", "http://localhost:8000", "*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # 2. API Routers
-from api.routes import cameras, playback, vibe, faces
+from api.routes import cameras, playback, vibe, faces, settings
 
 app.include_router(cameras.router, prefix="/api")
 app.include_router(playback.router, prefix="/api")
 app.include_router(vibe.router, prefix="/api")
 app.include_router(faces.router, prefix="/api")
+app.include_router(settings.router, prefix="/api")
 
 # 3. WebSocket /ws and /ws/vibe-stream
 @app.websocket("/ws")
@@ -294,9 +304,11 @@ async def camera_feed(cam_id: int):
 # 5. Static Files & SPA Catch-all
 static_dir = Path(__file__).parent.parent / "static"
 
-# Mount /assets specifically for speed and clarity
-if (static_dir / "assets").exists():
-    app.mount("/assets", StaticFiles(directory=str(static_dir / "assets")), name="assets")
+# Mount static files at root level for production
+if static_dir.exists():
+    logger.info(f"[STATIC] Serving static files from: {static_dir}")
+    # Mount assets directory for JS/CSS bundles
+    app.mount("/assets", StaticFiles(directory=str(static_dir / "assets"), html=True), name="assets")
 
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str):
@@ -304,15 +316,24 @@ async def serve_spa(full_path: str):
     skip = ("api/", "feed/", "ws", "docs", "openapi")
     if any(full_path.startswith(s) for s in skip):
         raise HTTPException(status_code=404)
+
+    # Serve index.html for root path
+    index_file = static_dir / "index.html"
+    if full_path == "" or full_path == "/":
+        if index_file.exists():
+            logger.info(f"[STATIC] Serving index.html")
+            return FileResponse(index_file)
     
     # Check if a specific static file exists (e.g., favicon.ico, placeholder.svg)
     target_file = static_dir / full_path
     if target_file.is_file():
+        logger.debug(f"[STATIC] Serving file: {target_file}")
         return FileResponse(target_file)
-    
-    # Otherwise, serve the SPA index.html for any route
-    index_file = static_dir / "index.html"
+
+    # Serve index.html for SPA routes (React Router)
     if index_file.exists():
+        logger.debug(f"[STATIC] Serving index.html for route: {full_path}")
         return FileResponse(index_file)
-    
-    return {"error": "Frontend not built"}
+
+    logger.warning(f"[STATIC] File not found: {full_path}")
+    return {"error": "Frontend not built", "path": full_path}

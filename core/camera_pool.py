@@ -25,11 +25,8 @@ class CameraWorker(threading.Thread):
         self.target_height = target_height
         self.running = False
         self.cap = None
-        
-        # Settings
-        self.brightness = 0
-        self.contrast = 1.0
-        self.sharpness = 0
+        # Note: Brightness, contrast, and sharpness are now auto-adjusted
+        # based on lighting conditions - no manual controls needed
 
     def _connect(self):
         """Attempts to connect to the camera source."""
@@ -44,23 +41,68 @@ class CameraWorker(threading.Thread):
 
     def _preprocess(self, frame):
         """
-        Basic preprocessing: Resize and user settings.
+        Basic preprocessing: Resize with automatic lighting-based enhancement.
+        Auto-adjusts brightness, contrast, and sharpness based on scene lighting.
         """
-        # Apply user settings
-        if self.brightness != 0 or self.contrast != 1.0:
-            frame = cv2.convertScaleAbs(frame, alpha=self.contrast, beta=self.brightness * 10)
-        
-        # Simple sharpness (Laplacian enhancement)
-        if self.sharpness > 0:
-            kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
-            sharpened = cv2.filter2D(frame, -1, kernel)
-            frame = cv2.addWeighted(frame, 1-self.sharpness, sharpened, self.sharpness, 0)
+        # Convert to LAB color space for luminance analysis
+        lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
+        l, a, b = cv2.split(lab)
 
+        # Analyze brightness (mean luminance)
+        mean_brightness = np.mean(l)
+        std_dev = np.std(l)
+
+        # Auto-adjust brightness based on lighting conditions
+        auto_brightness = 0
+        if mean_brightness < 80:  # Dark scene
+            auto_brightness = 30  # Brighten
+        elif mean_brightness > 180:  # Very bright scene
+            auto_brightness = -20  # Darken slightly
+
+        # Auto-adjust contrast based on histogram spread
+        auto_contrast = 1.0
+        if std_dev < 40:  # Low contrast (flat histogram)
+            auto_contrast = 1.4
+        elif std_dev > 80:  # High contrast
+            auto_contrast = 1.0
+        else:
+            auto_contrast = 1.15
+
+        # Apply CLAHE for adaptive contrast enhancement
+        clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(10, 10))
+        cl = clahe.apply(l)
+
+        # Apply brightness adjustment
+        if auto_brightness != 0:
+            cl = cv2.add(cl, int(auto_brightness))
+
+        # Merge channels back
+        enhanced_lab = cv2.merge((cl, a, b))
+        frame = cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2BGR)
+
+        # Auto-sharpen based on edge detection
+        # Calculate edge strength to detect blur
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        edges = cv2.Laplacian(gray, cv2.CV_64F)
+        edge_variance = np.var(edges)
+
+        # Apply sharpening if image is blurry (low edge variance)
+        if edge_variance < 150:  # Blurry image
+            kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
+            sharpened = cv2.filter2D(frame, -1, kernel)
+            # Blend more sharpening for blurry images
+            frame = cv2.addWeighted(frame, 0.6, sharpened, 0.4, 0)
+        elif edge_variance < 300:  # Moderately sharp
+            kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
+            sharpened = cv2.filter2D(frame, -1, kernel)
+            frame = cv2.addWeighted(frame, 0.8, sharpened, 0.2, 0)
+
+        # Resize if needed
         h, w = frame.shape[:2]
         if h > self.target_height:
             scale = self.target_height / h
             frame = cv2.resize(frame, (int(w * scale), self.target_height))
-        
+
         return frame
 
     def run(self):
