@@ -28,8 +28,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # Install system dependencies (OpenCV, display libs, curl for healthcheck)
+# Note: libgl1 replaced libgl1-mesa-glx in Debian Trixie+
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libgl1-mesa-glx \
+    libgl1 \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
