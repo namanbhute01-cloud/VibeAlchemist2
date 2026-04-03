@@ -584,12 +584,13 @@ class VisionPipeline:
         results = []
         h, w = frame.shape[:2]
 
-        # ── STEP 2: Human Detection (strict) ──
+        # ── STEP 2: Human Detection (detect ALL persons) ──
+        # Lower confidence to catch more people, especially at distance
         persons = self.person_model(
             enhanced,
             classes=[0],       # Only person
-            conf=self.person_conf_threshold,
-            iou=0.45,
+            conf=0.25,         # Lowered from 0.35 to detect more people
+            iou=0.40,          # Stricter NMS to avoid duplicate boxes
             verbose=False,
             augment=False,
             half=False
@@ -600,8 +601,8 @@ class VisionPipeline:
             for box in result.boxes:
                 conf = float(box.conf[0])
 
-                # Strict confidence check
-                if conf < self.person_conf_threshold:
+                # Allow lower confidence (0.25) to catch more people
+                if conf < 0.25:
                     continue
 
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
@@ -611,17 +612,17 @@ class VisionPipeline:
                 box_w = x2 - x1
                 box_h = y2 - y1
 
-                # Size validation
-                if box_w < self.min_person_size or box_h < self.min_person_size:
+                # Lowered minimum size to detect distant people
+                if box_w < 50 or box_h < 50:
                     continue
 
                 # Aspect ratio validation (humans are roughly vertical)
                 aspect = max(box_w, box_h) / min(box_w, box_h)
-                if aspect > self.max_person_aspect:
+                if aspect > 4.0:  # Relaxed from 3.0
                     continue
 
-                # Body proportion check: height should be > width for standing/sitting humans
-                if box_h < box_w * 0.4:
+                # Relaxed body proportion check
+                if box_h < box_w * 0.3:
                     continue  # Too wide, likely not a human
 
                 person_crop = enhanced[y1:y2, x1:x2]
@@ -688,11 +689,10 @@ class VisionPipeline:
                     'is_good_quality': is_good
                 })
 
-        # ── STEP 7: Direct Face Detection Fallback ──
-        # Only run if no persons detected but motion detected
-        # This catches faces that person detection misses
-        if not person_boxes and motion_detected:
-            logger.debug(f"Direct face detection fallback (motion={motion_pixels})")
+        # ── STEP 7: Direct Face Detection (always run when motion detected) ──
+        # Runs alongside person-based detection to catch faces YOLO-person missed
+        # NMS at the end removes duplicates between the two detection paths
+        if motion_detected:
             direct_faces = self._detect_faces(enhanced, 0, 0)
 
             for fx1, fy1, fx2, fy2, fconf in direct_faces:

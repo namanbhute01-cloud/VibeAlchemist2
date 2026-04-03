@@ -246,8 +246,8 @@ def processing_loop(loop):
 
 def process_detections(detections, cam_id, pipeline, vibe_engine, player, face_vault, face_registry):
     """
-    Process detections: log to vibe engine, draw bounding boxes.
-    Music handover is handled by the separate music_handover_loop() thread.
+    Process detections: log to vibe engine, start music, draw bounding boxes.
+    Music handover (song transitions) is handled by music_handover_loop() thread.
     """
     if not detections:
         return
@@ -271,6 +271,23 @@ def process_detections(detections, cam_id, pipeline, vibe_engine, player, face_v
     # Log low-quality detections at debug level
     if low_quality:
         logger.debug(f"Cam {cam_id}: {len(low_quality)} low-quality detection(s) skipped for vibe")
+
+    # ── Start music if nothing is playing ──
+    # The handover thread handles transitions, but this starts the FIRST song
+    if good_detections and player and vibe_engine:
+        current_status = player.get_status()
+        current_song = current_status.get('song', 'None')
+        is_paused = current_status.get('paused', True)
+
+        if current_song == 'None' or current_song is None:
+            # No song playing — start music based on detected group
+            target_group = vibe_engine.get_current_group()
+            logger.info(f"First detection — starting music: {target_group}")
+            player.next(target_group)
+        elif is_paused:
+            # Song is paused — resume
+            player.toggle_pause()
+            logger.info("Resuming playback")
 
     # ── Draw Bounding Boxes ──
     frame = pipeline.pool.get_latest_frame(cam_id)
