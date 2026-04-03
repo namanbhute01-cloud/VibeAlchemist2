@@ -153,26 +153,34 @@ validate_env() {
 # Deploy with Docker
 # ═══════════════════════════════════════════════════════════════
 deploy() {
-    log_info "Deploying with Docker Compose..."
+    log_info "Deploying..."
 
     cd "$APP_DIR"
 
+    # ── Build frontend locally (submodule not available to Docker) ──
+    log_info "Building frontend locally..."
+    if [ -d "frontend" ] && [ -f "frontend/package.json" ]; then
+        cd frontend
+        if [ ! -d "node_modules" ]; then
+            npm install
+        fi
+        npm run build
+        cd "$APP_DIR"
+        log_success "Frontend built"
+    fi
+
     # Determine compose command
     local compose_cmd="docker compose"
-    if ! command -v docker &>/dev/null || ! docker compose version &>/dev/null 2>&1; then
+    if ! docker compose version &>/dev/null 2>&1; then
         if command -v docker-compose &>/dev/null; then
             compose_cmd="docker-compose"
         else
-            log_error "Neither 'docker compose' nor 'docker-compose' found"
+            log_error "Docker Compose not installed"
             exit 1
         fi
     fi
 
-    # Pull latest image (if using registry)
-    log_info "Pulling latest image..."
-    $compose_cmd pull vibe-alchemist 2>&1 | tee -a "$LOG_FILE" || log_warn "Pull failed (building locally instead)"
-
-    # Build and start
+    # Build and start (use pre-built frontend, skip frontend-builder stage)
     log_info "Building and starting container..."
     $compose_cmd up -d --build --remove-orphans vibe-alchemist 2>&1 | tee -a "$LOG_FILE"
 

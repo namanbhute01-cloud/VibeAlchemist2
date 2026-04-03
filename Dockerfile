@@ -1,28 +1,14 @@
 # ═══════════════════════════════════════════════════════════════
 # VIBE ALCHEMIST V2 - Production Dockerfile
-# Multi-stage build: Node frontend → Python backend
+#
+# Frontend must be built locally BEFORE docker build:
+#   cd frontend && npm install && npm run build
+#   (outputs to ../static/)
+#
+# For CI/CD: the workflow builds frontend first.
+# For server deploy: deploy-prod.sh builds frontend first.
 # ═══════════════════════════════════════════════════════════════
 
-# ───────────────────────────────────────────────────────────────
-# Stage 1: Build Frontend
-# ───────────────────────────────────────────────────────────────
-FROM node:20-alpine AS frontend-builder
-
-WORKDIR /app/frontend
-
-# Copy package files first (layer caching)
-COPY frontend/package*.json ./
-
-# Install all dependencies (including dev for build)
-RUN npm ci
-
-# Copy source and build
-COPY frontend/ ./
-RUN npm run build
-
-# ───────────────────────────────────────────────────────────────
-# Stage 2: Python Backend + Built Frontend
-# ───────────────────────────────────────────────────────────────
 FROM python:3.11-slim
 
 # Build-time arguments
@@ -35,7 +21,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     DEBIAN_FRONTEND=noninteractive \
-    # Default app config (overridden by .env at runtime)
     API_HOST=0.0.0.0 \
     API_PORT=8000 \
     DEBUG=false
@@ -51,7 +36,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrender-dev \
     libgomp1 \
     curl \
-    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy and install Python dependencies
@@ -67,8 +51,9 @@ COPY core/ ./core/
 COPY models/ ./models/
 RUN mkdir -p /app/models
 
-# Copy built frontend from builder stage
-COPY --from=frontend-builder /app/frontend/dist ./static
+# Copy pre-built frontend static files
+# (Built locally before docker build by deploy-prod.sh or CI/CD)
+COPY static/ ./static/
 
 # Create data directories
 RUN mkdir -p /app/temp_faces /app/logs /app/OfflinePlayback \
@@ -89,10 +74,10 @@ LABEL org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.title="Vibe Alchemist V2" \
       org.opencontainers.image.description="AI-powered ambiance system with age detection and adaptive music"
 
-# Expose port (actual port is set via API_PORT env var at runtime)
+# Expose port
 EXPOSE 8000
 
-# Health check (uses internal container port 8000)
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8000/api/cameras || exit 1
 
