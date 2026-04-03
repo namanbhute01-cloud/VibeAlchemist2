@@ -70,6 +70,95 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
+# --- MUSIC HANDOVER MONITOR (Background Thread) ---
+# Runs independently of face detection — ensures zero-gap song transitions.
+# Monitors song position continuously, pre-loads next song before current ends.
+
+def music_handover_loop():
+    """
+    Background thread that monitors song playback position.
+    - At 90-99%: continuously averages detected ages from vibe_engine
+    - At ~99%: immediately queues next song (zero gap)
+    - If vibe changed: switches folder; if same: continues current folder
+    - Runs every 200ms for responsive transitions
+    """
+    global vibe_engine, player
+
+    # Track which song we're monitoring (detect new songs)
+    last_monitored_song = None
+    # Age samples collected during 90-99% window
+    handover_age_samples = []
+    handover_prepared = False
+
+    logger.info("Music handover monitor started")
+
+    while True:
+        try:
+            if not player or not vibe_engine:
+                time.sleep(1)
+                continue
+
+            status = player.get_status()
+            current_song = status.get('song', 'None')
+            percent_pos = status.get('percent', 0)
+            current_group = status.get('group', 'adults')
+
+            # Detect new song started — reset handover state
+            if current_song != last_monitored_song and current_song != 'None':
+                last_monitored_song = current_song
+                handover_age_samples = []
+                handover_prepared = False
+                logger.debug(f"New song detected: {current_song}, resetting handover")
+
+            if current_song == 'None':
+                time.sleep(0.5)
+                continue
+
+            # ── 90-99% window: collect age samples ──
+            if 90 <= percent_pos <= 99:
+                # Sample current average age from vibe engine
+                avg_age = vibe_engine.average_age
+                if avg_age and avg_age > 0:
+                    handover_age_samples.append(avg_age)
+
+                # Prepare handover once at 92%
+                if not handover_prepared and percent_pos >= 92:
+                    handover_prepared = True
+                    vibe_engine.prepare_handover()
+                    logger.info(f"Handover prepared at {percent_pos:.0f}% — collected {len(handover_age_samples)} age samples")
+
+            # ── ~99%: queue next song IMMEDIATELY (zero gap) ──
+            if percent_pos >= 98.5 and handover_prepared:
+                # Calculate average age from samples collected during 90-99% window
+                if handover_age_samples:
+                    avg_handover_age = int(sum(handover_age_samples) / len(handover_age_samples))
+                    logger.info(f"Handover age average: {avg_handover_age} (from {len(handover_age_samples)} samples)")
+                else:
+                    avg_handover_age = vibe_engine.average_age
+
+                # Commit handover — returns target group
+                target_group = vibe_engine.commit_handover()
+
+                if target_group != current_group:
+                    logger.info(f"HANDOVER: Switching {current_group} -> {target_group}")
+                    player.next(target_group)
+                else:
+                    logger.info(f"HANDOVER: Continuing {target_group}")
+                    player.continue_current_folder()
+
+                # Reset for next song
+                handover_age_samples = []
+                handover_prepared = False
+                last_monitored_song = None  # Force re-detect on next iteration
+
+            # Poll every 200ms for responsive transitions
+            time.sleep(0.2)
+
+        except Exception as e:
+            logger.error(f"Music handover error: {e}")
+            time.sleep(1)
+
+
 # --- VISION PROCESSING LOOP ---
 def processing_loop(loop):
     """
@@ -84,7 +173,6 @@ def processing_loop(loop):
     """
     global pipeline, cam_pool, vibe_engine, face_vault, face_registry, player
     faces_detected_count = 0
-    last_music_change = time.time()
 
     # Per-camera rate limiting
     camera_last_process = {}
@@ -92,7 +180,6 @@ def processing_loop(loop):
 
     # Round-robin state
     current_camera_index = 0
-    last_queue_check = time.time()
 
     while True:
         try:
@@ -159,17 +246,9 @@ def processing_loop(loop):
 
 def process_detections(detections, cam_id, pipeline, vibe_engine, player, face_vault, face_registry):
     """
-    Process detections: log to vibe engine, trigger music, draw bounding boxes.
-
-    Improvements:
-    - Only log good-quality detections to vibe engine
-    - Color-coded bounding boxes (green=good, yellow=low quality)
-    - Shows confidence score on label
-    - Detection counter shows total + good-quality count
-    - 95% handover: prepares next vibe, continues current folder if no change
+    Process detections: log to vibe engine, draw bounding boxes.
+    Music handover is handled by the separate music_handover_loop() thread.
     """
-    global last_music_change
-
     if not detections:
         return
 
@@ -192,57 +271,6 @@ def process_detections(detections, cam_id, pipeline, vibe_engine, player, face_v
     # Log low-quality detections at debug level
     if low_quality:
         logger.debug(f"Cam {cam_id}: {len(low_quality)} low-quality detection(s) skipped for vibe")
-
-    # ── Music Playback with 95% Handover ──
-    if good_detections and player and vibe_engine:
-        current_time = time.time()
-        target_group = vibe_engine.get_current_group()
-        current_status = player.get_status()
-        current_group = current_status.get('group', 'adults')
-        current_song = current_status.get('song', 'None')
-        is_paused = current_status.get('paused', False)
-        percent_pos = current_status.get('percent', 0)
-
-        # ── 95% Handover: prepare next vibe ──
-        if 92 <= percent_pos <= 96:
-            vibe_engine.prepare_handover()
-
-        # ── Song completion: commit handover and continue ──
-        if current_song != 'None' and percent_pos < 5 and last_music_change > 0:
-            # Song just finished (position reset to near 0)
-            target = vibe_engine.commit_handover()
-            if target != current_group:
-                # Vibe changed — switch to new folder
-                logger.info(f"Handover: Switching music {current_group} -> {target}")
-                player.next(target)
-            else:
-                # Same vibe — continue playing from current folder
-                logger.info(f"Handover: Continuing {target} folder")
-                player.continue_current_folder()
-            if is_paused:
-                player.toggle_pause()
-            last_music_change = current_time
-            return  # Handled song transition, skip rest
-
-        # ── Normal music selection ──
-        should_change = (
-            target_group != current_group or
-            current_song == 'None' or
-            (current_time - last_music_change > 15 and target_group == current_group)
-        )
-
-        if should_change and target_group != current_group:
-            logger.info(f"Music: {target_group} (avg age: {vibe_engine.average_age})")
-            player.next(target_group)
-            if is_paused:
-                player.toggle_pause()
-            last_music_change = current_time
-        elif current_song == 'None':
-            logger.info(f"Music start: {target_group}")
-            player.next(target_group)
-            last_music_change = current_time
-        elif is_paused and target_group == current_group:
-            player.toggle_pause()
 
     # ── Draw Bounding Boxes ──
     frame = pipeline.pool.get_latest_frame(cam_id)
@@ -339,7 +367,12 @@ async def lifespan(app: FastAPI):
         pipeline.pool = cam_pool
         cam_pool.start()
 
+        # Start vision processing loop
         threading.Thread(target=processing_loop, args=(asyncio.get_event_loop(),), daemon=True).start()
+
+        # Start music handover monitor (independent of face detection — zero-gap transitions)
+        threading.Thread(target=music_handover_loop, daemon=True).start()
+
         logger.info("[STARTUP] All core modules initialized.")
         
         # Set global references for API routes
