@@ -54,13 +54,27 @@ manager = ConnectionManager()
 
 # --- VISION PROCESSING LOOP ---
 def processing_loop(loop):
+    """
+    Multi-camera processing loop with fair scheduling.
+
+    Improvements:
+    - Round-robin processing across all active cameras
+    - Quality-based filtering (only process good detections)
+    - Per-camera rate limiting with adaptive intervals
+    - No race conditions with face registry (single-threaded)
+    - Graceful handling of camera disconnects
+    """
     global pipeline, cam_pool, vibe_engine, face_vault, face_registry, player
     faces_detected_count = 0
     last_music_change = time.time()
 
-    # Track last processing time per camera to ensure fair processing
+    # Per-camera rate limiting
     camera_last_process = {}
-    min_process_interval = 0.15  # Minimum 150ms between processing same camera (faster for better real-time)
+    base_process_interval = 0.5  # Process each camera every 500ms
+
+    # Round-robin state
+    current_camera_index = 0
+    last_queue_check = time.time()
 
     while True:
         try:
@@ -68,65 +82,108 @@ def processing_loop(loop):
                 time.sleep(1)
                 continue
 
-            # Get frame from queue with timeout
+            num_cameras = len(cam_pool.sources)
+            if num_cameras == 0:
+                time.sleep(1)
+                continue
+
+            # ── Process frames from queue first (newest frames) ──
+            processed_from_queue = False
             try:
-                item = frame_queue.get(timeout=0.5)
-            except queue.Empty:
-                # If queue is empty, try to process latest frames from each camera
+                # Drain queue but only process the latest frame per camera
+                latest_per_cam = {}
+                while not frame_queue.empty():
+                    try:
+                        item = frame_queue.get_nowait()
+                        cam_id = item["cam_id"]
+                        latest_per_cam[cam_id] = item  # Keep only latest
+                    except queue.Empty:
+                        break
+
+                # Process latest frames with rate limiting
                 current_time = time.time()
-                for cam_id in range(len(cam_pool.sources)):
-                    # Check if enough time has passed since last processing
+                for cam_id, item in latest_per_cam.items():
                     last_process = camera_last_process.get(cam_id, 0)
-                    if current_time - last_process >= min_process_interval:
-                        frame = cam_pool.get_latest_frame(cam_id)
-                        if frame is not None:
-                            detections = pipeline.process_frame(frame, cam_id)
-                            process_detections(detections, cam_id, pipeline, vibe_engine, player, face_vault, face_registry)
-                            camera_last_process[cam_id] = current_time
-                            faces_detected_count += len(detections)
-                continue
+                    if current_time - last_process >= base_process_interval:
+                        camera_last_process[cam_id] = current_time
+                        detections = pipeline.process_frame(item["frame"], cam_id)
+                        process_detections(detections, cam_id, pipeline, vibe_engine, player, face_vault, face_registry)
+                        faces_detected_count += len(detections)
+                        processed_from_queue = True
 
-            cam_id = item["cam_id"]
-            frame = item["frame"]
+            except queue.Empty:
+                pass
 
-            # Check if we should process this camera or wait (rate limiting)
-            current_time = time.time()
-            last_process = camera_last_process.get(cam_id, 0)
-            if current_time - last_process < min_process_interval:
-                # Skip this frame, not enough time passed
-                continue
+            # ── Round-robin fallback: process latest frames from each camera ──
+            if not processed_from_queue:
+                current_time = time.time()
 
-            camera_last_process[cam_id] = current_time
-            detections = pipeline.process_frame(frame, cam_id)
-            process_detections(detections, cam_id, pipeline, vibe_engine, player, face_vault, face_registry)
-            faces_detected_count += len(detections)
+                # Cycle through cameras in round-robin fashion
+                current_camera_index = current_camera_index % num_cameras
+                cam_id = current_camera_index
+                current_camera_index += 1
+
+                last_process = camera_last_process.get(cam_id, 0)
+                if current_time - last_process >= base_process_interval:
+                    frame = cam_pool.get_latest_frame(cam_id)
+                    if frame is not None:
+                        camera_last_process[cam_id] = current_time
+                        detections = pipeline.process_frame(frame, cam_id)
+                        process_detections(detections, cam_id, pipeline, vibe_engine, player, face_vault, face_registry)
+                        faces_detected_count += len(detections)
+
+            # Small sleep to prevent CPU spinning
+            time.sleep(0.05)
 
         except Exception as e:
-            logger.error(f"Loop Error: {e}")
+            logger.error(f"Processing loop error: {e}")
+            time.sleep(1)
 
 def process_detections(detections, cam_id, pipeline, vibe_engine, player, face_vault, face_registry):
-    """Process detections from a single frame and draw bounding boxes."""
+    """
+    Process detections: log to vibe engine, trigger music, draw bounding boxes.
+
+    Improvements:
+    - Only log good-quality detections to vibe engine
+    - Color-coded bounding boxes (green=good, yellow=low quality)
+    - Shows confidence score on label
+    - Detection counter shows total + good-quality count
+    """
     global last_music_change
 
-    for det in detections:
-        # Log detection to vibe engine (includes age tracking)
-        if vibe_engine:
-            vibe_engine.log_detection(det['group'], age=det['age'])
+    if not detections:
+        return
 
-    # If faces detected, trigger music playback based on detected age group
-    if detections and player:
+    # Separate good and low-quality detections
+    good_detections = [d for d in detections if d.get('is_good_quality', True)]
+    low_quality = [d for d in detections if not d.get('is_good_quality', True)]
+
+    # Only log good-quality detections to vibe engine (more reliable)
+    for det in good_detections:
+        if vibe_engine:
+            quality = det.get('quality', 1.0)
+            cam_id_val = det.get('cam_id', cam_id)
+            vibe_engine.log_detection(
+                det['group'],
+                age=det['age'],
+                quality=quality,
+                cam_id=cam_id_val
+            )
+
+    # Log low-quality detections at debug level
+    if low_quality:
+        logger.debug(f"Cam {cam_id}: {len(low_quality)} low-quality detection(s) skipped for vibe")
+
+    # Music playback based on good-quality detections
+    if good_detections and player:
         current_time = time.time()
-        # Get the current vibe group based on all detections
         target_group = vibe_engine.get_current_group() if vibe_engine else "adults"
 
-        # Check if we need to change the music
         current_status = player.get_status()
         current_group = current_status.get('group', 'adults')
         current_song = current_status.get('song', 'None')
         is_paused = current_status.get('paused', False)
 
-        # Play music from the detected group's folder
-        # Change music if: different group, no song playing, or it's been 15 seconds
         should_change = (
             target_group != current_group or
             current_song == 'None' or
@@ -134,64 +191,82 @@ def process_detections(detections, cam_id, pipeline, vibe_engine, player, face_v
         )
 
         if should_change and target_group != current_group:
-            logger.info(f"Playing music for detected group: {target_group} (avg age: {vibe_engine.average_age if vibe_engine else 25})")
+            logger.info(f"Music: {target_group} (avg age: {vibe_engine.average_age if vibe_engine else 25})")
             player.next(target_group)
-            # Ensure music is playing (not paused)
             if is_paused:
                 player.toggle_pause()
             last_music_change = current_time
         elif current_song == 'None':
-            # Start playing immediately if nothing is playing
-            logger.info(f"Starting music for detected group: {target_group}")
+            logger.info(f"Music start: {target_group}")
             player.next(target_group)
             last_music_change = current_time
         elif is_paused and target_group == current_group:
-            # If paused but same group, just resume playing
-            logger.info(f"Resuming music for detected group: {target_group}")
             player.toggle_pause()
 
-    # Draw bounding boxes on the latest frame for this camera
+    # ── Draw Bounding Boxes ──
     frame = pipeline.pool.get_latest_frame(cam_id)
-    if frame is not None and isinstance(frame, np.ndarray):
-        # Make a copy to avoid modifying the original
-        annotated_frame = frame.copy()
-        
-        # Draw bounding boxes for all detections
-        for det in detections:
-            x1, y1, x2, y2 = det['bbox']
-            
-            # Ensure coordinates are within frame bounds
-            h, w = annotated_frame.shape[:2]
-            x1, y1 = max(0, x1), max(0, y1)
-            x2, y2 = min(w, x2), min(h, y2)
-            
-            # Draw rectangle around face (bright green box, 3px thick)
-            cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 255, 0), 3)
-            
-            # Add age/group label with background
-            label = f"Age:{det['age']} ({det['group']})"
-            (label_w, label_h), baseline = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
-            
-            # Draw label background (green rectangle)
-            cv2.rectangle(annotated_frame, (x1, y1 - label_h - 10), (x1 + label_w + 10, y1), (0, 255, 0), -1)
-            
-            # Add text (black text on green background)
-            cv2.putText(annotated_frame, label, (x1 + 5, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
-        
-        # If there are detections, also add a detection counter badge
-        if len(detections) > 0:
-            counter_text = f"Detected: {len(detections)}"
-            (cw, ch), cb = cv2.getTextSize(counter_text, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
-            # Top-right corner badge
-            cv2.rectangle(annotated_frame, (w - cw - 25, 10), (w - 10, 15 + ch + 10), (0, 255, 0), -1)
-            cv2.putText(annotated_frame, counter_text, (w - cw - 20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
+    if frame is None or not isinstance(frame, np.ndarray):
+        return
 
-        # Encode and store the annotated frame for MJPEG stream
-        ret, buffer = cv2.imencode('.jpg', annotated_frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
-        if ret:
-            pipeline.pool.latest_frames[cam_id] = buffer.tobytes()
-            if len(detections) > 0:
-                logger.info(f"[Cam {cam_id}] Drew {len(detections)} bounding box(es)")
+    annotated_frame = frame.copy()
+    h, w = annotated_frame.shape[:2]
+
+    for det in detections:
+        x1, y1, x2, y2 = det['bbox']
+        x1, y1 = max(0, x1), max(0, y1)
+        x2, y2 = min(w, x2), min(h, y2)
+
+        is_good = det.get('is_good_quality', True)
+        quality = det.get('quality', 0)
+        face_conf = det.get('face_conf', 0)
+
+        # Color: green for good quality, yellow for low quality
+        color = (0, 255, 0) if is_good else (0, 255, 255)  # BGR: green / yellow
+        thickness = 3 if is_good else 2
+
+        cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), color, thickness)
+
+        # Label with age, group, and confidence
+        label = f"Age:{det['age']} {det['group']} ({quality:.1f})"
+        (label_w, label_h), baseline = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+
+        # Label background
+        cv2.rectangle(
+            annotated_frame,
+            (x1, y1 - label_h - 8),
+            (x1 + label_w + 6, y1),
+            color, -1
+        )
+
+        # Text (white on colored background)
+        cv2.putText(
+            annotated_frame, label,
+            (x1 + 3, y1 - 4),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1
+        )
+
+    # Detection counter badge
+    total = len(detections)
+    good_count = len(good_detections)
+    if total > 0:
+        counter_text = f"Faces: {good_count}/{total}"
+        (cw, ch), cb = cv2.getTextSize(counter_text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+        cv2.rectangle(
+            annotated_frame,
+            (w - cw - 20, 8),
+            (w - 8, 8 + ch + 8),
+            (0, 255, 0) if good_count == total else (0, 165, 255), -1
+        )
+        cv2.putText(
+            annotated_frame, counter_text,
+            (w - cw - 15, 8 + ch + 3),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1
+        )
+
+    # Encode and store
+    ret, buffer = cv2.imencode('.jpg', annotated_frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+    if ret:
+        pipeline.pool.latest_frames[cam_id] = buffer.tobytes()
 
 # --- LIFECYCLE ---
 @asynccontextmanager

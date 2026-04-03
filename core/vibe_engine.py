@@ -1,3 +1,17 @@
+"""
+Vibe Engine V2 - Improved Audience State Management
+
+Manages the 'Vibe Journal' (history of detections), calculates the dominant audience,
+and handles the '95% Handover' logic for smooth transitions.
+
+Improvements over V1:
+- Quality-weighted detection logging (good-quality detections count more)
+- Per-camera detection tracking (know which cameras are active)
+- Better consensus algorithm with quality weighting
+- Age tracking with per-identity smoothing
+- Stale detection cleanup
+"""
+
 import time
 import logging
 import statistics
@@ -6,12 +20,8 @@ from collections import deque, Counter
 
 logger = logging.getLogger("VibeEngine")
 
+
 class VibeEngine:
-    """
-    The Alchemy State Engine.
-    Manages the 'Vibe Journal' (history of detections), calculates the dominant audience,
-    and handles the '95% Handover' logic for smooth transitions.
-    """
     def __init__(self, history_len=50, consensus_threshold=20):
         # Rolling window of detected groups: ['youths', 'adults', 'kids', ...]
         self.journal = deque(maxlen=history_len)
@@ -23,78 +33,175 @@ class VibeEngine:
         self.last_consensus_vibe = "adults"
 
         # Current active state
-        self.current_vibe = "adults" # Default
+        self.current_vibe = "adults"
         self.next_vibe = None
-        self.status = "VIBING"       # SEARCHING | LOADING | VIBING
+        self.status = "VIBING"
         self.current_age = "..."
 
-        # Age tracking for accurate average calculation
-        self.recent_ages = deque(maxlen=30)  # Last 30 age detections
-        self.average_age = 25  # Default
+        # Age tracking
+        self.recent_ages = deque(maxlen=30)
+        self.average_age = 25
 
-        # Mapping for averaging (kids=1, youths=2, adults=3, seniors=4)
+        # ── NEW: Quality-weighted detection tracking ──
+        # Track detections per camera to know which sources are active
+        self.camera_detections = {}  # cam_id -> last_detection_time
+        self.active_cameras = set()
+
+        # Quality-weighted journal entries: (group, quality, timestamp)
+        self.quality_journal = deque(maxlen=history_len)
+
+        # Group mapping
         self.group_map = {"kids": 1, "youths": 2, "adults": 3, "seniors": 4}
         self.inv_map = {1: "kids", 2: "youths", 3: "adults", 4: "seniors"}
 
-    def log_detection(self, group, age="..."):
+        # Stale detection cleanup
+        self.last_cleanup = time.time()
+        self.stale_threshold = 30  # Seconds before a camera is considered inactive
+
+        logger.info("VibeEngine V2 initialized with quality-weighted detection")
+
+    def log_detection(self, group, age="...", quality=1.0, cam_id=None):
         """
-        Logs a new detected group into the journal with consensus debounce.
-        Also tracks ages for accurate average calculation.
+        Log a new detection with quality weighting.
+
+        Args:
+            group: Age group (kids/youths/adults/seniors)
+            age: Numeric age or "..."
+            quality: Detection quality (0.0-1.0). Higher = more reliable.
+            cam_id: Camera ID that detected this face.
         """
         if group not in self.group_map:
             return
 
         with self.lock:
-            # 1. Update temp consensus buffer
-            self.temp_consensus.append(group)
+            # Track camera activity
+            if cam_id is not None:
+                self.camera_detections[cam_id] = time.time()
+                self.active_cameras.add(cam_id)
 
-            # 2. Track age if provided
+            # Track age
             if age != "...":
                 try:
                     age_num = int(age)
                     self.recent_ages.append(age_num)
-                    # Calculate running average age
                     if len(self.recent_ages) > 0:
                         self.average_age = int(sum(self.recent_ages) / len(self.recent_ages))
                         self.current_age = str(self.average_age)
                 except (ValueError, TypeError):
                     pass
 
-            # 3. Check for consensus (100% agreement in small window)
-            if len(self.temp_consensus) == self.consensus_threshold:
-                counts = Counter(self.temp_consensus)
-                most_common, count = counts.most_common(1)[0]
+            # Quality-weighted consensus: good detections count more
+            # Add detection to consensus buffer weighted by quality
+            quality_weight = max(0.1, min(1.0, quality))
 
-                if count >= self.consensus_threshold * 0.8: # 80% consensus
-                    if most_common != self.last_consensus_vibe:
+            # Add to temp consensus (may add multiple entries for high quality)
+            self.temp_consensus.append(group)
+            if quality_weight > 0.7:
+                # High quality detections get extra weight in consensus
+                self.temp_consensus.append(group)
+
+            # Also add to quality journal for detailed tracking
+            self.quality_journal.append({
+                'group': group,
+                'quality': quality_weight,
+                'timestamp': time.time(),
+                'cam_id': cam_id
+            })
+
+            # Check for consensus
+            if len(self.temp_consensus) >= self.consensus_threshold:
+                # Quality-weighted voting
+                quality_votes = {}
+                for entry in self.quality_journal:
+                    g = entry['group']
+                    q = entry['quality']
+                    quality_votes[g] = quality_votes.get(g, 0) + q
+
+                if quality_votes:
+                    most_common = max(quality_votes, key=quality_votes.get)
+                    total_quality = sum(quality_votes.values())
+                    dominant_quality = quality_votes.get(most_common, 0)
+
+                    # Only change vibe if dominant group has significant quality weight
+                    if dominant_quality / total_quality > 0.6 and most_common != self.last_consensus_vibe:
                         self.last_consensus_vibe = most_common
-                        # Add to long-term journal ONLY when consensus changes or every N frames
                         self.journal.append(most_common)
-                        logger.info(f"Vibe consensus: {most_common} (avg age: {self.average_age})")
+                        logger.info(
+                            f"Vibe consensus: {most_common} | "
+                            f"Quality: {dominant_quality/total_quality:.2f} | "
+                            f"Avg age: {self.average_age} | "
+                            f"Active cameras: {len(self.active_cameras)}"
+                        )
+
+                # Reset temp consensus
+                self.temp_consensus.clear()
+
+            # Periodic cleanup of stale cameras
+            if time.time() - self.last_cleanup > 60:
+                self._cleanup_stale()
+
+    def _cleanup_stale(self):
+        """Remove cameras that haven't detected anything recently."""
+        now = time.time()
+        stale_cameras = []
+
+        for cam_id, last_time in self.camera_detections.items():
+            if now - last_time > self.stale_threshold:
+                stale_cameras.append(cam_id)
+
+        for cam_id in stale_cameras:
+            self.active_cameras.discard(cam_id)
+            del self.camera_detections[cam_id]
+            logger.debug(f"Camera {cam_id} marked as inactive (no detections for {self.stale_threshold}s)")
+
+        self.last_cleanup = now
+
+    def get_active_camera_count(self):
+        """Get number of cameras with recent detections."""
+        with self.lock:
+            self._cleanup_stale()
+            return len(self.active_cameras)
 
     def get_dominant_vibe(self):
-        """Calculates the dominant vibe based on the current journal."""
+        """Calculate dominant vibe from the journal."""
         with self.lock:
             if not self.journal:
                 return self.current_vibe
 
             vals = [self.group_map[g] for g in self.journal]
             avg_val = round(statistics.mean(vals))
-            dominant = self.inv_map.get(avg_val, "adults")
-
-            return dominant
+            return self.inv_map.get(avg_val, "adults")
 
     def get_current_group(self):
         """
-        Returns the current target group for music playback.
-        Based on the most recently detected group or average age.
+        Get current target group for music playback.
+        Uses quality-weighted recent detections.
         """
         with self.lock:
-            # If we have recent detections, use the dominant vibe
+            # Check quality journal for recent high-quality detections
+            if self.quality_journal:
+                now = time.time()
+                recent = [
+                    entry for entry in self.quality_journal
+                    if now - entry['timestamp'] < 30  # Last 30 seconds
+                ]
+
+                if recent:
+                    # Quality-weighted vote
+                    quality_votes = {}
+                    for entry in recent:
+                        g = entry['group']
+                        q = entry['quality']
+                        quality_votes[g] = quality_votes.get(g, 0) + q
+
+                    if quality_votes:
+                        return max(quality_votes, key=quality_votes.get)
+
+            # Fallback to journal-based vibe
             if self.journal:
                 return self.get_dominant_vibe()
 
-            # Fallback to age-based grouping
+            # Final fallback to age-based
             if self.average_age < 13:
                 return "kids"
             elif self.average_age < 20:
@@ -105,53 +212,55 @@ class VibeEngine:
                 return "seniors"
 
     def prepare_handover(self):
-        """
-        Called when music player hits 95% completion.
-        Locks in the next vibe based on recent history.
-        """
+        """Called when music player hits 95% completion."""
         next_vibe = self.get_dominant_vibe()
         self.next_vibe = next_vibe
-        logger.info(f"Handover Prepared: Current[{self.current_vibe}] -> Next[{self.next_vibe}] (avg age: {self.average_age})")
+        logger.info(
+            f"Handover: {self.current_vibe} -> {self.next_vibe} | "
+            f"Avg age: {self.average_age}"
+        )
         return next_vibe
 
     def commit_handover(self):
-        """Called when track finishes. Updates current vibe."""
+        """Called when track finishes."""
         if self.next_vibe:
             self.current_vibe = self.next_vibe
             self.next_vibe = None
         return self.current_vibe
 
     def get_state(self, player=None, camera_count=0, face_count=0) -> dict:
-        """Returns the full state for the UI/WebSocket. Includes global system metrics."""
+        """Return full state for UI/WebSocket."""
         dominant = self.get_dominant_vibe()
 
         with self.lock:
-            # Get player status if provided
             p_status = player.get_status() if player else {}
+            active_cams = len(self.active_cameras)
 
             return {
-                "status":         self.status,
+                "status": self.status,
                 "detected_group": dominant,
-                "current_vibe":   dominant,   # alias for UI
-                "age":            str(self.current_age),
-                "average_age":    self.average_age,
-                "journal_count":  len(self.journal),
-                "percent_pos":    float(p_status.get('percent', 0)),
-                "is_playing":     bool(player.is_playing if player else False),
-                "paused":         bool(p_status.get('paused', True)),
-                "shuffle":        bool(p_status.get('shuffle', True)),
-                "current_song":   str(p_status.get('song', "")),
-                "next_vibe":      self.next_vibe,
-                "active_cameras": int(camera_count),
-                "unique_faces":   int(face_count)
+                "current_vibe": dominant,
+                "age": str(self.current_age),
+                "average_age": self.average_age,
+                "journal_count": len(self.journal),
+                "percent_pos": float(p_status.get('percent', 0)),
+                "is_playing": bool(player.is_playing if player else False),
+                "paused": bool(p_status.get('paused', True)),
+                "shuffle": bool(p_status.get('shuffle', True)),
+                "current_song": str(p_status.get('song', "")),
+                "next_vibe": self.next_vibe,
+                "active_cameras": max(active_cams, camera_count),
+                "unique_faces": int(face_count)
             }
 
     def get_status(self):
+        """Return concise status."""
         with self.lock:
             return {
                 "current_vibe": self.current_vibe,
                 "next_vibe": self.next_vibe,
                 "journal_size": len(self.journal),
                 "dominant_now": self.get_dominant_vibe(),
-                "average_age": self.average_age
+                "average_age": self.average_age,
+                "active_cameras": len(self.active_cameras)
             }

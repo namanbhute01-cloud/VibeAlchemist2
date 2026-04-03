@@ -49,14 +49,16 @@ class FaceVault:
             logger.error(f"Drive Authentication Failed: {e}")
             self.service = None
 
-    def save_face(self, face_img, face_id, group, force_save=False):
+    def save_face(self, face_img, face_id, group, quality=0.0, age=None):
         """
-        Saves a face crop locally.
-        
+        Save a face crop locally with quality metadata.
+
         Args:
             face_img: Face image to save
             face_id: Unique face identifier
             group: Age group (kids/youths/adults/seniors)
+            quality: Detection quality score (0.0-1.0)
+            age: Estimated age
             force_save: If True, save even if already exists (default False)
         """
         if face_img is None:
@@ -66,24 +68,30 @@ class FaceVault:
             logger.warning(f"Cannot save face {face_id}: image is empty")
             return False
 
-        # Check if this face_id has already been saved (to prevent duplicates)
-        if not force_save:
-            existing = list(self.temp_dir.glob(f"*_{face_id}_*.png"))
-            if existing:
-                logger.debug(f"Face {face_id} already saved, skipping duplicate")
-                return False
+        # Check if this face_id has already been saved
+        existing = list(self.temp_dir.glob(f"*_{face_id}_*.png"))
+        if existing:
+            logger.debug(f"Face {face_id} already saved, skipping duplicate")
+            return False
 
-        filename = f"{group}_{face_id}_{int(time.time())}.png"
+        # Include quality and age in filename for metadata
+        quality_str = f"{quality:.2f}" if quality else "0.00"
+        age_str = str(age) if age is not None else "unknown"
+        filename = f"{group}_{face_id}_q{quality_str}_age{age_str}_{int(time.time())}.png"
         filepath = self.temp_dir / filename
 
         try:
-            # Ensure face_img is contiguous in memory
+            # Ensure face_img is contiguous
             if not face_img.flags['C_CONTIGUOUS']:
                 face_img = np.ascontiguousarray(face_img)
 
             success = cv2.imwrite(str(filepath), face_img)
             if success:
-                logger.info(f"Saved face: {filepath} ({face_img.shape[0]}x{face_img.shape[1]})")
+                logger.info(
+                    f"Saved face: {face_id} | "
+                    f"Group: {group} | Quality: {quality:.2f} | Age: {age} | "
+                    f"Size: {face_img.shape[0]}x{face_img.shape[1]}"
+                )
                 return True
             else:
                 logger.error(f"cv2.imwrite failed for {filepath}")

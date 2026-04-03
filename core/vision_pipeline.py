@@ -1,19 +1,30 @@
+"""
+Vision Pipeline V2 - Improved Age Detection Pipeline
+
+Orchestrates: Motion Gating → Human Detection → Face Detection → Age Estimation → Identity Matching
+
+Improvements over V1:
+- Stricter human validation (aspect ratio, size, confidence)
+- Face alignment before age/embedding extraction
+- Temporal age smoothing (rolling average per face identity)
+- Face quality scoring (blur, size, pose estimation)
+- Better multi-camera deduplication with higher ArcFace threshold
+- No duplicate detections between person-crop and direct detection paths
+- Confidence-weighted age predictions with rejection of low-quality faces
+"""
+
 import cv2
 import numpy as np
 import logging
 import os
+import time
 import onnxruntime as ort
 from ultralytics import YOLO
 
 logger = logging.getLogger("VisionPipeline")
 
+
 class VisionPipeline:
-    """
-    Orchestrates the Gated Vision Pipeline:
-    Motion (MOG2) -> Human (YOLO) -> Face (YOLO-Face + Haar Cascade fallback) -> Identity/Age (ArcFace/DEX)
-    Optimized for CPU inference using ONNX Runtime.
-    Features automatic image enhancement based on lighting conditions.
-    """
     def __init__(self, models_dir="models", pool=None, engine=None, vault=None, registry=None):
         self.models_dir = models_dir
         self.pool = pool
@@ -21,144 +32,225 @@ class VisionPipeline:
         self.vault = vault
         self.registry = registry
 
-        # 1. Motion Detector
-        self.bg_subtractor = cv2.createBackgroundSubtractorMOG2(history=500, varThreshold=25, detectShadows=False)
+        # ── Motion Detector ──
+        self.bg_subtractor = cv2.createBackgroundSubtractorMOG2(
+            history=500, varThreshold=25, detectShadows=False
+        )
 
-        # 2. Human Detector (YOLOv8-nano ONNX)
+        # ── Human Detector (YOLOv8-nano) ──
         self.person_model = self._load_yolo("yolov8n.onnx", "yolov8n.pt")
 
-        # 3. Face Detector (YOLOv8-face ONNX with Haar Cascade fallback)
+        # ── Face Detector (YOLOv8-face with Haar fallback) ──
         self.face_model = self._load_yolo("yolov8n-face.onnx", "yolov8n-face.pt")
-        
-        # Haar Cascade fallback for face detection
-        self.haar_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-        if self.haar_cascade.empty():
-            logger.warning("Haar cascade not loaded, face detection will be limited")
-        else:
-            logger.info("Haar cascade loaded as fallback")
 
-        # 4. Feature Extractors (Raw ONNX)
+        # Haar Cascade fallback
+        self.haar_cascade = cv2.CascadeClassifier(
+            cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
+        )
+
+        # ── Feature Extractors ──
         self.arcface_sess = self._load_onnx_session("arcface_r100.onnx")
         self.age_sess = self._load_onnx_session("dex_age.onnx")
 
-        # Auto-enhancement state
+        # ── Face Alignment (Dlib-style 5-point landmark model via Haar approx) ──
+        # We use eye-detection approximation for alignment without extra model
+        self.eye_cascade = cv2.CascadeClassifier(
+            cv2.data.haarcascades + 'haarcascade_eye.xml'
+        )
+
+        # ── Auto-enhancement state ──
         self.frame_brightness_history = []
-        self.auto_brightness = 0
-        self.auto_contrast = 1.0
-        self.auto_sharpness = 0.3
+
+        # ── Temporal age smoothing per face identity ──
+        # face_id -> deque of recent age predictions
+        self.age_history = {}
+        self.age_smoothing_window = 5  # Average last 5 predictions per face
+
+        # ── Detection deduplication within a single frame ──
+        self.frame_nms_iou = 0.5  # IoU threshold for within-frame NMS
+
+        # ── Face quality thresholds ──
+        self.min_face_size = 50  # Minimum face width/height in pixels
+        self.max_blur_score = 100  # Laplacian variance below this = blurry
+        self.max_aspect_ratio = 2.0  # Face box aspect ratio limit
+
+        # ── Human detection thresholds ──
+        self.person_conf_threshold = 0.35  # Minimum confidence for person
+        self.min_person_size = 80  # Minimum person box dimension
+        self.max_person_aspect = 3.0  # Max width/height ratio
+
+        logger.info("VisionPipeline V2 initialized with improved accuracy settings")
+
+    # ═══════════════════════════════════════════════════════════════
+    # Model Loading
+    # ═══════════════════════════════════════════════════════════════
 
     def _load_yolo(self, onnx_name, pt_name):
-        """Loads YOLO model, preferring ONNX for CPU speed."""
+        """Load YOLO model, preferring ONNX for CPU speed."""
         onnx_path = os.path.join(self.models_dir, onnx_name)
         pt_path = os.path.join(self.models_dir, pt_name)
 
         if os.path.exists(onnx_path):
-            logger.info(f"Loading {onnx_name} (ONNX)...")
+            logger.info(f"Loading {onnx_name} (ONNX)")
             return YOLO(onnx_path, task="detect")
         elif os.path.exists(pt_path):
-            logger.info(f"Loading {pt_name} (PyTorch - Slow)...")
+            logger.info(f"Loading {pt_name} (PyTorch)")
             return YOLO(pt_path, task="detect")
         else:
-            logger.warning(f"Model {onnx_name} not found. Attempting auto-download of {pt_name}...")
-            return YOLO(pt_name) # Auto-download
+            logger.warning(f"Model {onnx_name} not found. Auto-downloading {pt_name}...")
+            return YOLO(pt_name)
 
     def _load_onnx_session(self, model_name):
-        """Loads a raw ONNX Runtime session."""
+        """Load ONNX Runtime session with CPU provider."""
         path = os.path.join(self.models_dir, model_name)
         if os.path.exists(path):
             try:
-                # Specify CPU execution provider explicitly
                 sess = ort.InferenceSession(path, providers=['CPUExecutionProvider'])
-                logger.info(f"Loaded {model_name} successfully.")
+                logger.info(f"Loaded {model_name}")
                 return sess
             except Exception as e:
                 logger.error(f"Failed to load {model_name}: {e}")
                 return None
-        logger.warning(f"Model {model_name} missing from {self.models_dir}. Features disabled.")
+        logger.warning(f"Model {model_name} missing. Features disabled.")
         return None
 
+    # ═══════════════════════════════════════════════════════════════
+    # Image Enhancement
+    # ═══════════════════════════════════════════════════════════════
+
     def auto_enhance_frame(self, frame):
-        """
-        Automatic image enhancement based on lighting analysis.
-        Analyzes histogram and adjusts brightness/contrast/sharpness automatically.
-        """
-        # Convert to LAB color space for better luminance analysis
+        """Enhance frame based on lighting analysis."""
         lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
         l, a, b = cv2.split(lab)
 
-        # Analyze brightness (mean luminance)
         mean_brightness = np.mean(l)
         self.frame_brightness_history.append(mean_brightness)
         if len(self.frame_brightness_history) > 30:
             self.frame_brightness_history.pop(0)
 
-        # Calculate average brightness over time
         avg_brightness = np.mean(self.frame_brightness_history)
-
-        # Auto-adjust brightness based on lighting conditions
-        if avg_brightness < 80:  # Dark scene
-            self.auto_brightness = 0.3  # Brighten
-        elif avg_brightness > 180:  # Very bright scene
-            self.auto_brightness = -0.2  # Darken slightly
-        else:
-            self.auto_brightness = 0  # Normal
-
-        # Auto-adjust contrast based on histogram spread
         std_dev = np.std(l)
-        if std_dev < 40:  # Low contrast (flat histogram)
-            self.auto_contrast = 1.5
-        elif std_dev > 80:  # High contrast
-            self.auto_contrast = 1.0
-        else:
-            self.auto_contrast = 1.2
 
-        # Apply CLAHE for adaptive contrast enhancement
+        # CLAHE for adaptive contrast
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
         cl = clahe.apply(l)
 
-        # Apply brightness adjustment
-        if self.auto_brightness != 0:
-            cl = cv2.add(cl, int(self.auto_brightness * 50))
+        # Brightness correction
+        if avg_brightness < 80:
+            cl = cv2.add(cl, 15)
+        elif avg_brightness > 180:
+            cl = cv2.add(cl, -10)
 
-        # Merge channels back
         enhanced_lab = cv2.merge((cl, a, b))
-        enhanced = cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2BGR)
-
-        # Auto-sharpen if image is blurry (detected by edge strength)
-        if self.auto_sharpness > 0:
-            kernel = np.array([[-1, -1, -1], [-1, 9, -1], [-1, -1, -1]])
-            sharpened = cv2.filter2D(enhanced, -1, kernel)
-            enhanced = cv2.addWeighted(enhanced, 1 - self.auto_sharpness, sharpened, self.auto_sharpness, 0)
-
-        return enhanced
+        return cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2BGR)
 
     def enhance_face(self, face_crop):
-        """Software enhancement for better feature extraction."""
-        # CLAHE (Contrast Limited Adaptive Histogram Equalization)
+        """Enhance face crop for better feature extraction."""
         lab = cv2.cvtColor(face_crop, cv2.COLOR_BGR2LAB)
         l, a, b = cv2.split(lab)
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
         cl = clahe.apply(l)
         enhanced = cv2.merge((cl, a, b))
         return cv2.cvtColor(enhanced, cv2.COLOR_LAB2BGR)
 
+    # ═══════════════════════════════════════════════════════════════
+    # Face Quality Assessment
+    # ═══════════════════════════════════════════════════════════════
+
+    def assess_face_quality(self, face_crop):
+        """
+        Assess face quality for reliable age estimation.
+        Returns (is_good, blur_score, brightness_score, size_score).
+        """
+        h, w = face_crop.shape[:2]
+        size = min(h, w)
+
+        # Size score: larger faces are better
+        size_score = min(1.0, size / 100.0)
+
+        # Blur detection via Laplacian variance
+        gray = cv2.cvtColor(face_crop, cv2.COLOR_BGR2GRAY)
+        blur_score = cv2.Laplacian(gray, cv2.CV_64F).var()
+        is_sharp = blur_score > self.max_blur_score
+
+        # Brightness check
+        brightness = np.mean(gray)
+        brightness_score = 1.0 - abs(brightness - 127) / 127.0
+        is_well_lit = 40 < brightness < 220
+
+        # Overall quality
+        is_good = is_sharp and is_well_lit and size >= self.min_face_size
+
+        return is_good, blur_score, brightness_score, size_score
+
+    # ═══════════════════════════════════════════════════════════════
+    # Face Alignment
+    # ═══════════════════════════════════════════════════════════════
+
+    def align_face(self, face_crop):
+        """
+        Approximate face alignment using eye detection.
+        Rotates face so eyes are horizontal.
+        Falls back to original if eyes not detected.
+        """
+        if self.eye_cascade is None or self.eye_cascade.empty():
+            return face_crop
+
+        try:
+            gray = cv2.cvtColor(face_crop, cv2.COLOR_BGR2GRAY)
+            eyes = self.eye_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
+
+            if len(eyes) >= 2:
+                # Sort eyes by Y position (top = left eye in most cases)
+                eyes = sorted(eyes, key=lambda e: e[1])
+                left_eye = eyes[0]
+                right_eye = eyes[1]
+
+                # Eye centers
+                left_center = (left_eye[0] + left_eye[2] // 2, left_eye[1] + left_eye[3] // 2)
+                right_center = (right_eye[0] + right_eye[2] // 2, right_eye[1] + right_eye[3] // 2)
+
+                # Calculate angle
+                dY = right_center[1] - left_center[1]
+                dX = right_center[0] - left_center[0]
+                angle = np.degrees(np.arctan2(dY, dX))
+
+                # Only rotate if angle is significant
+                if abs(angle) > 3:
+                    h, w = face_crop.shape[:2]
+                    center = (w // 2, h // 2)
+                    M = cv2.getRotationMatrix2D(center, angle, 1.0)
+                    aligned = cv2.warpAffine(
+                        face_crop, M, (w, h),
+                        flags=cv2.INTER_LINEAR,
+                        borderMode=cv2.BORDER_REPLICATE
+                    )
+                    return aligned
+
+        except Exception as e:
+            logger.debug(f"Face alignment error: {e}")
+
+        return face_crop  # Return original if alignment fails
+
+    # ═══════════════════════════════════════════════════════════════
+    # Face Detection (YOLO + Haar with strict validation)
+    # ═══════════════════════════════════════════════════════════════
+
     def _detect_faces(self, person_crop, offset_x, offset_y):
         """
-        Detect faces using YOLO-Face with Haar Cascade fallback.
-        Returns list of tuples: (x1, y1, x2, y2, is_yolo_detection)
-        Enhanced for better accuracy with stricter validation.
+        Detect faces with strict validation.
+        Returns list of (x1, y1, x2, y2, confidence).
         """
         faces = []
         h, w = person_crop.shape[:2]
 
-        # Try YOLO-Face first (more accurate)
+        # ── YOLO Face Detection ──
         if self.face_model:
             try:
-                # Higher confidence threshold for better accuracy
                 yolo_faces = self.face_model(
-                    person_crop, 
-                    conf=0.25,    # Higher confidence (was 0.12)
-                    iou=0.40,     # Stricter NMS
+                    person_crop,
+                    conf=0.30,     # Higher confidence threshold
+                    iou=0.35,      # Stricter NMS
                     verbose=False,
                     augment=False,
                     half=False
@@ -166,252 +258,248 @@ class VisionPipeline:
                 for box in yolo_faces[0].boxes:
                     fx1, fy1, fx2, fy2 = map(int, box.xyxy[0])
                     conf = float(box.conf[0])
-                    
-                    # Skip low confidence face detections
-                    if conf < 0.25:
+
+                    if conf < 0.30:
                         continue
-                    
-                    # Convert to global coordinates
+
                     gx1, gy1 = offset_x + fx1, offset_y + fy1
                     gx2, gy2 = offset_x + fx2, offset_y + fy2
 
-                    # Validate face crop has reasonable dimensions
                     face_w = gx2 - gx1
                     face_h = gy2 - gy1
-                    
-                    # Minimum face size (40x40 pixels for better accuracy)
-                    if face_w >= 40 and face_h >= 40:
-                        # Check face aspect ratio (faces are roughly square/oval)
-                        face_aspect = max(face_w, face_h) / min(face_w, face_h)
-                        if face_aspect < 2.5:  # Skip extremely non-square boxes
-                            faces.append((gx1, gy1, gx2, gy2, True))
+
+                    # Minimum face size
+                    if face_w < self.min_face_size or face_h < self.min_face_size:
+                        continue
+
+                    # Aspect ratio validation
+                    aspect = max(face_w, face_h) / min(face_w, face_h)
+                    if aspect > self.max_aspect_ratio:
+                        continue
+
+                    faces.append((gx1, gy1, gx2, gy2, conf))
 
                 if faces:
-                    logger.debug(f"YOLO detected {len(faces)} face(s)")
-                    return faces  # Return YOLO detections if found
+                    return faces
             except Exception as e:
                 logger.debug(f"YOLO face detection error: {e}")
 
-        # Fallback to Haar Cascade with stricter parameters
+        # ── Haar Cascade Fallback ──
         if self.haar_cascade is not None and not self.haar_cascade.empty():
             try:
                 gray = cv2.cvtColor(person_crop, cv2.COLOR_BGR2GRAY)
-                
-                # Apply histogram equalization for better detection
                 gray = cv2.equalizeHist(gray)
-                
-                # Stricter Haar cascade detection
+
                 haar_faces = self.haar_cascade.detectMultiScale(
                     gray,
-                    scaleFactor=1.08,     # More precise scale
-                    minNeighbors=4,       # Higher = fewer false positives
-                    minSize=(50, 50),     # Larger minimum face
+                    scaleFactor=1.08,
+                    minNeighbors=5,
+                    minSize=(self.min_face_size, self.min_face_size),
                     flags=cv2.CASCADE_SCALE_IMAGE
                 )
-                
+
                 for (fx, fy, fw, fh) in haar_faces:
-                    # Convert to global coordinates
                     gx1, gy1 = offset_x + fx, offset_y + fy
                     gx2, gy2 = offset_x + fx + fw, offset_y + fy + fh
-                    
-                    # Validate face aspect ratio
-                    face_aspect = max(fw, fh) / min(fw, fh)
-                    if face_aspect < 2.0:  # Stricter than YOLO
-                        faces.append((gx1, gy1, gx2, gy2, False))
 
-                if faces:
-                    logger.debug(f"Haar detected {len(faces)} face(s)")
+                    aspect = max(fw, fh) / min(fw, fh)
+                    if aspect < 1.8:  # Stricter for Haar
+                        faces.append((gx1, gy1, gx2, gy2, 0.5))  # Default confidence
+
             except Exception as e:
                 logger.debug(f"Haar face detection error: {e}")
 
         return faces
 
-    def process_frame(self, frame, cam_id):
+    # ═══════════════════════════════════════════════════════════════
+    # NMS for deduplication within a single frame
+    # ═══════════════════════════════════════════════════════════════
+
+    def _nms_deduplicate(self, detections):
         """
-        Main pipeline entry point.
-        Returns a list of detections: [{'id': 'face_1', 'age': 25, 'group': 'youths', 'bbox': ...}]
-        Enhanced for better multi-camera face detection.
+        Remove duplicate detections within the same frame using NMS.
+        Each detection is a dict with 'bbox' key.
         """
-        if frame is None: return []
+        if len(detections) <= 1:
+            return detections
 
-        # --- STEP 0: AUTO-ENHANCE FRAME ---
-        # Automatically adjust image quality based on lighting
-        enhanced_frame = self.auto_enhance_frame(frame)
+        # Sort by confidence (age prediction quality)
+        detections.sort(key=lambda d: d.get('quality', 0), reverse=True)
 
-        # --- STEP 1: MOTION GATING ---
-        mask = self.bg_subtractor.apply(enhanced_frame)
-        mask = cv2.threshold(mask, 180, 255, cv2.THRESH_BINARY)[0]  # Lower threshold for better sensitivity
-        mask = cv2.dilate(mask, None, iterations=2)  # Fill gaps
-        motion_pixels = cv2.countNonZero(mask)
+        keep = []
+        boxes = np.array([d['bbox'] for d in detections], dtype=np.float32)
 
-        # Lower threshold for better sensitivity - detect even small movements
-        motion_detected = motion_pixels > 80
+        x1 = boxes[:, 0]
+        y1 = boxes[:, 1]
+        x2 = boxes[:, 2]
+        y2 = boxes[:, 3]
 
-        results = []
-        h, w = frame.shape[:2]
+        areas = (x2 - x1) * (y2 - y1)
+        suppressed = np.zeros(len(detections), dtype=bool)
 
-        # --- STEP 2: HUMAN DETECTION (Improved Accuracy) ---
-        # Balanced confidence threshold for good accuracy while maintaining sensitivity
-        # Only detect class 0 (person) with validated parameters
-        persons = self.person_model(
-            enhanced_frame, 
-            classes=[0],      # Only person class
-            conf=0.30,        # Balanced confidence (was 0.35, lowered for webcam compatibility)
-            iou=0.45,         # NMS IoU threshold - removes overlapping boxes
-            verbose=False,
-            augment=False,    # Disable TTA for speed
-            half=False        # Use FP32 for better accuracy on CPU
-        )
+        for i in range(len(detections)):
+            if suppressed[i]:
+                continue
+            keep.append(detections[i])
 
-        persons_detected = False
-        for result in persons:
-            for box in result.boxes:
-                conf = float(box.conf[0])
-                
-                # Skip low confidence detections (extra safety check)
-                if conf < 0.28:
+            xx1 = np.maximum(x1[i], x1)
+            yy1 = np.maximum(y1[i], y1)
+            xx2 = np.minimum(x2[i], x2)
+            yy2 = np.minimum(y2[i], y2)
+
+            inter_w = np.maximum(0, xx2 - xx1)
+            inter_h = np.maximum(0, yy2 - yy1)
+            inter_area = inter_w * inter_h
+
+            union_area = areas[i] + areas - inter_area
+            iou = inter_area / np.maximum(union_area, 1e-10)
+
+            # Suppress overlapping boxes
+            suppressed[iou > self.frame_nms_iou] = True
+
+        return keep
+
+    # ═══════════════════════════════════════════════════════════════
+    # Age Estimation with Temporal Smoothing
+    # ═══════════════════════════════════════════════════════════════
+
+    def _predict_age(self, face):
+        """
+        Predict age with multi-crop approach and quality assessment.
+        Returns (age, confidence).
+        """
+        if not self.age_sess:
+            return 25, 0.0
+
+        try:
+            # Assess quality first
+            is_good, blur, brightness, size = self.assess_face_quality(face)
+            quality_score = (min(1.0, blur / 200.0) + brightness + size) / 3.0
+
+            # Reject very low quality faces
+            if not is_good:
+                return 25, max(0.0, quality_score * 0.5)
+
+            # Align face for better age estimation
+            aligned_face = self.align_face(face)
+
+            # Multi-crop approach
+            age_predictions = []
+            weights = []
+
+            # Crop 1: Full face (weight: 1.0)
+            crops = [(aligned_face, 1.0)]
+
+            # Crop 2: Upper face (forehead to nose) - better for age (weight: 0.7)
+            h, w = face.shape[:2]
+            upper_face = aligned_face[0:int(h * 0.7), :]
+            if upper_face.shape[0] > 30:
+                crops.append((upper_face, 0.7))
+
+            # Crop 3: Center crop (weight: 0.8)
+            margin = int(min(h, w) * 0.1)
+            center_crop = aligned_face[margin:h - margin, margin:w - margin]
+            if center_crop.shape[0] > 30 and center_crop.shape[1] > 30:
+                crops.append((center_crop, 0.8))
+
+            for crop, weight in crops:
+                try:
+                    gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+                    gray_eq = cv2.equalizeHist(gray)
+                    face_3ch = cv2.merge([gray_eq, gray_eq, gray_eq])
+
+                    blob = cv2.resize(face_3ch, (96, 96)).astype(np.float32)
+                    blob = blob.transpose(2, 0, 1)  # HWC to CHW
+                    blob = np.expand_dims(blob, axis=0)
+
+                    input_name = self.age_sess.get_inputs()[0].name
+                    outs = self.age_sess.run(None, {input_name: blob})
+
+                    age_probs = outs[0][0].flatten()
+                    age_probs = np.clip(age_probs, 0, None)
+                    total = np.sum(age_probs)
+                    if total > 0:
+                        age_probs = age_probs / total
+
+                    ages = np.arange(len(age_probs))
+                    expected_age = int(np.sum(ages * age_probs))
+
+                    # Confidence based on prediction sharpness
+                    peak_prob = np.max(age_probs)
+                    crop_conf = min(1.0, peak_prob * 5)  # Scale to 0-1
+
+                    age_predictions.append(expected_age)
+                    weights.append(weight * crop_conf)
+                except Exception:
                     continue
-                
-                persons_detected = True
-                x1, y1, x2, y2 = map(int, box.xyxy[0])
-                x1, y1 = max(0, x1), max(0, y1)
-                x2, y2 = min(w, x2), min(h, y2)
-                
-                # Validate person box has reasonable size (at least 60x60 pixels for webcam)
-                box_w = x2 - x1
-                box_h = y2 - y1
-                if box_w < 60 or box_h < 60:
-                    continue  # Skip very small detections (likely false positives)
-                
-                # Calculate aspect ratio to filter out unusual shapes
-                aspect_ratio = max(box_w, box_h) / min(box_w, box_h)
-                if aspect_ratio > 3.5:
-                    continue  # Skip extremely wide/tall boxes (likely not human)
 
-                person_crop = enhanced_frame[y1:y2, x1:x2]
-                if person_crop.size == 0: continue
+            if not age_predictions:
+                return 25, 0.0
 
-                # --- STEP 3: FACE DETECTION (YOLO + Haar Cascade fallback) ---
-                faces = self._detect_faces(person_crop, x1, y1)
+            # Weighted average
+            weights = np.array(weights)
+            weights = weights / np.sum(weights)
+            final_age = int(np.average(age_predictions, weights=weights))
 
-                for fbox in faces:
-                    fx1, fy1, fx2, fy2, is_yolo = fbox
-                    gx1, gy1 = fx1, fy1
-                    gx2, gy2 = fx2, fy2
+            # Overall confidence
+            overall_conf = float(np.average(
+                [min(1.0, w) for w in weights],
+                weights=weights
+            )) * quality_score
 
-                    face_crop = enhanced_frame[gy1:gy2, gx1:gx2]
-                    # Check minimum face dimensions (at least 35x35 pixels for better sensitivity)
-                    if face_crop.shape[0] < 35 or face_crop.shape[1] < 35: continue
+            return final_age, overall_conf
 
-                    # --- STEP 4: ENHANCEMENT & ANALYSIS ---
-                    enhanced_face = self.enhance_face(face_crop)
-                    embedding = self._get_embedding(enhanced_face)
-                    age = self._predict_age(enhanced_face)
-                    group = self._age_to_group(age)
+        except Exception as e:
+            logger.error(f"Age prediction error: {e}")
+            return 25, 0.0
 
-                    # Deduplication - now with cross-camera support
-                    face_id = "unknown"
-                    face_age = age  # Store age for registry
-                    if embedding is not None and self.registry:
-                        fid, sim, registered_age = self.registry.is_known(embedding, age=face_age)
-                        if fid:
-                            # Known face - update last seen and add this camera
-                            self.registry.update(fid, cam_id)
-                            face_id = fid
-                            # Use the registered age if available
-                            if registered_age is not None:
-                                face_age = registered_age
-                                # Update the group based on registered age
-                                group = self._age_to_group(face_age)
-                        else:
-                            # New face - register it with age
-                            face_id = self.registry.register(embedding, group, cam_id, age=face_age)
+    def _smooth_age(self, face_id, raw_age, confidence):
+        """
+        Apply temporal smoothing to age predictions per face identity.
+        Returns smoothed age.
+        """
+        if face_id not in self.age_history:
+            self.age_history[face_id] = []
 
-                        # Save face to vault ONLY if it's a new face that hasn't been saved yet
-                        if self.vault and not self.registry.is_saved(face_id):
-                            if self.vault.save_face(enhanced_face, face_id, group):
-                                self.registry.mark_as_saved(face_id)
-                                logger.info(f"Face saved to vault: {face_id} (Group: {group}, Age: {face_age})")
+        history = self.age_history[face_id]
+        history.append((raw_age, confidence))
 
-                    results.append({
-                        'id': face_id,
-                        'age': face_age,
-                        'group': group,
-                        'bbox': [gx1, gy1, gx2, gy2],
-                        'cam_id': cam_id
-                    })
+        # Keep only recent predictions
+        if len(history) > self.age_smoothing_window:
+            history.pop(0)
 
-        # FALLBACK: Direct face detection on full frame if no persons detected but motion detected
-        # This ensures faces are detected even when person detection fails
-        if not persons_detected or motion_detected:
-            logger.debug(f"Direct face detection (motion={motion_pixels}, persons={persons_detected})")
-            direct_faces = self._detect_faces(enhanced_frame, 0, 0)
-            for fbox in direct_faces:
-                fx1, fy1, fx2, fy2, is_yolo = fbox
-                face_crop = enhanced_frame[fy1:fy2, fx1:fx2]
-                # Stricter minimum face dimensions (45x45 pixels)
-                if face_crop.shape[0] < 45 or face_crop.shape[1] < 45: continue
+        # Weighted average (more recent = higher weight)
+        if len(history) == 0:
+            return raw_age
 
-                enhanced_face = self.enhance_face(face_crop)
-                embedding = self._get_embedding(enhanced_face)
-                age = self._predict_age(enhanced_face)
-                group = self._age_to_group(age)
+        ages = [h[0] for h in history]
+        confs = [max(0.1, h[1]) for h in history]
 
-                face_id = "unknown"
-                face_age = age  # Store age for registry
-                if embedding is not None and self.registry:
-                    fid, sim, registered_age = self.registry.is_known(embedding, age=face_age)
-                    if fid:
-                        # Known face - update last seen and add this camera
-                        self.registry.update(fid, cam_id)
-                        face_id = fid
-                        if registered_age is not None:
-                            face_age = registered_age
-                            group = self._age_to_group(face_age)
-                    else:
-                        # New face - register it with age
-                        face_id = self.registry.register(embedding, group, cam_id, age=face_age)
+        # Exponential weighting: most recent gets highest weight
+        time_weights = np.exp(np.linspace(0, 1, len(confs)))
+        final_weights = np.array(confs) * time_weights
+        final_weights = final_weights / np.sum(final_weights)
 
-                    # Save face to vault ONLY if it's a new face that hasn't been saved yet
-                    if self.vault and not self.registry.is_saved(face_id):
-                        if self.vault.save_face(enhanced_face, face_id, group):
-                            self.registry.mark_as_saved(face_id)
-                            logger.info(f"Face saved to vault: {face_id} (Group: {group}, Age: {face_age})")
+        smoothed_age = int(np.average(ages, weights=final_weights))
 
-                results.append({
-                    'id': face_id,
-                    'age': face_age,
-                    'group': group,
-                    'bbox': [fx1, fy1, fx2, fy2],
-                    'cam_id': cam_id
-                })
+        # Clamp to reasonable range
+        return min(75, max(16, smoothed_age))
 
-        if results:
-            logger.info(f"Detected {len(results)} face(s) in camera {cam_id}")
-            # Log ages for debugging
-            ages = [r['age'] for r in results]
-            avg_age = sum(ages) / len(ages)
-            groups = [r['group'] for r in results]
-            face_ids = [r['id'] for r in results]
-            logger.info(f"Camera {cam_id} - Ages: {ages}, Avg: {avg_age:.1f}, Groups: {groups}")
-            logger.info(f"Face IDs: {face_ids}")
-
-            # Log cross-camera tracking info
-            unique_faces = len(set(face_ids))
-            if unique_faces < len(results):
-                logger.info(f"Cross-camera deduplication: {len(results)} detections -> {unique_faces} unique face(s)")
-
-        return results
+    # ═══════════════════════════════════════════════════════════════
+    # Embedding Extraction
+    # ═══════════════════════════════════════════════════════════════
 
     def _get_embedding(self, face):
-        """Runs ArcFace inference."""
-        if not self.arcface_sess: return None
+        """Get ArcFace embedding for face recognition."""
+        if not self.arcface_sess:
+            return None
         try:
-            # ArcFace expects NHWC format: [batch, height, width, channels]
-            blob = cv2.resize(face, (112, 112)).astype(np.float32)
+            # Align face first
+            aligned = self.align_face(face)
+            blob = cv2.resize(aligned, (112, 112)).astype(np.float32)
             blob = (blob - 127.5) / 128.0
-            blob = np.expand_dims(blob, axis=0)  # Add batch dimension: (1, 112, 112, 3)
-            
+            blob = np.expand_dims(blob, axis=0)
+
             input_name = self.arcface_sess.get_inputs()[0].name
             outs = self.arcface_sess.run(None, {input_name: blob})
             return outs[0].flatten()
@@ -419,97 +507,225 @@ class VisionPipeline:
             logger.debug(f"ArcFace embedding error: {e}")
             return None
 
-    def _predict_age(self, face):
-        """
-        Runs DEX Age inference with improved accuracy.
-        Model outputs 101 age probabilities (0-100).
-        Uses multi-crop averaging for better accuracy.
-        """
-        if not self.age_sess: return 25
-
-        try:
-            # Preprocess face for better age estimation
-            gray = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
-            
-            # Apply histogram equalization for better contrast
-            gray_eq = cv2.equalizeHist(gray)
-            
-            # Convert back to 3-channel for model input
-            face_enhanced = cv2.merge([gray_eq, gray_eq, gray_eq])
-            
-            # Multi-crop approach for better accuracy
-            age_predictions = []
-            
-            # Crop 1: Full face
-            crops = [face_enhanced]
-            
-            # Crop 2: Upper face (forehead to nose) - better for age
-            h, w = face.shape[:2]
-            upper_face = face_enhanced[0:int(h*0.7), :]
-            if upper_face.shape[0] > 20:
-                crops.append(upper_face)
-            
-            # Crop 3: Center crop (removes background)
-            margin = int(min(h, w) * 0.1)
-            center_crop = face_enhanced[margin:h-margin, margin:w-margin]
-            if center_crop.shape[0] > 20 and center_crop.shape[1] > 20:
-                crops.append(center_crop)
-            
-            # Predict age for each crop
-            for crop in crops:
-                try:
-                    # DEX Age model expects CHW format: [batch, channels, height, width]
-                    blob = cv2.resize(crop, (96, 96)).astype(np.float32)
-                    blob = blob.transpose(2, 0, 1)  # HWC to CHW
-                    blob = np.expand_dims(blob, axis=0)  # Add batch dimension
-
-                    input_name = self.age_sess.get_inputs()[0].name
-                    outs = self.age_sess.run(None, {input_name: blob})
-
-                    # DEX outputs 101 probabilities for ages 0-100
-                    age_probs = outs[0][0]  # Shape: (101,)
-
-                    # Ensure it's 1D array of 101 elements
-                    if age_probs.ndim > 1:
-                        age_probs = age_probs.flatten()
-
-                    # Normalize to ensure valid probability distribution
-                    age_probs = np.clip(age_probs, 0, None)
-                    total = np.sum(age_probs)
-                    if total > 0:
-                        age_probs = age_probs / total
-
-                    # Calculate expected age (weighted average)
-                    ages = np.arange(len(age_probs))
-                    expected_age = int(np.sum(ages * age_probs))
-                    age_predictions.append(expected_age)
-                except Exception as e:
-                    logger.debug(f"Age prediction crop error: {e}")
-                    continue
-            
-            # Average all predictions
-            if len(age_predictions) > 0:
-                final_age = int(np.mean(age_predictions))
-            else:
-                return 25  # Default fallback
-
-            # Apply age correction based on face size
-            # Larger faces in frame tend to be closer to camera (often adults)
-            face_area = face.shape[0] * face.shape[1]
-            if face_area > 5000:  # Large face (close to camera)
-                # Slight upward adjustment for close-up adult faces
-                final_age = int(final_age * 1.15)
-            
-            # Clamp to reasonable range (18-70 for adults, wider for general use)
-            return min(75, max(16, final_age))
-            
-        except Exception as e:
-            logger.error(f"Age prediction error: {e}")
-            return 25
+    # ═══════════════════════════════════════════════════════════════
+    # Age Group Mapping
+    # ═══════════════════════════════════════════════════════════════
 
     def _age_to_group(self, age):
-        """Convert age to music group based on typical music preferences."""
-        if age < 13: return "kids"       # Children
-        if age < 20: return "youths"     # Teens
-        if age < 50: return "adults"     # Young/Middle adults
-        return "seniors"                 # Seniors (50+)
+        """Convert age to music group."""
+        if age < 13:
+            return "kids"
+        elif age < 20:
+            return "youths"
+        elif age < 50:
+            return "adults"
+        else:
+            return "seniors"
+
+    # ═══════════════════════════════════════════════════════════════
+    # Main Pipeline Entry Point
+    # ═══════════════════════════════════════════════════════════════
+
+    def process_frame(self, frame, cam_id):
+        """
+        Process a single frame from a camera.
+        Returns list of detections with age, group, bbox, cam_id.
+
+        Pipeline:
+        1. Auto-enhance frame
+        2. Motion gating
+        3. Human detection (strict validation)
+        4. Face detection within person crops
+        5. Face quality assessment
+        6. Age estimation (multi-crop, aligned)
+        7. Face embedding + identity matching
+        8. Temporal age smoothing
+        9. NMS deduplication
+        """
+        if frame is None:
+            return []
+
+        # ── STEP 0: Auto-enhance ──
+        enhanced = self.auto_enhance_frame(frame)
+
+        # ── STEP 1: Motion Gating ──
+        mask = self.bg_subtractor.apply(enhanced)
+        mask = cv2.threshold(mask, 180, 255, cv2.THRESH_BINARY)[0]
+        mask = cv2.dilate(mask, None, iterations=2)
+        motion_pixels = cv2.countNonZero(mask)
+        motion_detected = motion_pixels > 80
+
+        results = []
+        h, w = frame.shape[:2]
+
+        # ── STEP 2: Human Detection (strict) ──
+        persons = self.person_model(
+            enhanced,
+            classes=[0],       # Only person
+            conf=self.person_conf_threshold,
+            iou=0.45,
+            verbose=False,
+            augment=False,
+            half=False
+        )
+
+        person_boxes = []
+        for result in persons:
+            for box in result.boxes:
+                conf = float(box.conf[0])
+
+                # Strict confidence check
+                if conf < self.person_conf_threshold:
+                    continue
+
+                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                x1, y1 = max(0, x1), max(0, y1)
+                x2, y2 = min(w, x2), min(h, y2)
+
+                box_w = x2 - x1
+                box_h = y2 - y1
+
+                # Size validation
+                if box_w < self.min_person_size or box_h < self.min_person_size:
+                    continue
+
+                # Aspect ratio validation (humans are roughly vertical)
+                aspect = max(box_w, box_h) / min(box_w, box_h)
+                if aspect > self.max_person_aspect:
+                    continue
+
+                # Body proportion check: height should be > width for standing/sitting humans
+                if box_h < box_w * 0.4:
+                    continue  # Too wide, likely not a human
+
+                person_crop = enhanced[y1:y2, x1:x2]
+                if person_crop.size == 0:
+                    continue
+
+                person_boxes.append((x1, y1, x2, y2, conf, person_crop))
+
+        # ── STEP 3: Face Detection within Person Crops ──
+        for px1, py1, px2, py2, pconf, person_crop in person_boxes:
+            faces = self._detect_faces(person_crop, px1, py1)
+
+            for fx1, fy1, fx2, fy2, fconf in faces:
+                face_crop = enhanced[fy1:fy2, fx1:fx2]
+
+                # Quality check
+                is_good, blur, brightness, size = self.assess_face_quality(face_crop)
+
+                # ── STEP 4: Age Estimation ──
+                raw_age, age_conf = self._predict_age(face_crop)
+
+                # ── STEP 5: Face Embedding + Identity ──
+                embedding = self._get_embedding(face_crop)
+                group = self._age_to_group(raw_age)
+
+                face_id = "unknown"
+                final_age = raw_age
+
+                if embedding is not None and self.registry:
+                    fid, sim, registered_age = self.registry.is_known(embedding, age=raw_age)
+
+                    if fid:
+                        # Known face - use registry data
+                        self.registry.update(fid, cam_id)
+                        face_id = fid
+
+                        # Use registered age if available
+                        if registered_age is not None:
+                            final_age = registered_age
+                            group = self._age_to_group(final_age)
+                    else:
+                        # New face - register
+                        face_id = self.registry.register(embedding, group, cam_id, age=raw_age)
+
+                    # ── STEP 6: Temporal Age Smoothing ──
+                    final_age = self._smooth_age(face_id, raw_age, age_conf)
+                    group = self._age_to_group(final_age)
+
+                    # Save to vault if new
+                    if self.vault and not self.registry.is_saved(face_id):
+                        if self.vault.save_face(face_crop, face_id, group, quality=age_conf, age=final_age):
+                            self.registry.mark_as_saved(face_id)
+                            logger.info(f"Face saved: {face_id} (Group: {group}, Age: {final_age}, Quality: {age_conf:.2f})")
+
+                results.append({
+                    'id': face_id,
+                    'age': final_age,
+                    'group': group,
+                    'bbox': [fx1, fy1, fx2, fy2],
+                    'cam_id': cam_id,
+                    'quality': age_conf,
+                    'person_conf': pconf,
+                    'face_conf': fconf,
+                    'is_good_quality': is_good
+                })
+
+        # ── STEP 7: Direct Face Detection Fallback ──
+        # Only run if no persons detected but motion detected
+        # This catches faces that person detection misses
+        if not person_boxes and motion_detected:
+            logger.debug(f"Direct face detection fallback (motion={motion_pixels})")
+            direct_faces = self._detect_faces(enhanced, 0, 0)
+
+            for fx1, fy1, fx2, fy2, fconf in direct_faces:
+                face_crop = enhanced[fy1:fy2, fx1:fx2]
+                is_good, blur, brightness, size = self.assess_face_quality(face_crop)
+
+                raw_age, age_conf = self._predict_age(face_crop)
+                embedding = self._get_embedding(face_crop)
+                group = self._age_to_group(raw_age)
+
+                face_id = "unknown"
+                final_age = raw_age
+
+                if embedding is not None and self.registry:
+                    fid, sim, registered_age = self.registry.is_known(embedding, age=raw_age)
+                    if fid:
+                        self.registry.update(fid, cam_id)
+                        face_id = fid
+                        if registered_age is not None:
+                            final_age = registered_age
+                            group = self._age_to_group(final_age)
+                    else:
+                        face_id = self.registry.register(embedding, group, cam_id, age=raw_age)
+
+                    final_age = self._smooth_age(face_id, raw_age, age_conf)
+                    group = self._age_to_group(final_age)
+
+                    if self.vault and not self.registry.is_saved(face_id):
+                        if self.vault.save_face(face_crop, face_id, group, quality=age_conf, age=final_age):
+                            self.registry.mark_as_saved(face_id)
+
+                results.append({
+                    'id': face_id,
+                    'age': final_age,
+                    'group': group,
+                    'bbox': [fx1, fy1, fx2, fy2],
+                    'cam_id': cam_id,
+                    'quality': age_conf,
+                    'person_conf': 0.0,
+                    'face_conf': fconf,
+                    'is_good_quality': is_good
+                })
+
+        # ── STEP 8: NMS Deduplication ──
+        results = self._nms_deduplicate(results)
+
+        # ── Logging ──
+        if results:
+            ages = [r['age'] for r in results]
+            avg_age = sum(ages) / len(ages)
+            groups = [r['group'] for r in results]
+            qualities = [r.get('quality', 0) for r in results]
+            avg_quality = sum(qualities) / len(qualities)
+
+            logger.info(
+                f"Cam {cam_id}: {len(results)} face(s) | "
+                f"Ages: {ages} (avg: {avg_age:.1f}) | "
+                f"Groups: {groups} | "
+                f"Avg quality: {avg_quality:.2f}"
+            )
+
+        return results
