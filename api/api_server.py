@@ -77,18 +77,19 @@ manager = ConnectionManager()
 def music_handover_loop():
     """
     Background thread that monitors song playback position.
-    - At 90-99%: continuously averages detected ages from vibe_engine
-    - At ~99%: immediately queues next song (zero gap)
+    - At 90%+: collects age samples continuously
+    - At 92%: prepares handover (locks in next vibe)
+    - At song end (percent drops from high to low): immediately queues next song
     - If vibe changed: switches folder; if same: continues current folder
-    - Runs every 200ms for responsive transitions
+    - Runs every 100ms for instant response
     """
     global vibe_engine, player
 
-    # Track which song we're monitoring (detect new songs)
     last_monitored_song = None
-    # Age samples collected during 90-99% window
     handover_age_samples = []
     handover_prepared = False
+    last_percent = 0
+    song_ended = False
 
     logger.info("Music handover monitor started")
 
@@ -103,44 +104,40 @@ def music_handover_loop():
             percent_pos = status.get('percent', 0)
             current_group = status.get('group', 'adults')
 
-            # Detect new song started — reset handover state
+            # ── Detect new song started ──
             if current_song != last_monitored_song and current_song != 'None':
                 last_monitored_song = current_song
                 handover_age_samples = []
                 handover_prepared = False
-                logger.debug(f"New song detected: {current_song}, resetting handover")
+                last_percent = 0
+                song_ended = False
+                logger.debug(f"New song: {current_song}")
 
             if current_song == 'None':
-                time.sleep(0.5)
+                time.sleep(0.2)
                 continue
 
-            # ── 90-99% window: collect age samples ──
-            if 90 <= percent_pos <= 99:
-                # Sample current average age from vibe engine
+            # ── Detect song ended (percent dropped from high to low) ──
+            # This catches the case where MPV jumps from 91% → 100% → 0%
+            if last_percent > 85 and percent_pos < 10 and not song_ended:
+                song_ended = True
+                logger.info(f"Song ended at {last_percent:.0f}% — triggering handover")
+
+                # Collect final age sample
                 avg_age = vibe_engine.average_age
                 if avg_age and avg_age > 0:
                     handover_age_samples.append(avg_age)
 
-                # Prepare handover once at 92%
-                if not handover_prepared and percent_pos >= 92:
-                    handover_prepared = True
+                # Prepare if not already done
+                if not handover_prepared:
                     vibe_engine.prepare_handover()
-                    logger.info(f"Handover prepared at {percent_pos:.0f}% — collected {len(handover_age_samples)} age samples")
+                    handover_prepared = True
 
-            # ── ~99%: queue next song IMMEDIATELY (zero gap) ──
-            if percent_pos >= 98.5 and handover_prepared:
-                # Calculate average age from samples collected during 90-99% window
-                if handover_age_samples:
-                    avg_handover_age = int(sum(handover_age_samples) / len(handover_age_samples))
-                    logger.info(f"Handover age average: {avg_handover_age} (from {len(handover_age_samples)} samples)")
-                else:
-                    avg_handover_age = vibe_engine.average_age
-
-                # Commit handover — returns target group
+                # Commit and queue next song
                 target_group = vibe_engine.commit_handover()
 
                 if target_group != current_group:
-                    logger.info(f"HANDOVER: Switching {current_group} -> {target_group}")
+                    logger.info(f"HANDOVER: {current_group} -> {target_group}")
                     player.next(target_group)
                 else:
                     logger.info(f"HANDOVER: Continuing {target_group}")
@@ -149,10 +146,27 @@ def music_handover_loop():
                 # Reset for next song
                 handover_age_samples = []
                 handover_prepared = False
-                last_monitored_song = None  # Force re-detect on next iteration
+                last_monitored_song = None  # Force re-detect
+                last_percent = 0
+                time.sleep(0.5)  # Let new song start
+                continue
 
-            # Poll every 200ms for responsive transitions
-            time.sleep(0.2)
+            # ── 90%+ window: collect age samples ──
+            if percent_pos >= 90:
+                avg_age = vibe_engine.average_age
+                if avg_age and avg_age > 0:
+                    handover_age_samples.append(avg_age)
+
+                # Prepare handover at 92%
+                if not handover_prepared and percent_pos >= 92:
+                    handover_prepared = True
+                    vibe_engine.prepare_handover()
+                    logger.info(f"Handover prepared at {percent_pos:.0f}% ({len(handover_age_samples)} samples)")
+
+            last_percent = percent_pos
+
+            # Poll every 100ms for instant response
+            time.sleep(0.1)
 
         except Exception as e:
             logger.error(f"Music handover error: {e}")
