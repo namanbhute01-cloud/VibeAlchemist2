@@ -103,18 +103,27 @@ pull_code() {
         return 0
     fi
 
-    # Stash local changes (preserve .env and data)
-    git stash --include-untracked 2>/dev/null || true
-
-    # Pull latest
-    if git pull origin main 2>&1; then
-        log_success "Code updated"
-    else
-        log_warn "Git pull failed (may already be up to date)"
+    # Save .env locally (never commit it, never stash it)
+    local env_backup=""
+    if [ -f "$ENV_FILE" ]; then
+        env_backup=$(cat "$ENV_FILE")
     fi
 
-    # Restore stashed changes
-    git stash pop 2>/dev/null || true
+    # Pull latest — use --ff-only to avoid merge conflicts
+    if git fetch origin main 2>&1; then
+        git reset --hard origin/main 2>&1
+        log_success "Code updated"
+    else
+        log_warn "Git fetch failed (may already be up to date)"
+    fi
+
+    # Restore .env (preserve local config)
+    if [ -n "$env_backup" ]; then
+        echo "$env_backup" > "$ENV_FILE"
+    fi
+
+    # Clean up any stash entries
+    git stash clear 2>/dev/null || true
 }
 
 # ═══════════════════════════════════════════════════════════════
