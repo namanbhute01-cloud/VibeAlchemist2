@@ -27,7 +27,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Install system dependencies (OpenCV, display libs, curl for healthcheck)
+# Install system dependencies (OpenCV, display libs, curl, g++ for insightface)
 # Note: libgl1 replaced libgl1-mesa-glx in Debian Trixie+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
@@ -37,6 +37,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrender-dev \
     libgomp1 \
     curl \
+    g++ \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy and install Python dependencies
