@@ -439,7 +439,33 @@ class VisionPipeline:
             # Weighted average
             weights = np.array(weights)
             weights = weights / np.sum(weights)
-            final_age = int(np.average(age_predictions, weights=weights))
+            raw_age = int(np.average(age_predictions, weights=weights))
+
+            # ── Age Correction Factor ──
+            # DEX model systematically underestimates adult ages.
+            # Apply correction based on detected age range:
+            if raw_age < 12:
+                # Children: slight upward correction
+                corrected_age = int(raw_age * 1.1)
+            elif raw_age < 18:
+                # Teens: moderate correction
+                corrected_age = int(raw_age * 1.15)
+            elif raw_age < 30:
+                # Young adults: significant correction (most common error range)
+                # DEX often detects 25-40 year olds as 18-25
+                corrected_age = int(raw_age * 1.35)
+            elif raw_age < 45:
+                # Middle adults: moderate correction
+                corrected_age = int(raw_age * 1.2)
+            elif raw_age < 60:
+                # Older adults: slight correction
+                corrected_age = int(raw_age * 1.1)
+            else:
+                # Seniors: minimal correction
+                corrected_age = int(raw_age * 1.05)
+
+            # Clamp to reasonable range
+            final_age = min(80, max(16, corrected_age))
 
             # Overall confidence
             overall_conf = float(np.average(

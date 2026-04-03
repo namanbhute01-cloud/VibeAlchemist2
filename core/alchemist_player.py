@@ -180,12 +180,29 @@ class AlchemistPlayer:
             logger.warning(f"No songs in {group}")
             return
 
+        # Pick a song NOT in recent history (avoid repeats)
+        recent_files = set(str(s) for s in list(self.song_history)[-5:])
+        available = [s for s in songs if str(s) not in recent_files]
+        if not available:
+            available = songs  # Fallback: all songs
+
         if self.shuffle_mode:
-            next_song = random.choice(songs)
+            next_song = random.choice(available)
         else:
-            next_song = songs[0]
+            # Sequential: pick next song not in history
+            next_song = available[0]
 
         self.play(str(next_song))
+
+    def continue_current_folder(self):
+        """
+        Play next song from the CURRENT folder.
+        Used when a song finishes — keeps playing from same folder
+        until the vibe engine signals a group change.
+        """
+        with self._lock:
+            folder = self.current_folder
+        self.next(folder)
 
     def prev(self):
         """Plays the previous song from history."""

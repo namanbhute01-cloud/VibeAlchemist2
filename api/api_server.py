@@ -166,6 +166,7 @@ def process_detections(detections, cam_id, pipeline, vibe_engine, player, face_v
     - Color-coded bounding boxes (green=good, yellow=low quality)
     - Shows confidence score on label
     - Detection counter shows total + good-quality count
+    - 95% handover: prepares next vibe, continues current folder if no change
     """
     global last_music_change
 
@@ -192,16 +193,38 @@ def process_detections(detections, cam_id, pipeline, vibe_engine, player, face_v
     if low_quality:
         logger.debug(f"Cam {cam_id}: {len(low_quality)} low-quality detection(s) skipped for vibe")
 
-    # Music playback based on good-quality detections
-    if good_detections and player:
+    # ── Music Playback with 95% Handover ──
+    if good_detections and player and vibe_engine:
         current_time = time.time()
-        target_group = vibe_engine.get_current_group() if vibe_engine else "adults"
-
+        target_group = vibe_engine.get_current_group()
         current_status = player.get_status()
         current_group = current_status.get('group', 'adults')
         current_song = current_status.get('song', 'None')
         is_paused = current_status.get('paused', False)
+        percent_pos = current_status.get('percent', 0)
 
+        # ── 95% Handover: prepare next vibe ──
+        if 92 <= percent_pos <= 96:
+            vibe_engine.prepare_handover()
+
+        # ── Song completion: commit handover and continue ──
+        if current_song != 'None' and percent_pos < 5 and last_music_change > 0:
+            # Song just finished (position reset to near 0)
+            target = vibe_engine.commit_handover()
+            if target != current_group:
+                # Vibe changed — switch to new folder
+                logger.info(f"Handover: Switching music {current_group} -> {target}")
+                player.next(target)
+            else:
+                # Same vibe — continue playing from current folder
+                logger.info(f"Handover: Continuing {target} folder")
+                player.continue_current_folder()
+            if is_paused:
+                player.toggle_pause()
+            last_music_change = current_time
+            return  # Handled song transition, skip rest
+
+        # ── Normal music selection ──
         should_change = (
             target_group != current_group or
             current_song == 'None' or
@@ -209,7 +232,7 @@ def process_detections(detections, cam_id, pipeline, vibe_engine, player, face_v
         )
 
         if should_change and target_group != current_group:
-            logger.info(f"Music: {target_group} (avg age: {vibe_engine.average_age if vibe_engine else 25})")
+            logger.info(f"Music: {target_group} (avg age: {vibe_engine.average_age})")
             player.next(target_group)
             if is_paused:
                 player.toggle_pause()

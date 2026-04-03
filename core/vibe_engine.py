@@ -212,21 +212,54 @@ class VibeEngine:
                 return "seniors"
 
     def prepare_handover(self):
-        """Called when music player hits 95% completion."""
-        next_vibe = self.get_dominant_vibe()
-        self.next_vibe = next_vibe
-        logger.info(
-            f"Handover: {self.current_vibe} -> {self.next_vibe} | "
-            f"Avg age: {self.average_age}"
-        )
-        return next_vibe
+        """
+        Called when music player hits ~95% completion.
+        Locks in the next vibe based on recent quality-weighted detections.
+        Returns the target group for the next song.
+        """
+        with self.lock:
+            # Determine next vibe from recent quality-weighted detections
+            next_vibe = self.get_current_group()
+
+            # Only prepare handover if vibe is different from current
+            if next_vibe != self.current_vibe:
+                self.next_vibe = next_vibe
+                logger.info(
+                    f"Handover Prepared (95%): {self.current_vibe} -> {self.next_vibe} | "
+                    f"Avg age: {self.average_age} | "
+                    f"Active cameras: {len(self.active_cameras)}"
+                )
+            else:
+                # Same vibe — no transition needed, just continue
+                self.next_vibe = None
+                logger.info(
+                    f"Handover Skipped: Still {self.current_vibe} | "
+                    f"Avg age: {self.average_age}"
+                )
+
+            return next_vibe
 
     def commit_handover(self):
-        """Called when track finishes."""
-        if self.next_vibe:
-            self.current_vibe = self.next_vibe
+        """
+        Called when track finishes.
+        If a handover was prepared, updates current vibe.
+        Returns the target group for the next song.
+        """
+        with self.lock:
+            if self.next_vibe and self.next_vibe != self.current_vibe:
+                old_vibe = self.current_vibe
+                self.current_vibe = self.next_vibe
+                logger.info(
+                    f"Handover Committed: {old_vibe} -> {self.current_vibe}"
+                )
+                target = self.current_vibe
+            else:
+                # No vibe change — continue with current folder
+                target = self.current_vibe
+                logger.info(f"Handover: Continuing {target}")
+
             self.next_vibe = None
-        return self.current_vibe
+            return target
 
     def get_state(self, player=None, camera_count=0, face_count=0) -> dict:
         """Return full state for UI/WebSocket."""
