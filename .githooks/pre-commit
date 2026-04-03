@@ -1,0 +1,41 @@
+#!/bin/bash
+# ═══════════════════════════════════════════════════════════════
+# Pre-commit hook: Run linting before each commit
+# 
+# Install: cp .githooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+# ═══════════════════════════════════════════════════════════════
+
+echo "Running pre-commit checks..."
+
+# ── Python Lint ──
+echo "  [1/3] Checking Python syntax..."
+python3 -m py_compile api/routes/*.py core/*.py main.py 2>/dev/null
+if [ $? -ne 0 ]; then
+    echo "  ✗ Python syntax errors found"
+    exit 1
+fi
+echo "  ✓ Python syntax OK"
+
+# ── Frontend Type Check ──
+echo "  [2/3] Checking TypeScript..."
+cd frontend
+npx tsc --noEmit 2>/dev/null
+if [ $? -ne 0 ]; then
+    echo "  ⚠ TypeScript has issues (continuing anyway)"
+fi
+cd ..
+echo "  ✓ TypeScript check done"
+
+# ── .env not staged ──
+echo "  [3/3] Checking for staged .env files..."
+if git diff --cached --name-only | grep -q "^\.env$"; then
+    echo "  ✗ .env file is staged for commit!"
+    echo "    .env contains secrets and should NOT be committed."
+    echo "    Run: git reset HEAD .env"
+    exit 1
+fi
+echo "  ✓ No .env in commit"
+
+echo ""
+echo "✓ All pre-commit checks passed"
+exit 0

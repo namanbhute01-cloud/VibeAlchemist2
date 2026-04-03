@@ -2,6 +2,7 @@ from fastapi import APIRouter, Response, Request
 import os
 import logging
 import json
+from core import env_manager
 
 router = APIRouter(prefix="/cameras", tags=["cameras"])
 logger = logging.getLogger("CamerasRoute")
@@ -25,9 +26,10 @@ async def list_cameras():
         logger.debug(f"Cameras from pool: {sources}")
 
     if not sources:
-        # Fallback to .env parsing
-        env_sources = os.getenv("CAMERA_SOURCES", "0")
-        sources = [s.strip() for s in env_sources.split(",") if s.strip()]
+        # Fallback to .env parsing via env_manager
+        settings = env_manager.load_all_settings()
+        sources_str = settings.get("CAMERA_SOURCES", "0")
+        sources = [s.strip() for s in str(sources_str).split(",") if s.strip()]
         logger.debug(f"Cameras from env: {sources}")
 
     return [
@@ -44,11 +46,12 @@ async def list_cameras():
 @router.get("/config")
 async def get_camera_config():
     """Returns the current camera sources configuration."""
-    env_sources = os.getenv("CAMERA_SOURCES", "0")
-    sources = [s.strip() for s in env_sources.split(",") if s.strip()]
+    settings = env_manager.load_all_settings()
+    sources_str = settings.get("CAMERA_SOURCES", "0")
+    sources = [s.strip() for s in str(sources_str).split(",") if s.strip()]
     return {
         "sources": sources,
-        "raw": env_sources
+        "raw": sources_str
     }
 
 @router.post("/config")
@@ -57,46 +60,24 @@ async def save_camera_config(request: Request):
     try:
         body = await request.json()
         sources = body.get("sources", [])
-        
+
         if not isinstance(sources, list):
             return {"ok": False, "error": "Sources must be a list"}
-        
+
         # Convert list to comma-separated string
         sources_str = ",".join(str(s).strip() for s in sources if str(s).strip())
-        
+
         if not sources_str:
             return {"ok": False, "error": "At least one camera source is required"}
+
+        # Update .env file using env_manager
+        success, error = env_manager.update_setting("CAMERA_SOURCES", sources_str)
         
-        # Update .env file
-        env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env")
-        
-        if not os.path.exists(env_path):
-            return {"ok": False, "error": ".env file not found"}
-        
-        # Read existing .env
-        with open(env_path, "r") as f:
-            lines = f.readlines()
-        
-        # Find and update CAMERA_SOURCES line
-        updated = False
-        new_lines = []
-        for line in lines:
-            if line.startswith("CAMERA_SOURCES="):
-                new_lines.append(f"CAMERA_SOURCES={sources_str}\n")
-                updated = True
-            else:
-                new_lines.append(line)
-        
-        # If not found, add it
-        if not updated:
-            new_lines.append(f"CAMERA_SOURCES={sources_str}\n")
-        
-        # Write back
-        with open(env_path, "w") as f:
-            f.writelines(new_lines)
-        
+        if not success:
+            return {"ok": False, "error": error}
+
         logger.info(f"Camera sources updated: {sources_str}")
-        
+
         # Update camera pool if available
         cam_pool = cam_pool_ref.get("pool")
         if cam_pool:
@@ -112,9 +93,9 @@ async def save_camera_config(request: Request):
                     new_sources.append(s)
             cam_pool.sources = new_sources
             logger.info(f"Camera pool updated with {len(new_sources)} sources")
-        
+
         return {"ok": True, "sources": sources}
-    
+
     except Exception as e:
         logger.error(f"Error saving camera config: {e}")
         return {"ok": False, "error": str(e)}

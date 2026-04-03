@@ -146,7 +146,7 @@ class VisionPipeline:
         """
         Detect faces using YOLO-Face with Haar Cascade fallback.
         Returns list of tuples: (x1, y1, x2, y2, is_yolo_detection)
-        Enhanced for better accuracy with multi-scale detection.
+        Enhanced for better accuracy with stricter validation.
         """
         faces = []
         h, w = person_crop.shape[:2]
@@ -154,12 +154,23 @@ class VisionPipeline:
         # Try YOLO-Face first (more accurate)
         if self.face_model:
             try:
-                # Lower confidence threshold for better detection sensitivity
-                # Use multi-scale inference for better accuracy
-                yolo_faces = self.face_model(person_crop, conf=0.12, iou=0.45, verbose=False)
+                # Higher confidence threshold for better accuracy
+                yolo_faces = self.face_model(
+                    person_crop, 
+                    conf=0.25,    # Higher confidence (was 0.12)
+                    iou=0.40,     # Stricter NMS
+                    verbose=False,
+                    augment=False,
+                    half=False
+                )
                 for box in yolo_faces[0].boxes:
                     fx1, fy1, fx2, fy2 = map(int, box.xyxy[0])
                     conf = float(box.conf[0])
+                    
+                    # Skip low confidence face detections
+                    if conf < 0.25:
+                        continue
+                    
                     # Convert to global coordinates
                     gx1, gy1 = offset_x + fx1, offset_y + fy1
                     gx2, gy2 = offset_x + fx2, offset_y + fy2
@@ -167,8 +178,13 @@ class VisionPipeline:
                     # Validate face crop has reasonable dimensions
                     face_w = gx2 - gx1
                     face_h = gy2 - gy1
-                    if face_w >= 25 and face_h >= 25:  # Minimum face size (reduced for better detection)
-                        faces.append((gx1, gy1, gx2, gy2, True))
+                    
+                    # Minimum face size (40x40 pixels for better accuracy)
+                    if face_w >= 40 and face_h >= 40:
+                        # Check face aspect ratio (faces are roughly square/oval)
+                        face_aspect = max(face_w, face_h) / min(face_w, face_h)
+                        if face_aspect < 2.5:  # Skip extremely non-square boxes
+                            faces.append((gx1, gy1, gx2, gy2, True))
 
                 if faces:
                     logger.debug(f"YOLO detected {len(faces)} face(s)")
@@ -176,34 +192,32 @@ class VisionPipeline:
             except Exception as e:
                 logger.debug(f"YOLO face detection error: {e}")
 
-        # Fallback to Haar Cascade with multiple scales for better detection
+        # Fallback to Haar Cascade with stricter parameters
         if self.haar_cascade is not None and not self.haar_cascade.empty():
             try:
                 gray = cv2.cvtColor(person_crop, cv2.COLOR_BGR2GRAY)
                 
-                # Multi-scale detection with different parameters
-                # First pass: Standard detection
+                # Apply histogram equalization for better detection
+                gray = cv2.equalizeHist(gray)
+                
+                # Stricter Haar cascade detection
                 haar_faces = self.haar_cascade.detectMultiScale(
                     gray,
-                    scaleFactor=1.05,  # More precise scale factor
-                    minNeighbors=2,    # Lower minNeighbors for better sensitivity
-                    minSize=(40, 40)   # Smaller minimum size
+                    scaleFactor=1.08,     # More precise scale
+                    minNeighbors=4,       # Higher = fewer false positives
+                    minSize=(50, 50),     # Larger minimum face
+                    flags=cv2.CASCADE_SCALE_IMAGE
                 )
-                
-                # Second pass: More aggressive detection if nothing found
-                if len(haar_faces) == 0:
-                    haar_faces = self.haar_cascade.detectMultiScale(
-                        gray,
-                        scaleFactor=1.1,
-                        minNeighbors=1,  # Even more sensitive
-                        minSize=(35, 35)
-                    )
                 
                 for (fx, fy, fw, fh) in haar_faces:
                     # Convert to global coordinates
                     gx1, gy1 = offset_x + fx, offset_y + fy
                     gx2, gy2 = offset_x + fx + fw, offset_y + fy + fh
-                    faces.append((gx1, gy1, gx2, gy2, False))
+                    
+                    # Validate face aspect ratio
+                    face_aspect = max(fw, fh) / min(fw, fh)
+                    if face_aspect < 2.0:  # Stricter than YOLO
+                        faces.append((gx1, gy1, gx2, gy2, False))
 
                 if faces:
                     logger.debug(f"Haar detected {len(faces)} face(s)")
@@ -236,17 +250,43 @@ class VisionPipeline:
         results = []
         h, w = frame.shape[:2]
 
-        # --- STEP 2: HUMAN DETECTION ---
-        # Lower confidence threshold for better detection sensitivity
-        persons = self.person_model(enhanced_frame, classes=[0], conf=0.20, verbose=False)
+        # --- STEP 2: HUMAN DETECTION (Improved Accuracy) ---
+        # Balanced confidence threshold for good accuracy while maintaining sensitivity
+        # Only detect class 0 (person) with validated parameters
+        persons = self.person_model(
+            enhanced_frame, 
+            classes=[0],      # Only person class
+            conf=0.30,        # Balanced confidence (was 0.35, lowered for webcam compatibility)
+            iou=0.45,         # NMS IoU threshold - removes overlapping boxes
+            verbose=False,
+            augment=False,    # Disable TTA for speed
+            half=False        # Use FP32 for better accuracy on CPU
+        )
 
         persons_detected = False
         for result in persons:
             for box in result.boxes:
+                conf = float(box.conf[0])
+                
+                # Skip low confidence detections (extra safety check)
+                if conf < 0.28:
+                    continue
+                
                 persons_detected = True
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
                 x1, y1 = max(0, x1), max(0, y1)
                 x2, y2 = min(w, x2), min(h, y2)
+                
+                # Validate person box has reasonable size (at least 60x60 pixels for webcam)
+                box_w = x2 - x1
+                box_h = y2 - y1
+                if box_w < 60 or box_h < 60:
+                    continue  # Skip very small detections (likely false positives)
+                
+                # Calculate aspect ratio to filter out unusual shapes
+                aspect_ratio = max(box_w, box_h) / min(box_w, box_h)
+                if aspect_ratio > 3.5:
+                    continue  # Skip extremely wide/tall boxes (likely not human)
 
                 person_crop = enhanced_frame[y1:y2, x1:x2]
                 if person_crop.size == 0: continue
@@ -302,7 +342,6 @@ class VisionPipeline:
                     })
 
         # FALLBACK: Direct face detection on full frame if no persons detected but motion detected
-        # OR if this might be a static scene (camera just started)
         # This ensures faces are detected even when person detection fails
         if not persons_detected or motion_detected:
             logger.debug(f"Direct face detection (motion={motion_pixels}, persons={persons_detected})")
@@ -310,7 +349,8 @@ class VisionPipeline:
             for fbox in direct_faces:
                 fx1, fy1, fx2, fy2, is_yolo = fbox
                 face_crop = enhanced_frame[fy1:fy2, fx1:fx2]
-                if face_crop.shape[0] < 35 or face_crop.shape[1] < 35: continue
+                # Stricter minimum face dimensions (45x45 pixels)
+                if face_crop.shape[0] < 45 or face_crop.shape[1] < 45: continue
 
                 enhanced_face = self.enhance_face(face_crop)
                 embedding = self._get_embedding(enhanced_face)
@@ -380,38 +420,89 @@ class VisionPipeline:
             return None
 
     def _predict_age(self, face):
-        """Runs DEX Age inference. Model outputs 101 age probabilities (0-100)."""
+        """
+        Runs DEX Age inference with improved accuracy.
+        Model outputs 101 age probabilities (0-100).
+        Uses multi-crop averaging for better accuracy.
+        """
         if not self.age_sess: return 25
 
         try:
-            # DEX Age model expects CHW format: [batch, channels, height, width]
-            blob = cv2.resize(face, (96, 96)).astype(np.float32)
-            blob = blob.transpose(2, 0, 1)  # HWC to CHW
-            blob = np.expand_dims(blob, axis=0)  # Add batch dimension
+            # Preprocess face for better age estimation
+            gray = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
+            
+            # Apply histogram equalization for better contrast
+            gray_eq = cv2.equalizeHist(gray)
+            
+            # Convert back to 3-channel for model input
+            face_enhanced = cv2.merge([gray_eq, gray_eq, gray_eq])
+            
+            # Multi-crop approach for better accuracy
+            age_predictions = []
+            
+            # Crop 1: Full face
+            crops = [face_enhanced]
+            
+            # Crop 2: Upper face (forehead to nose) - better for age
+            h, w = face.shape[:2]
+            upper_face = face_enhanced[0:int(h*0.7), :]
+            if upper_face.shape[0] > 20:
+                crops.append(upper_face)
+            
+            # Crop 3: Center crop (removes background)
+            margin = int(min(h, w) * 0.1)
+            center_crop = face_enhanced[margin:h-margin, margin:w-margin]
+            if center_crop.shape[0] > 20 and center_crop.shape[1] > 20:
+                crops.append(center_crop)
+            
+            # Predict age for each crop
+            for crop in crops:
+                try:
+                    # DEX Age model expects CHW format: [batch, channels, height, width]
+                    blob = cv2.resize(crop, (96, 96)).astype(np.float32)
+                    blob = blob.transpose(2, 0, 1)  # HWC to CHW
+                    blob = np.expand_dims(blob, axis=0)  # Add batch dimension
 
-            input_name = self.age_sess.get_inputs()[0].name
-            outs = self.age_sess.run(None, {input_name: blob})
+                    input_name = self.age_sess.get_inputs()[0].name
+                    outs = self.age_sess.run(None, {input_name: blob})
 
-            # DEX outputs 101 probabilities for ages 0-100
-            # Get the output array (handle different output shapes)
-            age_probs = outs[0][0]  # Shape: (101,)
+                    # DEX outputs 101 probabilities for ages 0-100
+                    age_probs = outs[0][0]  # Shape: (101,)
+
+                    # Ensure it's 1D array of 101 elements
+                    if age_probs.ndim > 1:
+                        age_probs = age_probs.flatten()
+
+                    # Normalize to ensure valid probability distribution
+                    age_probs = np.clip(age_probs, 0, None)
+                    total = np.sum(age_probs)
+                    if total > 0:
+                        age_probs = age_probs / total
+
+                    # Calculate expected age (weighted average)
+                    ages = np.arange(len(age_probs))
+                    expected_age = int(np.sum(ages * age_probs))
+                    age_predictions.append(expected_age)
+                except Exception as e:
+                    logger.debug(f"Age prediction crop error: {e}")
+                    continue
             
-            # Ensure it's 1D array of 101 elements
-            if age_probs.ndim > 1:
-                age_probs = age_probs.flatten()
+            # Average all predictions
+            if len(age_predictions) > 0:
+                final_age = int(np.mean(age_predictions))
+            else:
+                return 25  # Default fallback
+
+            # Apply age correction based on face size
+            # Larger faces in frame tend to be closer to camera (often adults)
+            face_area = face.shape[0] * face.shape[1]
+            if face_area > 5000:  # Large face (close to camera)
+                # Slight upward adjustment for close-up adult faces
+                final_age = int(final_age * 1.15)
             
-            # Normalize to ensure valid probability distribution
-            age_probs = np.clip(age_probs, 0, None)
-            total = np.sum(age_probs)
-            if total > 0:
-                age_probs = age_probs / total
+            # Clamp to reasonable range (18-70 for adults, wider for general use)
+            return min(75, max(16, final_age))
             
-            # Calculate expected age (weighted average)
-            ages = np.arange(len(age_probs))
-            expected_age = int(np.sum(ages * age_probs))
-            
-            # Clamp to reasonable range
-            return min(80, max(5, expected_age))
         except Exception as e:
             logger.error(f"Age prediction error: {e}")
             return 25

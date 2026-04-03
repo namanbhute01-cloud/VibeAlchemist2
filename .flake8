@@ -1,0 +1,19 @@
+[flake8]
+max-line-length = 120
+max-complexity = 15
+exclude =
+    .git,
+    __pycache__,
+    venv,
+    .venv,
+    node_modules,
+    static,
+    dist,
+    models,
+    temp_faces,
+    logs
+ignore =
+    E501,
+    W503,
+    F401,
+    E722

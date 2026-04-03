@@ -1,6 +1,14 @@
 # ═══════════════════════════════════════════════════════════════
 # VIBE ALCHEMIST V2 - Docker Compose Configuration
-# For running alongside HRMS server
+#
+# Designed to run alongside HRMS server (port 5000)
+# Vibe Alchemist uses port 8081 by default (set API_PORT in .env)
+#
+# Usage:
+#   docker compose up -d          # Start
+#   docker compose down           # Stop
+#   docker compose logs -f        # View logs
+#   docker compose ps             # Status
 # ═══════════════════════════════════════════════════════════════
 
 services:
@@ -10,57 +18,75 @@ services:
       dockerfile: Dockerfile
     container_name: vibe-alchemist-v2
     restart: unless-stopped
-    
-    # Port mapping - change if HRMS uses 8080
-    # Format: "HOST_PORT:CONTAINER_PORT"
-    # Default: 8081 (to avoid conflict with HRMS on port 5000)
+
+    # ── Port Mapping ──
+    # Host port is controlled by API_PORT in .env (default: 8081)
+    # Container always listens on 8000 internally
+    # This avoids conflict with HRMS on port 5000
     ports:
-      - "${API_PORT:-8081}:8080"
-    
+      - "${API_PORT:-8081}:8000"
+
+    # ── Environment ──
+    # Load all variables from .env file
+    env_file:
+      - path: .env
+        required: false  # Won't fail if .env is missing (uses defaults)
+
     environment:
-      # Core settings
-      - API_HOST=0.0.0.0
-      - API_PORT=8080
-      - DEBUG=false
-      
-      # Camera configuration
+      # Core - override from .env via env_file above
+      - API_HOST=${API_HOST:-0.0.0.0}
+      - API_PORT=8000  # Internal container port (always 8000)
+      - DEBUG=${DEBUG:-false}
+
+      # Camera
       - CAMERA_SOURCES=${CAMERA_SOURCES:-0}
       - TARGET_HEIGHT=${TARGET_HEIGHT:-720}
       - FRAME_RATE_LIMIT=${FRAME_RATE_LIMIT:-15}
-      
-      # Vision settings
+
+      # Vision
       - FACE_DETECTION_CONF=${FACE_DETECTION_CONF:-0.5}
       - PERSON_DETECTION_CONF=${PERSON_DETECTION_CONF:-0.4}
       - FACE_SIMILARITY_THRESHOLD=${FACE_SIMILARITY_THRESHOLD:-0.65}
-      
+
       # Storage
       - FACE_TEMP_DIR=/app/temp_faces
       - GDRIVE_FOLDER_ID=${GDRIVE_FOLDER_ID:-}
+      - GDRIVE_CREDENTIALS_FILE=${GDRIVE_CREDENTIALS_FILE:-credentials.json}
       - DRIVE_UPLOAD_INTERVAL=${DRIVE_UPLOAD_INTERVAL:-900}
-      
+
       # Music
       - ROOT_MUSIC_DIR=/app/OfflinePlayback
       - DEFAULT_VOLUME=${DEFAULT_VOLUME:-70}
       - SHUFFLE_MODE=${SHUFFLE_MODE:-true}
-      
+
+      # UI Settings
+      - AUTO_PLAYLIST=${AUTO_PLAYLIST:-true}
+      - FACE_OVERLAY=${FACE_OVERLAY:-true}
+      - PRIVACY_MODE=${PRIVACY_MODE:-false}
+
       # Performance
-      - OMP_NUM_THREADS=1
-      - NNPACK_LIMIT=0
-    
+      - OMP_NUM_THREADS=${OMP_NUM_THREADS:-1}
+      - NNPACK_LIMIT=${NNPACK_LIMIT:-0}
+
+    # ── Volumes ──
     volumes:
-      # Persist face temp data
+      # Persist face temp data across restarts
       - vibe_temp_faces:/app/temp_faces
-      
-      # Mount music directory (adjust path to your music location)
-      - ./OfflinePlayback:/app/OfflinePlayback:ro
-      
-      # Mount models (optional, if you want to update without rebuild)
+
+      # Music directory - READ/WRITE so uploaded songs persist
+      - ./OfflinePlayback:/app/OfflinePlayback
+
+      # Models - read-only (updated via rebuild)
       - ./models:/app/models:ro
-      
+
       # Logs
       - ./logs:/app/logs
-    
-    # Resource limits (adjust based on your server capacity)
+
+      # .env file - mount so container can read AND update it
+      - ./.env:/app/.env:rw
+
+    # ── Resource Limits ──
+    # Prevents Vibe Alchemist from starving the HRMS server
     deploy:
       resources:
         limits:
@@ -69,38 +95,32 @@ services:
         reservations:
           cpus: '0.5'
           memory: 512M
-    
-    # Logging configuration
+
+    # ── Logging ──
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
-    
-    # Network
+
+    # ── Network ──
     networks:
       - vibe-network
-    
-  # Optional: Nginx reverse proxy (uncomment if you want a unified domain)
-  # nginx-proxy:
-  #   image: nginx:alpine
-  #   container_name: vibe-nginx
-  #   restart: unless-stopped
-  #   ports:
-  #     - "80:80"
-  #   volumes:
-  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
-  #   depends_on:
-  #     - vibe-alchemist
-  #   networks:
-  #     - vibe-network
 
-# Named volumes
+    # ── Health Check ──
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/cameras"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+# ── Named Volumes ──
 volumes:
   vibe_temp_faces:
     driver: local
 
-# Network
+# ── Network ──
 networks:
   vibe-network:
     driver: bridge

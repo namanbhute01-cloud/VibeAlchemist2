@@ -93,12 +93,20 @@ class FaceVault:
             return False
 
     def cleanup(self):
-        """Delete all files in temp_faces directory. Call this on shutdown."""
+        """
+        Delete all files in temp_faces directory and remove the directory.
+        IMPORTANT: This should ONLY be called on shutdown/termination.
+        Do NOT call this during runtime - it will delete all detected faces!
+        """
         if not self.temp_dir.exists():
+            logger.info("temp_faces directory does not exist, nothing to clean")
             return
-            
+
+        logger.warning("CLEANUP CALLED - This will delete ALL faces in temp_faces (should only happen on termination)")
+
         try:
-            files = list(self.temp_dir.glob("*.png"))
+            # Delete all image files
+            files = list(self.temp_dir.glob("*.png")) + list(self.temp_dir.glob("*.jpg"))
             deleted = 0
             for f in files:
                 try:
@@ -106,9 +114,20 @@ class FaceVault:
                     deleted += 1
                 except Exception as e:
                     logger.error(f"Failed to delete {f}: {e}")
-            
+
             if deleted > 0:
-                logger.info(f"Cleaned up {deleted} face(s) from temp_faces")
+                logger.info(f"Cleaned up {deleted} face(s) from temp_faces on termination")
+
+            # Remove the directory itself if empty
+            try:
+                remaining = list(self.temp_dir.iterdir())
+                if not remaining:
+                    self.temp_dir.rmdir()
+                    logger.info("Removed empty temp_faces directory on termination")
+                else:
+                    logger.warning(f"temp_faces not empty after cleanup: {remaining}")
+            except Exception as e:
+                logger.error(f"Failed to remove temp_faces directory: {e}")
         except Exception as e:
             logger.error(f"Cleanup failed: {e}")
 

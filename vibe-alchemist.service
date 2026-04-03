@@ -1,0 +1,60 @@
+# ═══════════════════════════════════════════════════════════════
+# VIBE ALCHEMIST V2 - Systemd Service File
+# 
+# Install: sudo cp vibe-alchemist.service /etc/systemd/system/
+# Enable:  sudo systemctl enable vibe-alchemist
+# Start:   sudo systemctl start vibe-alchemist
+# Logs:    journalctl -u vibe-alchemist -f
+#
+# Designed to run alongside HRMS server (port 5000)
+# Vibe Alchemist uses port 8081 by default
+# ═══════════════════════════════════════════════════════════════
+
+[Unit]
+Description=Vibe Alchemist V2 - AI Ambiance System
+Documentation=file:///home/vibeuser/vibe-alchemist-v2/README.md
+After=network-online.target docker.service
+Requires=docker.service
+Wants=network-online.target
+
+# If HRMS is also a systemd service, uncomment:
+# After=network-online.target docker.service hrms.service
+# Wants=hrms.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/vibeuser/vibe-alchemist-v2
+
+# Environment
+EnvironmentFile=/home/vibeuser/vibe-alchemist-v2/.env
+
+# Start command
+ExecStart=/usr/bin/docker compose up -d --remove-orphans
+ExecStartPost=/bin/sleep 10
+ExecStartPost=/bin/bash -c 'curl -sf http://localhost:${API_PORT:-8081}/api/cameras || exit 1'
+
+# Stop command
+ExecStop=/usr/bin/docker compose down
+ExecStopPost=/bin/sleep 5
+
+# Restart policy
+Restart=on-failure
+RestartSec=30
+
+# Resource limits (prevent OOM from killing HRMS)
+MemoryMax=2G
+CPUQuota=200%
+
+# Security hardening
+NoNewPrivileges=no
+ProtectSystem=false
+ProtectHome=false
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=vibe-alchemist
+
+[Install]
+WantedBy=multi-user.target

@@ -150,29 +150,48 @@ def process_detections(detections, cam_id, pipeline, vibe_engine, player, face_v
             logger.info(f"Resuming music for detected group: {target_group}")
             player.toggle_pause()
 
-    # Draw bounding boxes on detected faces on the latest frame
-    for det in detections:
-        x1, y1, x2, y2 = det['bbox']
-        # Get the latest frame for this camera
-        frame = pipeline.pool.get_latest_frame(cam_id)
-        if frame is not None and isinstance(frame, np.ndarray):
-            # Draw rectangle around face (green box, 2px thick)
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+    # Draw bounding boxes on the latest frame for this camera
+    frame = pipeline.pool.get_latest_frame(cam_id)
+    if frame is not None and isinstance(frame, np.ndarray):
+        # Make a copy to avoid modifying the original
+        annotated_frame = frame.copy()
+        
+        # Draw bounding boxes for all detections
+        for det in detections:
+            x1, y1, x2, y2 = det['bbox']
+            
+            # Ensure coordinates are within frame bounds
+            h, w = annotated_frame.shape[:2]
+            x1, y1 = max(0, x1), max(0, y1)
+            x2, y2 = min(w, x2), min(h, y2)
+            
+            # Draw rectangle around face (bright green box, 3px thick)
+            cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 255, 0), 3)
             
             # Add age/group label with background
-            label = f"{det['age']} ({det['group']})"
-            (label_w, label_h), baseline = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
+            label = f"Age:{det['age']} ({det['group']})"
+            (label_w, label_h), baseline = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
             
-            # Draw label background
-            cv2.rectangle(frame, (x1, y1 - label_h - baseline - 5), (x1 + label_w, y1), (0, 255, 0), -1)
+            # Draw label background (green rectangle)
+            cv2.rectangle(annotated_frame, (x1, y1 - label_h - 10), (x1 + label_w + 10, y1), (0, 255, 0), -1)
             
-            # Add text
-            cv2.putText(frame, label, (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 2)
+            # Add text (black text on green background)
+            cv2.putText(annotated_frame, label, (x1 + 5, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
+        
+        # If there are detections, also add a detection counter badge
+        if len(detections) > 0:
+            counter_text = f"Detected: {len(detections)}"
+            (cw, ch), cb = cv2.getTextSize(counter_text, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
+            # Top-right corner badge
+            cv2.rectangle(annotated_frame, (w - cw - 25, 10), (w - 10, 15 + ch + 10), (0, 255, 0), -1)
+            cv2.putText(annotated_frame, counter_text, (w - cw - 20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
 
-            # Encode and store frame for MJPEG stream
-            ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 75])
-            if ret:
-                pipeline.pool.latest_frames[cam_id] = buffer.tobytes()
+        # Encode and store the annotated frame for MJPEG stream
+        ret, buffer = cv2.imencode('.jpg', annotated_frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+        if ret:
+            pipeline.pool.latest_frames[cam_id] = buffer.tobytes()
+            if len(detections) > 0:
+                logger.info(f"[Cam {cam_id}] Drew {len(detections)} bounding box(es)")
 
 # --- LIFECYCLE ---
 @asynccontextmanager
@@ -216,26 +235,44 @@ async def lifespan(app: FastAPI):
         logger.error(f"[STARTUP ERROR] {e}")
 
     yield
-    # Shutdown sequence
+    # Shutdown sequence - ONLY clean up temp_faces on termination
     logger.info("Shutting down Vibe Alchemist V2...")
-    
-    if cam_pool: 
+
+    if cam_pool:
         cam_pool.stop_all()
-    
-    if player: 
+
+    if player:
         player.stop()
-    
-    # Sync and cleanup faces on shutdown
+
+    # Sync and cleanup faces on shutdown (ONLY when terminating)
+    logger.info("Shutting down face vault and registry...")
     if face_vault:
-        # Optional: sync to Drive before cleanup (if credentials configured)
-        # face_vault.shutdown_push()
-        # Clean up temp_faces directory
+        # Sync any pending faces to Drive before cleanup
+        face_vault.sync_now()
+        # Clean up temp_faces directory on termination
         face_vault.cleanup()
-    
+
     if face_registry:
         face_registry.clear()
-    
-    logger.info("Shutdown complete. temp_faces cleaned up.")
+
+    # Final cleanup: ensure temp_faces is completely removed on termination
+    import shutil
+    temp_dir = Path(os.getenv("FACE_TEMP_DIR", "./temp_faces"))
+    if temp_dir.exists():
+        try:
+            # Force delete all files
+            for f in temp_dir.iterdir():
+                if f.is_file():
+                    f.unlink()
+                    logger.info(f"Force deleted on termination: {f}")
+            # Remove directory
+            if not any(temp_dir.iterdir()):
+                temp_dir.rmdir()
+                logger.info("Removed temp_faces directory on termination")
+        except Exception as e:
+            logger.error(f"Final cleanup error: {e}")
+
+    logger.info("Shutdown complete. temp_faces cleaned up on termination.")
 
 # --- APP INIT ---
 app = FastAPI(title="Vibe Alchemist V2", lifespan=lifespan)
@@ -284,21 +321,23 @@ async def websocket_endpoint(websocket: WebSocket):
     except (WebSocketDisconnect, Exception):
         pass
 
-# 4. MJPEG /feed/{cam_id}
+# 4. MJPEG /feed/{cam_id} - Serves frames with bounding boxes
 @app.get("/feed/{cam_id}")
 async def camera_feed(cam_id: int):
     def generate():
         while True:
             if cam_pool:
+                # Get the latest frame (may already have bounding boxes from process_detections)
                 frame_bytes = cam_pool.get_latest_frame(cam_id)
                 if frame_bytes is not None:
-                    # If it's a numpy array, encode it. If it's bytes (already encoded), use directly.
+                    # If it's bytes (already encoded with bounding boxes), use directly
                     if isinstance(frame_bytes, bytes):
                         yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
                     else:
-                        _, buf = cv2.imencode('.jpg', frame_bytes, [cv2.IMWRITE_JPEG_QUALITY, 70])
+                        # If it's a numpy array, encode it
+                        _, buf = cv2.imencode('.jpg', frame_bytes, [cv2.IMWRITE_JPEG_QUALITY, 80])
                         yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + buf.tobytes() + b'\r\n')
-            time.sleep(0.1)
+            time.sleep(0.08)  # ~12 FPS for smooth display
     return StreamingResponse(generate(), media_type="multipart/x-mixed-replace;boundary=frame")
 
 # 5. Static Files & SPA Catch-all
