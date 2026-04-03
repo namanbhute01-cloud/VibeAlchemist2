@@ -491,23 +491,22 @@ async def websocket_endpoint(websocket: WebSocket):
 @app.get("/feed/{cam_id}")
 async def camera_feed(cam_id: int):
     async def generate():
-        last_frame = None
         while True:
             if cam_pool:
-                frame_bytes = cam_pool.get_latest_frame(cam_id)
-                if frame_bytes is not None:
-                    if isinstance(frame_bytes, bytes):
-                        last_frame = frame_bytes
-                        yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
-                    elif isinstance(frame_bytes, np.ndarray):
-                        _, buf = cv2.imencode('.jpg', frame_bytes, [
-                            cv2.IMWRITE_JPEG_QUALITY, 75,
+                frame_data = cam_pool.get_latest_frame(cam_id)
+                if frame_data is not None:
+                    if isinstance(frame_data, bytes):
+                        # Already encoded (annotated frame from process_detections)
+                        yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame_data + b'\r\n')
+                    elif isinstance(frame_data, np.ndarray):
+                        # Raw frame from camera worker — encode quickly
+                        _, buf = cv2.imencode('.jpg', frame_data, [
+                            cv2.IMWRITE_JPEG_QUALITY, 70,
                             cv2.IMWRITE_JPEG_OPTIMIZE, 1,
                         ])
-                        last_frame = buf.tobytes()
-                        yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + last_frame + b'\r\n')
-            # Reduced sleep: 50ms = ~20 FPS for smoother display
-            await asyncio.sleep(0.05)
+                        yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + buf.tobytes() + b'\r\n')
+            # 33ms = ~30 FPS for smooth feed display
+            await asyncio.sleep(0.033)
     return StreamingResponse(
         generate(),
         media_type="multipart/x-mixed-replace;boundary=frame",
@@ -517,6 +516,20 @@ async def camera_feed(cam_id: int):
             "Expires": "0",
         }
     )
+
+# 4b. Camera status endpoint
+@app.get("/api/cameras/status")
+async def camera_status():
+    """Returns connection status of all cameras."""
+    if cam_pool:
+        return {
+            "ok": True,
+            "cameras": cam_pool.get_status() if hasattr(cam_pool, 'get_status') else [
+                {"id": i, "source": str(s), "connected": True}
+                for i, s in enumerate(cam_pool.sources)
+            ]
+        }
+    return {"ok": False, "cameras": []}
 
 # 5. Static Files & SPA Catch-all
 static_dir = Path(__file__).parent.parent / "static"
