@@ -34,21 +34,39 @@ face_registry = None
 class ConnectionManager:
     def __init__(self):
         self.active_connections: List[WebSocket] = []
+        self._lock = threading.Lock()
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
-        self.active_connections.append(websocket)
+        with self._lock:
+            self.active_connections.append(websocket)
 
     def disconnect(self, websocket: WebSocket):
-        if websocket in self.active_connections:
-            self.active_connections.remove(websocket)
+        with self._lock:
+            if websocket in self.active_connections:
+                self.active_connections.remove(websocket)
 
     async def broadcast(self, message: dict):
-        for connection in self.active_connections:
-            try:
-                await connection.send_json(message)
-            except:
-                pass
+        """Non-blocking broadcast — slow clients don't block fast ones."""
+        import asyncio
+        with self._lock:
+            connections = list(self.active_connections)
+
+        # Send to each connection independently (no blocking)
+        tasks = []
+        for connection in connections:
+            tasks.append(self._safe_send(connection, message))
+
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
+
+    async def _safe_send(self, connection, message):
+        """Send to a single connection with timeout."""
+        import asyncio
+        try:
+            await asyncio.wait_for(connection.send_json(message), timeout=1.0)
+        except Exception:
+            pass
 
 manager = ConnectionManager()
 
@@ -399,21 +417,33 @@ async def websocket_endpoint(websocket: WebSocket):
 # 4. MJPEG /feed/{cam_id} - Serves frames with bounding boxes
 @app.get("/feed/{cam_id}")
 async def camera_feed(cam_id: int):
-    def generate():
+    async def generate():
+        last_frame = None
         while True:
             if cam_pool:
-                # Get the latest frame (may already have bounding boxes from process_detections)
                 frame_bytes = cam_pool.get_latest_frame(cam_id)
                 if frame_bytes is not None:
-                    # If it's bytes (already encoded with bounding boxes), use directly
                     if isinstance(frame_bytes, bytes):
+                        last_frame = frame_bytes
                         yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
-                    else:
-                        # If it's a numpy array, encode it
-                        _, buf = cv2.imencode('.jpg', frame_bytes, [cv2.IMWRITE_JPEG_QUALITY, 80])
-                        yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + buf.tobytes() + b'\r\n')
-            time.sleep(0.08)  # ~12 FPS for smooth display
-    return StreamingResponse(generate(), media_type="multipart/x-mixed-replace;boundary=frame")
+                    elif isinstance(frame_bytes, np.ndarray):
+                        _, buf = cv2.imencode('.jpg', frame_bytes, [
+                            cv2.IMWRITE_JPEG_QUALITY, 75,
+                            cv2.IMWRITE_JPEG_OPTIMIZE, 1,
+                        ])
+                        last_frame = buf.tobytes()
+                        yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + last_frame + b'\r\n')
+            # Reduced sleep: 50ms = ~20 FPS for smoother display
+            await asyncio.sleep(0.05)
+    return StreamingResponse(
+        generate(),
+        media_type="multipart/x-mixed-replace;boundary=frame",
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        }
+    )
 
 # 5. Static Files & SPA Catch-all
 static_dir = Path(__file__).parent.parent / "static"
