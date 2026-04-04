@@ -15,7 +15,6 @@ def set_cam_pool(pool):
     cam_pool_ref["pool"] = pool
 
 @router.get("")
-@router.get("/")
 async def list_cameras():
     """Returns flat list of cameras as per contract."""
     cam_pool = cam_pool_ref.get("pool")

@@ -227,59 +227,55 @@ def processing_loop():
 # when starting/switching songs
 _playback_lock = threading.Lock()
 
-def process_detections(detections, cam_id, pipeline, vibe_engine, player, face_vault, face_registry):
-    """
-    Process detections: log to vibe engine, start music, draw bounding boxes.
-    Music handover (song transitions) is handled by music_handover_loop() thread.
-    """
-    if not detections:
-        return
 
-    # Separate good and low-quality detections
-    good_detections = [d for d in detections if d.get('is_good_quality', True)]
+def _log_detections(detections, vibe_engine, cam_id):
+    """Log good-quality detections to vibe engine; skip low-quality ones."""
+    good = [d for d in detections if d.get('is_good_quality', True)]
     low_quality = [d for d in detections if not d.get('is_good_quality', True)]
 
-    # Only log good-quality detections to vibe engine (more reliable)
-    for det in good_detections:
+    for det in good:
         if vibe_engine:
-            quality = det.get('quality', 1.0)
-            cam_id_val = det.get('cam_id', cam_id)
             vibe_engine.log_detection(
                 det['group'],
                 age=det['age'],
-                quality=quality,
-                cam_id=cam_id_val
+                quality=det.get('quality', 1.0),
+                cam_id=det.get('cam_id', cam_id)
             )
 
-    # Log low-quality detections at debug level
     if low_quality:
         logger.debug(f"Cam {cam_id}: {len(low_quality)} low-quality detection(s) skipped for vibe")
 
-    # ── Start music if nothing is playing ──
-    # The handover thread handles transitions, but this starts the FIRST song
-    if good_detections and player and vibe_engine:
-        with _playback_lock:
-            current_status = player.get_status()
-            current_song = current_status.get('song', 'None')
-            is_paused = current_status.get('paused', True)
+    return good
 
-            if current_song == 'None' or current_song is None:
-                # No song playing — start music based on detected group
-                target_group = vibe_engine.get_current_group()
-                logger.info(f"First detection — starting music: {target_group}")
-                player.next(target_group)
-            elif is_paused:
-                # Song is paused — resume
-                player.toggle_pause()
-                logger.info("Resuming playback")
 
-    # ── Draw Bounding Boxes ──
+def _handle_playback(good_detections, vibe_engine, player):
+    """Start or resume music playback when detections occur."""
+    if not good_detections or not player or not vibe_engine:
+        return
+
+    with _playback_lock:
+        current_status = player.get_status()
+        current_song = current_status.get('song', 'None')
+        is_paused = current_status.get('paused', True)
+
+        if current_song == 'None' or current_song is None:
+            target_group = vibe_engine.get_current_group()
+            logger.info(f"First detection — starting music: {target_group}")
+            player.next(target_group)
+        elif is_paused:
+            player.toggle_pause()
+            logger.info("Resuming playback")
+
+
+def _draw_bounding_boxes(detections, cam_id, pipeline):
+    """Draw annotated bounding boxes on the latest frame and store it."""
     frame = pipeline.pool.get_latest_frame(cam_id)
     if frame is None or not isinstance(frame, np.ndarray):
         return
 
     annotated_frame = frame.copy()
     h, w = annotated_frame.shape[:2]
+    good_count = sum(1 for d in detections if d.get('is_good_quality', True))
 
     for det in detections:
         x1, y1, x2, y2 = det['bbox']
@@ -288,19 +284,15 @@ def process_detections(detections, cam_id, pipeline, vibe_engine, player, face_v
 
         is_good = det.get('is_good_quality', True)
         quality = det.get('quality', 0)
-        face_conf = det.get('face_conf', 0)
 
-        # Color: green for good quality, yellow for low quality
-        color = (0, 255, 0) if is_good else (0, 255, 255)  # BGR: green / yellow
+        color = (0, 255, 0) if is_good else (0, 255, 255)
         thickness = 3 if is_good else 2
 
         cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), color, thickness)
 
-        # Label with age, group, and confidence
         label = f"Age:{det['age']} {det['group']} ({quality:.1f})"
-        (label_w, label_h), baseline = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+        (label_w, label_h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
 
-        # Label background
         cv2.rectangle(
             annotated_frame,
             (x1, y1 - label_h - 8),
@@ -308,7 +300,6 @@ def process_detections(detections, cam_id, pipeline, vibe_engine, player, face_v
             color, -1
         )
 
-        # Text (white on colored background)
         cv2.putText(
             annotated_frame, label,
             (x1 + 3, y1 - 4),
@@ -317,10 +308,9 @@ def process_detections(detections, cam_id, pipeline, vibe_engine, player, face_v
 
     # Detection counter badge
     total = len(detections)
-    good_count = len(good_detections)
     if total > 0:
         counter_text = f"Faces: {good_count}/{total}"
-        (cw, ch), cb = cv2.getTextSize(counter_text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+        (cw, ch), _ = cv2.getTextSize(counter_text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
         cv2.rectangle(
             annotated_frame,
             (w - cw - 20, 8),
@@ -333,10 +323,22 @@ def process_detections(detections, cam_id, pipeline, vibe_engine, player, face_v
             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1
         )
 
-    # Encode and store
     ret, buffer = cv2.imencode('.jpg', annotated_frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
     if ret:
         pipeline.pool.latest_frames[cam_id] = buffer.tobytes()
+
+
+def process_detections(detections, cam_id, pipeline, vibe_engine, player, face_vault, face_registry):
+    """
+    Process detections: delegate to specialized sub-functions.
+    Music handover (song transitions) is handled by music_handover_loop() thread.
+    """
+    if not detections:
+        return
+
+    good_detections = _log_detections(detections, vibe_engine, cam_id)
+    _handle_playback(good_detections, vibe_engine, player)
+    _draw_bounding_boxes(detections, cam_id, pipeline)
 
 # --- LIFECYCLE ---
 @asynccontextmanager
@@ -382,7 +384,13 @@ async def lifespan(app: FastAPI):
         vibe.set_refs(vibe_engine, player, cam_pool, face_registry)
         faces.set_refs(face_registry, face_vault)
     except Exception as e:
-        logger.error(f"[STARTUP ERROR] {e}")
+        logger.error(f"[STARTUP ERROR] Failed to initialize: {e}", exc_info=True)
+        logger.error("[STARTUP ERROR] Server will start in degraded mode — check configuration")
+        # Set safe defaults so routes don't crash
+        cameras.set_cam_pool(None)
+        playback.set_refs(None, None)
+        vibe.set_refs(None, None, None, None)
+        faces.set_refs(None, None)
 
     yield
     # Shutdown sequence - ONLY clean up temp_faces on termination

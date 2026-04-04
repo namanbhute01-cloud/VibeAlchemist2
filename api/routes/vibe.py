@@ -21,7 +21,6 @@ def set_refs(vibe_engine, player, cam_pool=None, face_registry=None):
     refs["face_registry"] = face_registry
 
 @router.get("/current")
-@router.get("/current/")
 async def get_current():
     """Returns flat vibe state."""
     vibe_engine = refs.get("vibe_engine")
@@ -57,7 +56,6 @@ async def get_current():
     }
 
 @router.get("/journal")
-@router.get("/journal/")
 async def get_journal():
     """Returns flat aggregated vibe analytics."""
     vibe_engine = refs.get("vibe_engine")

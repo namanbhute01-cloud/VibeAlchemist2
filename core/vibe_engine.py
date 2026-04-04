@@ -93,13 +93,7 @@ class VibeEngine:
             # Add detection to consensus buffer weighted by quality
             quality_weight = max(0.1, min(1.0, quality))
 
-            # Add to temp consensus (may add multiple entries for high quality)
-            self.temp_consensus.append(group)
-            if quality_weight > 0.7:
-                # High quality detections get extra weight in consensus
-                self.temp_consensus.append(group)
-
-            # Also add to quality journal for detailed tracking
+            # Add to quality journal for detailed tracking (single source of truth)
             self.quality_journal.append({
                 'group': group,
                 'quality': quality_weight,
@@ -107,11 +101,20 @@ class VibeEngine:
                 'cam_id': cam_id
             })
 
-            # Check for consensus
+            # Add to temp consensus — one entry per quality_journal entry, kept in sync
+            self.temp_consensus.append(group)
+            if quality_weight > 0.7:
+                # High quality detections get extra weight in consensus
+                self.temp_consensus.append(group)
+
+            # Check for consensus — use temp_consensus length as trigger,
+            # but vote from the matching slice of quality_journal
             if len(self.temp_consensus) >= self.consensus_threshold:
-                # Quality-weighted voting
+                # Quality-weighted voting from recent quality_journal entries
+                # Take the most recent entries matching temp_consensus size
+                recent_entries = list(self.quality_journal)[-len(self.temp_consensus):]
                 quality_votes = {}
-                for entry in self.quality_journal:
+                for entry in recent_entries:
                     g = entry['group']
                     q = entry['quality']
                     quality_votes[g] = quality_votes.get(g, 0) + q

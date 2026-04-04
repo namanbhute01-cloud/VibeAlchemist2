@@ -13,7 +13,6 @@ def set_refs(face_registry, face_vault):
     refs["face_vault"] = face_vault
 
 @router.get("")
-@router.get("/")
 async def list_faces():
     """Returns detailed face summary stats including per-face details and camera tracking."""
     face_registry = refs.get("face_registry")

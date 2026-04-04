@@ -235,6 +235,8 @@ class FaceRegistry:
 
         if to_remove:
             logger.info(f"Pruned {len(to_remove)} stale face identities")
+            # Reset counter to prevent unbounded growth; new faces start from remaining count
+            self.face_counter = len(self.known_faces)
 
         self.last_prune = now
 

@@ -7,7 +7,6 @@ router = APIRouter(prefix="/settings", tags=["settings"])
 logger = logging.getLogger("SettingsRoute")
 
 @router.get("/")
-@router.get("")
 async def get_settings():
     """Returns all current settings from .env file."""
     try:
@@ -18,7 +17,6 @@ async def get_settings():
         return {"ok": False, "error": str(e)}
 
 @router.post("/")
-@router.post("")
 async def save_settings(request: Request):
     """
     Save settings and persist to .env file.
