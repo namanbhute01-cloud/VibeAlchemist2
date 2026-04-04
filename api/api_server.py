@@ -30,46 +30,6 @@ face_vault = None
 player = None
 face_registry = None
 
-# --- WEBSOCKET MANAGER ---
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: List[WebSocket] = []
-        self._lock = threading.Lock()
-
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        with self._lock:
-            self.active_connections.append(websocket)
-
-    def disconnect(self, websocket: WebSocket):
-        with self._lock:
-            if websocket in self.active_connections:
-                self.active_connections.remove(websocket)
-
-    async def broadcast(self, message: dict):
-        """Non-blocking broadcast — slow clients don't block fast ones."""
-        import asyncio
-        with self._lock:
-            connections = list(self.active_connections)
-
-        # Send to each connection independently (no blocking)
-        tasks = []
-        for connection in connections:
-            tasks.append(self._safe_send(connection, message))
-
-        if tasks:
-            await asyncio.gather(*tasks, return_exceptions=True)
-
-    async def _safe_send(self, connection, message):
-        """Send to a single connection with timeout."""
-        import asyncio
-        try:
-            await asyncio.wait_for(connection.send_json(message), timeout=1.0)
-        except Exception:
-            pass
-
-manager = ConnectionManager()
-
 # --- MUSIC HANDOVER MONITOR (Background Thread) ---
 # Runs independently of face detection — ensures zero-gap song transitions.
 # Monitors song position continuously, pre-loads next song before current ends.
@@ -175,7 +135,7 @@ def music_handover_loop():
 
 
 # --- VISION PROCESSING LOOP ---
-def processing_loop(loop):
+def processing_loop():
     """
     Multi-camera processing loop with fair scheduling.
 
@@ -408,8 +368,8 @@ async def lifespan(app: FastAPI):
         pipeline.pool = cam_pool
         cam_pool.start()
 
-        # Start vision processing loop
-        threading.Thread(target=processing_loop, args=(asyncio.get_event_loop(),), daemon=True).start()
+        # Start vision processing loop (no loop argument needed — processing_loop doesn't use it)
+        threading.Thread(target=processing_loop, daemon=True).start()
 
         # Start music handover monitor (independent of face detection — zero-gap transitions)
         threading.Thread(target=music_handover_loop, daemon=True).start()
@@ -468,13 +428,42 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Vibe Alchemist V2", lifespan=lifespan)
 
 # 1. CORSMiddleware
+# Configurable origins via CORS_ORIGINS env var (comma-separated)
+# Defaults to localhost variants for development
+cors_origins = os.getenv("CORS_ORIGINS", "")
+allowed_origins = [o.strip() for o in cors_origins.split(",") if o.strip()] if cors_origins else [
+    "http://127.0.0.1:5173", "http://127.0.0.1:8000",
+    "http://localhost:5173", "http://localhost:8000",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:5173", "http://127.0.0.1:8000", "http://localhost:5173", "http://localhost:8000", "*"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 1b. Optional API Key Authentication
+# If API_KEY env var is set, all endpoints (except /health, /docs, /feed) require it
+API_KEY = os.getenv("API_KEY", "")
+
+if API_KEY:
+    from fastapi import Request
+    @app.middleware("http")
+    async def require_api_key(request: Request, call_next):
+        # Skip auth for health, docs, and camera feeds
+        skip_paths = ("/health", "/docs", "/openapi.json", "/feed/", "/ws", "/assets/", "/favicon.ico", "/placeholder.svg", "/robots.txt")
+        if any(request.url.path.startswith(p) for p in skip_paths):
+            return await call_next(request)
+
+        # Check API key in header or query param
+        provided_key = request.headers.get("X-API-Key") or request.query_params.get("api_key")
+        if not provided_key or provided_key != API_KEY:
+            from fastapi.responses import JSONResponse
+            return JSONResponse(status_code=401, content={"detail": "Invalid or missing API key"})
+
+        return await call_next(request)
 
 # 2. API Routers
 from api.routes import cameras, playback, vibe, faces, settings
@@ -508,8 +497,10 @@ async def websocket_endpoint(websocket: WebSocket):
                 state['active_cameras'] = cam_count
                 await websocket.send_json(state)
             await asyncio.sleep(0.5)
-    except (WebSocketDisconnect, Exception):
-        pass
+    except WebSocketDisconnect:
+        logger.info("WebSocket client disconnected")
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}", exc_info=True)
 
 # 4. MJPEG /feed/{cam_id} - Serves frames with bounding boxes
 @app.get("/feed/{cam_id}")
@@ -541,7 +532,19 @@ async def camera_feed(cam_id: int):
         }
     )
 
-# 4b. Camera status endpoint
+# 4b. Health check endpoint (lightweight — no camera dependency)
+@app.get("/health")
+async def health():
+    """Lightweight health check — always returns 200 if server is alive."""
+    uptime = time.time() - app.state.start_time if hasattr(app.state, 'start_time') else 0
+    return {
+        "status": "ok",
+        "version": "2.0.0",
+        "uptime": round(uptime, 1),
+        "pipeline_ready": pipeline is not None,
+    }
+
+# 4c. Camera status endpoint
 @app.get("/api/cameras/status")
 async def camera_status():
     """Returns connection status of all cameras."""
@@ -563,19 +566,22 @@ if static_dir.exists():
 
     @app.get("/assets/{filename:path}")
     async def serve_assets(filename: str):
-        """Serve JS/CSS assets with correct MIME types."""
+        """Serve JS/CSS assets with correct MIME types and cache headers."""
         file_path = static_dir / "assets" / filename
         if file_path.is_file():
             media_type = "text/javascript" if filename.endswith(".js") else "text/css" if filename.endswith(".css") else "application/octet-stream"
-            return FileResponse(file_path, media_type=media_type)
+            # Hashed filenames can be cached aggressively (1 year)
+            headers = {"Cache-Control": "public, max-age=31536000, immutable"}
+            return FileResponse(file_path, media_type=media_type, headers=headers)
         raise HTTPException(status_code=404)
 
     @app.get("/")
     async def serve_root():
-        """Serve index.html for root path."""
+        """Serve index.html for root path — no caching."""
         index_file = static_dir / "index.html"
         if index_file.exists():
-            return FileResponse(index_file)
+            headers = {"Cache-Control": "no-cache, no-store, must-revalidate"}
+            return FileResponse(index_file, headers=headers)
         raise HTTPException(status_code=404)
 
     @app.get("/{full_path:path}")

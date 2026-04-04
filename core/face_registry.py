@@ -133,7 +133,7 @@ class FaceRegistry:
                 data['cam_ids'].add(cam_id)
 
             # Periodic pruning
-            if time.time() - self.last_prune > 300:
+            if time.time() - self.last_prune > self.prune_interval:
                 self._prune()
 
     def update_age(self, face_id, new_age):

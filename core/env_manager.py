@@ -236,14 +236,18 @@ def update_setting(key: str, value: Any) -> tuple[bool, Optional[str]]:
         return False, f"Failed to persist {key} to .env"
 
 
+# Module-level cache to avoid re-reading .env on every call
+_settings_cache: Optional[Dict[str, Any]] = None
+_cache_mtime: float = 0.0
+
 def get_setting(key: str) -> tuple[bool, Any]:
     """
-    Get a single setting value.
+    Get a single setting value with caching.
     Returns (found, value).
     """
     if key not in ENV_SCHEMA:
         return False, None
-    
+
     settings = load_all_settings()
     return True, settings.get(key)
 

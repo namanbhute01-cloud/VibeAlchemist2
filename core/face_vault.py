@@ -6,9 +6,18 @@ import cv2
 import shutil
 import numpy as np
 from pathlib import Path
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
+
+# Google Drive imports — optional (graceful degradation if not installed)
+try:
+    from google.oauth2 import service_account
+    from googleapiclient.discovery import build
+    from googleapiclient.http import MediaFileUpload
+    _GDRIVE_AVAILABLE = True
+except ImportError:
+    _GDRIVE_AVAILABLE = False
+    service_account = None  # type: ignore
+    build = None  # type: ignore
+    MediaFileUpload = None  # type: ignore
 
 logger = logging.getLogger("FaceVault")
 
@@ -40,6 +49,10 @@ class FaceVault:
             logger.warning("Google Drive credentials not configured. Running in local-only mode.")
 
     def _authenticate(self):
+        if not _GDRIVE_AVAILABLE:
+            logger.warning("Google Drive libraries not installed — Drive sync disabled")
+            self.service = None
+            return
         try:
             scopes = ['https://www.googleapis.com/auth/drive.file']
             creds = service_account.Credentials.from_service_account_file(self.creds_file, scopes=scopes)

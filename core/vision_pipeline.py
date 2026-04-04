@@ -571,15 +571,18 @@ class VisionPipeline:
         if frame is None:
             return []
 
-        # ── STEP 0: Auto-enhance ──
-        enhanced = self.auto_enhance_frame(frame)
-
-        # ── STEP 1: Motion Gating ──
-        mask = self.bg_subtractor.apply(enhanced)
+        # ── STEP 0: Motion Gating (on raw frame — skip enhancement if no motion) ──
+        mask = self.bg_subtractor.apply(frame)
         mask = cv2.threshold(mask, 180, 255, cv2.THRESH_BINARY)[0]
         mask = cv2.dilate(mask, None, iterations=2)
         motion_pixels = cv2.countNonZero(mask)
         motion_detected = motion_pixels > 80
+
+        # Only enhance if motion detected (saves CPU on static frames)
+        if motion_detected:
+            enhanced = self.auto_enhance_frame(frame)
+        else:
+            enhanced = frame
 
         results = []
         h, w = frame.shape[:2]

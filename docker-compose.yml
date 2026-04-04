@@ -20,11 +20,11 @@ services:
     restart: unless-stopped
 
     # ── Port Mapping ──
-    # Host port is controlled by API_PORT in .env (default: 8081)
+    # Host port is controlled by API_PORT in .env (default: 8000)
     # Container always listens on 8000 internally
     # This avoids conflict with HRMS on port 5000
     ports:
-      - "${API_PORT:-8081}:8000"
+      - "${API_PORT:-8000}:8000"
 
     # ── Environment ──
     # Load all variables from .env file
@@ -88,11 +88,12 @@ services:
 
     # ── Resource Limits ──
     # Prevents Vibe Alchemist from starving the HRMS server
+    # Increased from 2G to 3G to accommodate ML model loading (YOLO + InsightFace + ONNX)
     deploy:
       resources:
         limits:
-          cpus: '2.0'
-          memory: 2G
+          cpus: '2.5'
+          memory: 3G
         reservations:
           cpus: '0.5'
           memory: 512M
@@ -110,11 +111,11 @@ services:
 
     # ── Health Check ──
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/cameras"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 120s
 
 # ── Named Volumes ──
 volumes:

@@ -113,8 +113,23 @@ free_port() {
     local port=$1
     if check_port $port; then
         log_warning "Port $port is in use, freeing..."
-        lsof -ti:$port | xargs kill -9 2>/dev/null || true
-        sleep 1
+        # Safe: only kill processes that are our own backend
+        local pids
+        pids=$(ss -tlnp "sport = :$port" 2>/dev/null | grep -oP 'pid=\K[0-9]+' | sort -u)
+        if [ -n "$pids" ]; then
+            for pid in $pids; do
+                if ps -p "$pid" -o args= 2>/dev/null | grep -qE 'python|uvicorn|main\.py|vite'; then
+                    log_info "Stopping existing process (PID: $pid)..."
+                    kill "$pid" 2>/dev/null || true
+                    sleep 1
+                    if kill -0 "$pid" 2>/dev/null; then
+                        kill -9 "$pid" 2>/dev/null || true
+                    fi
+                else
+                    log_warning "Port $port is used by non-app process (PID: $pid), skipping"
+                fi
+            done
+        fi
     fi
 }
 

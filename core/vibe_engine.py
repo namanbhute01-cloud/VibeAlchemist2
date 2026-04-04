@@ -35,7 +35,6 @@ class VibeEngine:
         # Current active state
         self.current_vibe = "adults"
         self.next_vibe = None
-        self.status = "VIBING"
         self.current_age = "..."
 
         # Age tracking
@@ -270,7 +269,7 @@ class VibeEngine:
             active_cams = len(self.active_cameras)
 
             return {
-                "status": self.status,
+                "status": "active" if player and player.is_playing else "idle",
                 "detected_group": dominant,
                 "current_vibe": dominant,
                 "age": str(self.current_age),
