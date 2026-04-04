@@ -1,14 +1,28 @@
 # ═══════════════════════════════════════════════════════════════
-# VIBE ALCHEMIST V2 - Production Dockerfile
+# VIBE ALCHEMIST V2 - Production Dockerfile (Multi-Stage)
 #
-# Frontend must be built locally BEFORE docker build:
-#   cd frontend && npm install && npm run build
-#   (outputs to ../static/)
-#
-# For CI/CD: the workflow builds frontend first.
-# For server deploy: deploy-prod.sh builds frontend first.
+# Self-contained: builds frontend AND backend in one command.
+# No pre-build steps needed. Just: docker compose up -d --build
 # ═══════════════════════════════════════════════════════════════
 
+# ───────────────────────────────────────────────────────────────
+# Stage 1: Build Frontend (Node.js)
+# ───────────────────────────────────────────────────────────────
+FROM node:20-alpine AS frontend-builder
+
+WORKDIR /app/frontend
+
+# Install dependencies (cached unless package.json changes)
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci --frozen-lockfile
+
+# Copy frontend source and build
+COPY frontend/ ./
+RUN npm run build
+
+# ───────────────────────────────────────────────────────────────
+# Stage 2: Python Backend + Serve Static Files
+# ───────────────────────────────────────────────────────────────
 FROM python:3.11-slim
 
 # Build-time arguments
@@ -28,7 +42,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # Install system dependencies (OpenCV, display libs, curl, g++ for insightface)
-# Note: libgl1 replaced libgl1-mesa-glx in Debian Trixie+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
     libglib2.0-0 \
@@ -53,9 +66,8 @@ COPY core/ ./core/
 COPY models/ ./models/
 RUN mkdir -p /app/models
 
-# Copy pre-built frontend static files
-# (Built locally before docker build by deploy-prod.sh or CI/CD)
-COPY static/ ./static/
+# Copy pre-built frontend from Stage 1
+COPY --from=frontend-builder /app/frontend/static/ ./static/
 
 # Create data directories
 RUN mkdir -p /app/temp_faces /app/logs /app/OfflinePlayback \
