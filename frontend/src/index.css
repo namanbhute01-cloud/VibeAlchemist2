@@ -1,0 +1,189 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 230 18% 6%;
+    --foreground: 45 10% 92%;
+
+    --card: 228 16% 9%;
+    --card-foreground: 45 10% 92%;
+
+    --popover: 228 16% 9%;
+    --popover-foreground: 45 10% 92%;
+
+    --primary: 43 96% 56%;
+    --primary-foreground: 230 18% 6%;
+
+    --secondary: 228 14% 13%;
+    --secondary-foreground: 220 12% 68%;
+
+    --muted: 228 12% 15%;
+    --muted-foreground: 225 8% 44%;
+
+    --accent: 173 58% 39%;
+    --accent-foreground: 45 10% 95%;
+
+    --destructive: 0 68% 52%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 228 12% 16%;
+    --input: 228 12% 16%;
+    --ring: 43 96% 56%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 230 20% 4%;
+    --sidebar-foreground: 220 12% 62%;
+    --sidebar-primary: 43 96% 56%;
+    --sidebar-primary-foreground: 230 18% 6%;
+    --sidebar-accent: 228 14% 11%;
+    --sidebar-accent-foreground: 45 10% 92%;
+    --sidebar-border: 228 12% 12%;
+    --sidebar-ring: 43 96% 56%;
+
+    /* Semantic tokens */
+    --glow-amber: 43 96% 56%;
+    --surface-elevated: 228 14% 11%;
+    --surface-sunken: 230 20% 4%;
+    --text-dim: 225 8% 40%;
+    --success: 160 55% 45%;
+    --warning: 43 96% 56%;
+    --info: 173 58% 39%;
+    --rose: 346 72% 58%;
+    --violet: 262 52% 62%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    text-wrap: balance;
+  }
+
+  code, .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@layer utilities {
+  .glow-amber {
+    box-shadow: 0 0 20px hsl(var(--glow-amber) / 0.15),
+                0 0 60px hsl(var(--glow-amber) / 0.05);
+  }
+
+  .glow-amber-sm {
+    box-shadow: 0 0 8px hsl(var(--glow-amber) / 0.2);
+  }
+
+  .text-gradient-amber {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(43 96% 60%), hsl(25 85% 55%));
+  }
+
+  .text-gradient-teal {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(173 58% 45%), hsl(160 55% 50%));
+  }
+
+  .glow-teal {
+    box-shadow: 0 0 20px hsl(173 58% 39% / 0.15),
+                0 0 60px hsl(173 58% 39% / 0.05);
+  }
+
+  .glow-rose {
+    box-shadow: 0 0 20px hsl(346 72% 58% / 0.12),
+                0 0 60px hsl(346 72% 58% / 0.04);
+  }
+
+  .glow-violet {
+    box-shadow: 0 0 16px hsl(262 52% 62% / 0.15);
+  }
+
+  .surface-elevated {
+    @apply bg-[hsl(var(--surface-elevated))];
+  }
+
+  .surface-sunken {
+    @apply bg-[hsl(var(--surface-sunken))];
+  }
+
+  .pulse-dot {
+    @apply relative;
+  }
+
+  .pulse-dot::after {
+    content: '';
+    @apply absolute top-0 right-0 w-2.5 h-2.5 rounded-full;
+    background: hsl(var(--success));
+    box-shadow: 0 0 6px hsl(var(--success) / 0.6);
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted)) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-muted rounded-full;
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.3); }
+}
+
+@keyframes float-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes count-up {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes eq-bar {
+  0%, 100% { height: 4px; }
+  50% { height: var(--bar-height, 16px); }
+}
+
+@keyframes waveform {
+  0% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
+  100% { transform: scaleY(0.3); }
+}
+
+@keyframes scanline {
+  0% { top: 0; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
