@@ -136,12 +136,13 @@ def music_handover_loop():
                 # Commit and queue next song
                 target_group = vibe_engine.commit_handover()
 
-                if target_group != current_group:
-                    logger.info(f"HANDOVER: {current_group} -> {target_group}")
-                    player.next(target_group)
-                else:
-                    logger.info(f"HANDOVER: Continuing {target_group}")
-                    player.continue_current_folder()
+                with _playback_lock:
+                    if target_group != current_group:
+                        logger.info(f"HANDOVER: {current_group} -> {target_group}")
+                        player.next(target_group)
+                    else:
+                        logger.info(f"HANDOVER: Continuing {target_group}")
+                        player.continue_current_folder()
 
                 # Reset for next song
                 handover_age_samples = []
@@ -262,6 +263,10 @@ def processing_loop(loop):
             logger.error(f"Processing loop error: {e}")
             time.sleep(1)
 
+# Global lock to prevent race condition between handover loop and detection loop
+# when starting/switching songs
+_playback_lock = threading.Lock()
+
 def process_detections(detections, cam_id, pipeline, vibe_engine, player, face_vault, face_registry):
     """
     Process detections: log to vibe engine, start music, draw bounding boxes.
@@ -293,19 +298,20 @@ def process_detections(detections, cam_id, pipeline, vibe_engine, player, face_v
     # ── Start music if nothing is playing ──
     # The handover thread handles transitions, but this starts the FIRST song
     if good_detections and player and vibe_engine:
-        current_status = player.get_status()
-        current_song = current_status.get('song', 'None')
-        is_paused = current_status.get('paused', True)
+        with _playback_lock:
+            current_status = player.get_status()
+            current_song = current_status.get('song', 'None')
+            is_paused = current_status.get('paused', True)
 
-        if current_song == 'None' or current_song is None:
-            # No song playing — start music based on detected group
-            target_group = vibe_engine.get_current_group()
-            logger.info(f"First detection — starting music: {target_group}")
-            player.next(target_group)
-        elif is_paused:
-            # Song is paused — resume
-            player.toggle_pause()
-            logger.info("Resuming playback")
+            if current_song == 'None' or current_song is None:
+                # No song playing — start music based on detected group
+                target_group = vibe_engine.get_current_group()
+                logger.info(f"First detection — starting music: {target_group}")
+                player.next(target_group)
+            elif is_paused:
+                # Song is paused — resume
+                player.toggle_pause()
+                logger.info("Resuming playback")
 
     # ── Draw Bounding Boxes ──
     frame = pipeline.pool.get_latest_frame(cam_id)

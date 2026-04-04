@@ -48,9 +48,13 @@ class AlchemistPlayer:
         self._cached_percent = 0.0
         self._last_pos_update = 0
 
+        # ── Shutdown event (for clean thread termination) ──
+        self._shutdown_event = threading.Event()
+
         # ── Start ──
         self._start_mpv()
         self._start_pos_poller()
+        self._start_mpv_monitor()
 
     def _get_socket_path(self):
         if sys.platform == 'win32':
@@ -105,6 +109,27 @@ class AlchemistPlayer:
                 time.sleep(0.5)  # Poll every 500ms
 
         t = threading.Thread(target=poller, daemon=True, name="mpv-pos-poller")
+        t.start()
+
+    def _start_mpv_monitor(self):
+        """Background thread to monitor MPV process and auto-restart if it crashes."""
+        def monitor():
+            while not self._shutdown_event.is_set():
+                time.sleep(2)
+                with self._lock:
+                    proc = self.process
+
+                if proc is not None:
+                    poll_result = proc.poll()
+                    if poll_result is not None:
+                        logger.warning(f"MPV process died (exit code: {poll_result}), restarting...")
+                        with self._lock:
+                            self.process = None
+                            self.is_playing = False
+                        self._start_mpv()
+                        self._start_pos_poller()
+
+        t = threading.Thread(target=monitor, daemon=True, name="mpv-monitor")
         t.start()
 
     def _send_ipc_fast(self, command):

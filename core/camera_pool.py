@@ -119,8 +119,10 @@ class CameraWorker(threading.Thread):
                     self.frame_count = 0
                     self.last_log = now
 
-                # Target ~15 FPS
-                time.sleep(0.066)
+                # Adaptive sleep based on FRAME_RATE_LIMIT env var
+                frame_rate_limit = int(os.getenv("FRAME_RATE_LIMIT", "15"))
+                if frame_rate_limit > 0:
+                    time.sleep(1.0 / frame_rate_limit)
 
             except Exception as e:
                 logger.error(f"[Cam {self.cam_id}] Error: {e}")

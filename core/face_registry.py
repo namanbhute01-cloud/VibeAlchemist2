@@ -34,6 +34,12 @@ class FaceRegistry:
         self.known_faces = {}
         self.saved_faces = set()
 
+        # Pending unknown faces: temp_id -> {embeddings: list, group, age_samples, first_seen, last_seen, cam_ids, count}
+        # Only register as known after consistent detections over time
+        self.pending_unknowns = {}
+        self.pending_threshold = 5  # Minimum consistent detections before registration
+        self.pending_timeout = 10  # Seconds before pending face expires
+
         self.last_prune = time.time()
         self.lock = threading.Lock()
         self.face_counter = 0
@@ -237,5 +243,68 @@ class FaceRegistry:
         with self.lock:
             self.known_faces.clear()
             self.saved_faces.clear()
+            self.pending_unknowns.clear()
             self.face_counter = 0
             logger.info("Face registry cleared")
+
+    def track_pending_unknown(self, embedding, group, cam_id, age):
+        """
+        Track an unknown face across detections. Only returns a stable face_id
+        after consistent detections exceed the pending_threshold.
+
+        Returns: (face_id, is_ready_for_registration)
+        - face_id: A temporary ID for tracking (e.g., "pending_0")
+        - is_ready_for_registration: True when the face has been consistently detected
+        """
+        now = time.time()
+
+        # Try to match this embedding to an existing pending unknown
+        best_pending_id = None
+        best_sim = 0
+
+        for pid, pdata in self.pending_unknowns.items():
+            # Compare with average embedding of pending face
+            avg_embedding = np.mean(pdata['embeddings'], axis=0)
+            sim = self._cosine_similarity(embedding, avg_embedding)
+            if sim > 0.7 and sim > best_sim:  # High threshold for pending matching
+                best_sim = sim
+                best_pending_id = pid
+
+        if best_pending_id:
+            # Update existing pending
+            pending = self.pending_unknowns[best_pending_id]
+            pending['embeddings'].append(embedding)
+            pending['age_samples'].append(age)
+            pending['last_seen'] = now
+            pending['cam_ids'].add(cam_id)
+            pending['count'] += 1
+
+            if pending['count'] >= self.pending_threshold:
+                # Ready for registration
+                del self.pending_unknowns[best_pending_id]
+                return best_pending_id, True
+            return best_pending_id, False
+        else:
+            # Create new pending unknown
+            pending_id = f"pending_{self.face_counter}"
+            self.face_counter += 1
+            self.pending_unknowns[pending_id] = {
+                'embeddings': [embedding],
+                'age_samples': [age] if age else [],
+                'group': group,
+                'first_seen': now,
+                'last_seen': now,
+                'cam_ids': {cam_id},
+                'count': 1,
+            }
+            return pending_id, False
+
+    def prune_pending_unknowns(self):
+        """Remove pending unknowns that have expired."""
+        now = time.time()
+        expired = [
+            pid for pid, pdata in self.pending_unknowns.items()
+            if now - pdata['last_seen'] > self.pending_timeout
+        ]
+        for pid in expired:
+            del self.pending_unknowns[pid]

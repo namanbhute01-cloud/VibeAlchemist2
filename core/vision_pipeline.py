@@ -664,12 +664,32 @@ class VisionPipeline:
                             final_age = registered_age
                             group = self._age_to_group(final_age)
                     else:
-                        # New face - register
-                        face_id = self.registry.register(embedding, group, cam_id, age=raw_age)
+                        # Unknown face - track as pending before registering
+                        pending_id, is_ready = self.registry.track_pending_unknown(
+                            embedding, group, cam_id, raw_age
+                        )
+
+                        if is_ready:
+                            # Consistently detected — register as known identity
+                            avg_age = None
+                            pending_data = self.registry.pending_unknowns.get(pending_id)
+                            if pending_data and pending_data['age_samples']:
+                                avg_age = int(np.mean(pending_data['age_samples']))
+
+                            face_id = self.registry.register(
+                                embedding, group, cam_id, age=avg_age or raw_age
+                            )
+                        else:
+                            # Not yet consistently detected — use pending ID
+                            face_id = pending_id
 
                     # ── STEP 6: Temporal Age Smoothing ──
                     final_age = self._smooth_age(face_id, raw_age, age_conf)
                     group = self._age_to_group(final_age)
+
+                    # Update registry with smoothed age
+                    if self.registry and face_id in self.registry.known_faces:
+                        self.registry.update_age(face_id, final_age)
 
                     # Save to vault if new
                     if self.vault and not self.registry.is_saved(face_id):
@@ -715,7 +735,22 @@ class VisionPipeline:
                             final_age = registered_age
                             group = self._age_to_group(final_age)
                     else:
-                        face_id = self.registry.register(embedding, group, cam_id, age=raw_age)
+                        # Unknown face - track as pending before registering
+                        pending_id, is_ready = self.registry.track_pending_unknown(
+                            embedding, group, cam_id, raw_age
+                        )
+
+                        if is_ready:
+                            avg_age = None
+                            pending_data = self.registry.pending_unknowns.get(pending_id)
+                            if pending_data and pending_data['age_samples']:
+                                avg_age = int(np.mean(pending_data['age_samples']))
+
+                            face_id = self.registry.register(
+                                embedding, group, cam_id, age=avg_age or raw_age
+                            )
+                        else:
+                            face_id = pending_id
 
                     final_age = self._smooth_age(face_id, raw_age, age_conf)
                     group = self._age_to_group(final_age)
