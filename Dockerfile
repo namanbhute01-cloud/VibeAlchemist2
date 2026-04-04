@@ -67,7 +67,8 @@ COPY models/ ./models/
 RUN mkdir -p /app/models
 
 # Copy pre-built frontend from Stage 1
-COPY --from=frontend-builder /app/frontend/static/ ./static/
+# Vite outDir is "../static" relative to frontend/, which resolves to /app/static
+COPY --from=frontend-builder /app/static/ ./static/
 
 # Create data directories
 RUN mkdir -p /app/temp_faces /app/logs /app/OfflinePlayback \
