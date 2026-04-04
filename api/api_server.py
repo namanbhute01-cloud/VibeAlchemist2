@@ -556,8 +556,8 @@ if static_dir.exists():
 
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str):
-    # Skip core system endpoints
-    skip = ("api/", "feed/", "ws", "docs", "openapi")
+    # Skip core system endpoints AND mounted routes
+    skip = ("api/", "feed/", "ws", "docs", "openapi", "assets/")
     if any(full_path.startswith(s) for s in skip):
         raise HTTPException(status_code=404)
 
