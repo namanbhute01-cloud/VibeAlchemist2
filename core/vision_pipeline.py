@@ -464,8 +464,8 @@ class VisionPipeline:
                 # Seniors: minimal correction
                 corrected_age = int(raw_age * 1.05)
 
-            # Clamp to reasonable range
-            final_age = min(80, max(16, corrected_age))
+            # Clamp to reasonable range (allow kids detection: min age 5)
+            final_age = min(80, max(5, corrected_age))
 
             # Overall confidence
             overall_conf = float(np.average(

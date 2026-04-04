@@ -76,14 +76,15 @@ services:
       # Music directory - READ/WRITE so uploaded songs persist
       - ./OfflinePlayback:/app/OfflinePlayback
 
-      # Models - read-only (updated via rebuild)
-      - ./models:/app/models:ro
+      # Models are baked into the Docker image (not mounted from host)
+      # If you need custom models, mount them explicitly:
+      # - ./models:/app/models:ro
 
       # Logs
       - ./logs:/app/logs
 
-      # .env file - mount so container can read AND update it
-      - ./.env:/app/.env:rw
+      # .env file - mount read-only so container can read but not modify it
+      - ./.env:/app/.env:ro
 
     # ── Resource Limits ──
     # Prevents Vibe Alchemist from starving the HRMS server

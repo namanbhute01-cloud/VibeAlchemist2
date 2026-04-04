@@ -240,7 +240,6 @@ def processing_loop(loop):
                 # Cycle through cameras in round-robin fashion
                 current_camera_index = current_camera_index % num_cameras
                 cam_id = current_camera_index
-                current_camera_index += 1
 
                 last_process = camera_last_process.get(cam_id, 0)
                 if current_time - last_process >= base_process_interval:
@@ -250,6 +249,11 @@ def processing_loop(loop):
                         detections = pipeline.process_frame(frame, cam_id)
                         process_detections(detections, cam_id, pipeline, vibe_engine, player, face_vault, face_registry)
                         faces_detected_count += len(detections)
+                        # Only advance to next camera when we actually process one
+                        current_camera_index += 1
+                else:
+                    # Rate limit active — advance to next camera for next iteration
+                    current_camera_index += 1
 
             # Small sleep to prevent CPU spinning
             time.sleep(0.05)

@@ -13,9 +13,19 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 # Load .env file if it exists in the working directory
 if [ -f /app/.env ]; then
     echo "  Loading .env configuration..."
-    set -a
-    source /app/.env
-    set +a
+    # Safe loading: read key=value pairs without executing shell commands
+    while IFS='=' read -r key value; do
+        # Skip comments and empty lines
+        case "$key" in
+            \#*|"") continue ;;
+        esac
+        # Trim whitespace
+        key=$(echo "$key" | xargs)
+        value=$(echo "$value" | xargs)
+        if [ -n "$key" ] && [ -n "$value" ]; then
+            export "$key=$value"
+        fi
+    done < /app/.env
     echo "  .env loaded successfully"
 fi
 

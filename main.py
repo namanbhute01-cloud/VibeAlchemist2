@@ -2,16 +2,24 @@ import uvicorn
 import os
 import sys
 import signal
-import atexit
 from dotenv import load_dotenv
 
 # Suppress noisy low-level library warnings (NNPACK, etc.)
 os.environ["nnpack_limit"] = "0"
 os.environ["OMP_NUM_THREADS"] = "1"
 
+# Track whether cleanup has already run (prevent double/triple cleanup)
+_cleanup_done = False
+
 def cleanup_temp_faces(signum=None, frame=None):
     """Cleanup temp_faces directory ONLY on termination (Ctrl+C, SIGTERM, etc.)."""
-    import shutil
+    global _cleanup_done
+
+    # Idempotent: only run once
+    if _cleanup_done:
+        return
+    _cleanup_done = True
+
     from pathlib import Path
 
     temp_dir = Path(os.getenv("FACE_TEMP_DIR", "temp_faces"))
@@ -55,14 +63,10 @@ def cleanup_temp_faces(signum=None, frame=None):
 
     if signum is not None:
         print("✓ Termination signal received, exiting gracefully...")
-        sys.exit(0)
 
 # Register signal handlers for cleanup
 signal.signal(signal.SIGINT, cleanup_temp_faces)
 signal.signal(signal.SIGTERM, cleanup_temp_faces)
-
-# Register atexit for cleanup on normal exit
-atexit.register(cleanup_temp_faces)
 
 if __name__ == "__main__":
     load_dotenv()
