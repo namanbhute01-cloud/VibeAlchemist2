@@ -551,8 +551,8 @@ static_dir = Path(__file__).parent.parent / "static"
 # Mount static files at root level for production
 if static_dir.exists():
     logger.info(f"[STATIC] Serving static files from: {static_dir}")
-    # Mount assets directory for JS/CSS bundles
-    app.mount("/assets", StaticFiles(directory=str(static_dir / "assets"), html=True), name="assets")
+    # Mount assets directory for JS/CSS bundles (no html=True for JS/CSS)
+    app.mount("/assets", StaticFiles(directory=str(static_dir / "assets")), name="assets")
 
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str):
