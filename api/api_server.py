@@ -548,36 +548,45 @@ async def camera_status():
 # 5. Static Files & SPA Catch-all
 static_dir = Path(__file__).parent.parent / "static"
 
-# Mount static files at root level for production
 if static_dir.exists():
     logger.info(f"[STATIC] Serving static files from: {static_dir}")
-    # Mount assets directory for JS/CSS bundles (no html=True for JS/CSS)
-    app.mount("/assets", StaticFiles(directory=str(static_dir / "assets")), name="assets")
 
-@app.get("/{full_path:path}")
-async def serve_spa(full_path: str):
-    # Skip core system endpoints AND mounted routes
-    skip = ("api/", "feed/", "ws", "docs", "openapi", "assets/")
-    if any(full_path.startswith(s) for s in skip):
+    @app.get("/assets/{filename:path}")
+    async def serve_assets(filename: str):
+        """Serve JS/CSS assets with correct MIME types."""
+        file_path = static_dir / "assets" / filename
+        if file_path.is_file():
+            media_type = "text/javascript" if filename.endswith(".js") else "text/css" if filename.endswith(".css") else "application/octet-stream"
+            return FileResponse(file_path, media_type=media_type)
         raise HTTPException(status_code=404)
 
-    # Serve index.html for root path
-    index_file = static_dir / "index.html"
-    if full_path == "" or full_path == "/":
+    @app.get("/")
+    async def serve_root():
+        """Serve index.html for root path."""
+        index_file = static_dir / "index.html"
         if index_file.exists():
-            logger.info(f"[STATIC] Serving index.html")
             return FileResponse(index_file)
-    
-    # Check if a specific static file exists (e.g., favicon.ico, placeholder.svg)
-    target_file = static_dir / full_path
-    if target_file.is_file():
-        logger.debug(f"[STATIC] Serving file: {target_file}")
-        return FileResponse(target_file)
+        raise HTTPException(status_code=404)
 
-    # Serve index.html for SPA routes (React Router)
-    if index_file.exists():
-        logger.debug(f"[STATIC] Serving index.html for route: {full_path}")
-        return FileResponse(index_file)
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        """Serve SPA routes — skip API, feeds, WS, and assets."""
+        skip = ("api/", "feed/", "ws", "docs", "openapi", "assets/")
+        if any(full_path.startswith(s) for s in skip):
+            raise HTTPException(status_code=404)
 
-    logger.warning(f"[STATIC] File not found: {full_path}")
-    return {"error": "Frontend not built", "path": full_path}
+        # Check if a specific static file exists (favicon.ico, placeholder.svg, etc.)
+        target_file = static_dir / full_path
+        if target_file.is_file():
+            return FileResponse(target_file)
+
+        # Serve index.html for SPA routes (React Router)
+        index_file = static_dir / "index.html"
+        if index_file.exists():
+            return FileResponse(index_file)
+
+        raise HTTPException(status_code=404)
+else:
+    @app.get("/")
+    async def serve_root():
+        return {"error": "Frontend not built. Run: cd frontend && npm run build"}
