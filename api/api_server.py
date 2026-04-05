@@ -78,8 +78,9 @@ def music_handover_loop():
             # The position poller in alchemist_player.py clears current_song when
             # the song finishes (percent-pos >= 99 for 4 consecutive polls or null).
             if current_song == 'None':
-                # No song playing — start music
-                target_group = vibe_engine.get_current_group()
+                # No song playing — prepare handover and start next song
+                vibe_engine.prepare_handover()
+                target_group = vibe_engine.commit_handover()
                 started = False
                 with _playback_lock:
                     try:
@@ -323,31 +324,27 @@ _playback_lock = threading.Lock()
 
 
 def _log_detections(detections, vibe_engine, cam_id):
-    """Log good-quality detections to vibe engine; skip low-quality ones."""
-    good = [d for d in detections if d.get('is_good_quality', True)]
-    low_quality = [d for d in detections if not d.get('is_good_quality', True)]
-
-    for det in good:
+    """Log ALL detections to vibe engine (including low-quality, but weighted)."""
+    for det in detections:
         if vibe_engine:
+            # Pass quality to vibe_engine — it weights detections by quality
+            # Low-quality detections still count, just with less weight
             vibe_engine.log_detection(
                 det['group'],
                 age=det['age'],
-                quality=det.get('quality', 1.0),
+                quality=det.get('quality', 0.3),  # Low-quality gets 0.3 default
                 cam_id=det.get('cam_id', cam_id)
             )
 
-    if low_quality:
-        logger.debug(f"Cam {cam_id}: {len(low_quality)} low-quality detection(s) skipped for vibe")
-
-    return good
+    return detections
 
 
-def _handle_playback(good_detections, vibe_engine, player):
+def _handle_playback(detections, vibe_engine, player):
     """
     Resume playback when detections occur — ONLY resume, never start new songs.
     Song transitions are handled by music_handover_loop (prevents race conditions).
     """
-    if not good_detections or not player or not vibe_engine:
+    if not detections or not player or not vibe_engine:
         return
 
     with _playback_lock:

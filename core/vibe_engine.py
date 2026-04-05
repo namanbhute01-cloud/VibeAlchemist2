@@ -22,7 +22,7 @@ logger = logging.getLogger("VibeEngine")
 
 
 class VibeEngine:
-    def __init__(self, history_len=50, consensus_threshold=20):
+    def __init__(self, history_len=50, consensus_threshold=8):
         # Rolling window of detected groups: ['youths', 'adults', 'kids', ...]
         self.journal = deque(maxlen=history_len)
         self.lock = threading.Lock()
@@ -203,12 +203,12 @@ class VibeEngine:
             if self.journal:
                 return self.get_dominant_vibe()
 
-            # Final fallback to age-based
-            if self.average_age < 13:
+            # Final fallback to age-based (match vision_pipeline._age_to_group)
+            if self.average_age < 14:
                 return "kids"
-            elif self.average_age < 20:
+            elif self.average_age < 22:
                 return "youths"
-            elif self.average_age < 50:
+            elif self.average_age < 55:
                 return "adults"
             else:
                 return "seniors"
