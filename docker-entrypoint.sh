@@ -30,8 +30,16 @@ if [ -f /app/.env ]; then
 fi
 
 # Ensure required directories exist
-mkdir -p /app/temp_faces /app/logs
+mkdir -p /app/temp_faces /app/logs /app/models
 mkdir -p /app/OfflinePlayback/{kids,youths,adults,seniors}
+
+# Auto-download YOLO11n if not present (first-run only)
+if [ ! -f /app/models/yolo11n.pt ] && [ ! -f /app/models/yolo11n.onnx ] && [ ! -f /app/models/yolov8n.pt ] && [ ! -f /app/models/yolov8n.onnx ]; then
+    echo ""
+    echo "  First run: downloading YOLO11n model..."
+    python3 -c "from ultralytics import YOLO; YOLO('yolo11n.pt')" 2>&1 | while read line; do echo "    $line"; done
+    echo "  Model downloaded."
+fi
 
 # Display runtime config
 echo ""

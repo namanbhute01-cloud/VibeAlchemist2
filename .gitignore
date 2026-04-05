@@ -12,6 +12,7 @@ env/
 models/**/*.onnx
 models/**/*.pt
 models/**/*.pth
+models/**/*.zip
 models/**/
 !models/.gitkeep
 
