@@ -40,12 +40,19 @@ class CameraWorker(threading.Thread):
 
         if isinstance(self.source, str):
             # HTTP/RTSP stream — optimize for low latency
-            self.cap = cv2.VideoCapture(self.source, cv2.CAP_FFMPEG)
-            # Reduce buffer to 1 frame (lowest latency)
-            self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-            # Set timeouts for network streams
-            self.cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 5000)
-            self.cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 5000)
+            # Try FFMPEG first, fall back to default if unavailable
+            try:
+                self.cap = cv2.VideoCapture(self.source, cv2.CAP_FFMPEG)
+            except Exception:
+                logger.debug(f"[Cam {self.cam_id}] CAP_FFMPEG unavailable, using default backend")
+                self.cap = cv2.VideoCapture(self.source)
+
+            if self.cap.isOpened():
+                # Reduce buffer to 1 frame (lowest latency)
+                self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+                # Set timeouts for network streams
+                self.cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 5000)
+                self.cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 5000)
         else:
             # USB webcam
             self.cap = cv2.VideoCapture(self.source)
@@ -53,7 +60,7 @@ class CameraWorker(threading.Thread):
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
-        if self.cap.isOpened():
+        if self.cap and self.cap.isOpened():
             self.connected = True
             logger.info(f"[Cam {self.cam_id}] Connected")
         else:
@@ -93,8 +100,9 @@ class CameraWorker(threading.Thread):
                     frame = cv2.resize(frame, (int(w * scale), self.target_height),
                                        interpolation=cv2.INTER_LINEAR)
 
-                # Store latest frame for MJPEG feed
-                self.pool.latest_frames[self.cam_id] = frame
+                # Store latest frame for MJPEG feed (thread-safe)
+                with self.pool._frame_lock:
+                    self.pool.latest_frames[self.cam_id] = frame.copy()
 
                 # Push to processing queue (drop oldest if full)
                 if self.queue.full():
@@ -158,8 +166,9 @@ class CameraPool:
         self.queue = frame_queue
         self.target_height = target_height
         self.workers = []
-        self.latest_frames = {}       # Raw frames from camera workers
-        self.annotated_frames = {}    # Annotated frames with bounding boxes (updated by processing loop)
+        self.latest_frames = {}       # Raw frames from camera workers (numpy arrays)
+        self.annotated_frames = {}    # Annotated frames with bounding boxes (JPEG bytes)
+        self._frame_lock = threading.Lock()  # Thread safety for shared dicts
 
     def start(self):
         logger.info(f"Starting CameraPool: {len(self.sources)} source(s)")
@@ -172,15 +181,20 @@ class CameraPool:
         """
         Return annotated frame if available (with bounding boxes),
         otherwise return raw camera frame.
-        Annotated frames take priority so UI shows face detection boxes.
+        Returns a COPY to prevent caller mutation of shared state.
+        Thread-safe via _frame_lock.
         """
-        # First check for annotated frame (with face bounding boxes)
-        annotated = self.annotated_frames.get(cam_id)
-        if annotated is not None:
-            return annotated
+        with self._frame_lock:
+            # First check for annotated frame (with face bounding boxes)
+            annotated = self.annotated_frames.get(cam_id)
+            if annotated is not None:
+                return annotated  # bytes are immutable
 
-        # Fall back to raw camera frame
-        return self.latest_frames.get(cam_id, None)
+            # Fall back to raw camera frame (return copy)
+            raw = self.latest_frames.get(cam_id)
+            if raw is not None:
+                return raw.copy()
+            return None
 
     def get_status(self) -> list:
         """Return status of all cameras."""
@@ -204,5 +218,6 @@ class CameraPool:
         for worker in self.workers:
             worker.join(timeout=2)
         self.workers.clear()
-        self.latest_frames.clear()
-        self.annotated_frames.clear()
+        with self._frame_lock:
+            self.latest_frames.clear()
+            self.annotated_frames.clear()

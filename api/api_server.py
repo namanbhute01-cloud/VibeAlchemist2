@@ -299,17 +299,16 @@ def processing_loop():
 
                 last_process = camera_last_process.get(cam_id, 0)
                 if current_time - last_process >= base_process_interval:
-                    frame = cam_pool.get_latest_frame(cam_id)
-                    if frame is not None:
+                    # Get raw frame only (numpy array) — NOT annotated bytes
+                    frame = cam_pool.latest_frames.get(cam_id)
+                    if frame is not None and isinstance(frame, np.ndarray):
                         camera_last_process[cam_id] = current_time
                         detections = pipeline.process_frame(frame, cam_id)
                         process_detections(detections, cam_id, pipeline, vibe_engine, player, face_vault, face_registry)
                         faces_detected_count += len(detections)
-                        # Only advance to next camera when we actually process one
-                        current_camera_index += 1
-                else:
-                    # Rate limit active — advance to next camera for next iteration
-                    current_camera_index += 1
+
+                # Always advance — prevent stall on disconnected camera
+                current_camera_index += 1
 
             # Small sleep to prevent CPU spinning
             time.sleep(0.05)
@@ -419,10 +418,11 @@ def _draw_bounding_boxes(detections, cam_id, pipeline):
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1
             )
 
-        # Encode and store in annotated_frames (separate from raw camera frames)
+        # Encode and store in annotated_frames (thread-safe)
         ret, buffer = cv2.imencode('.jpg', annotated_frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
         if ret:
-            pipeline.pool.annotated_frames[cam_id] = buffer.tobytes()
+            with pipeline.pool._frame_lock:
+                pipeline.pool.annotated_frames[cam_id] = buffer.tobytes()
     except Exception as e:
         logger.warning(f"_draw_bounding_boxes error (non-fatal): {e}")
 
@@ -644,6 +644,10 @@ async def websocket_endpoint(websocket: WebSocket):
 # 4. MJPEG /feed/{cam_id} - Serves frames with bounding boxes
 @app.get("/feed/{cam_id}")
 async def camera_feed(cam_id: int):
+    # Validate camera ID
+    if cam_pool and cam_id >= len(cam_pool.sources):
+        raise HTTPException(status_code=404, detail=f"Camera {cam_id} not found")
+
     loop = asyncio.get_event_loop()
     executor = None  # default ThreadPoolExecutor
 
@@ -651,7 +655,7 @@ async def camera_feed(cam_id: int):
         while True:
             try:
                 if cam_pool:
-                    # Priority: annotated frame (with bounding boxes) > raw frame
+                    # Get annotated frame (JPEG bytes with bounding boxes) or raw frame
                     frame_data = cam_pool.get_latest_frame(cam_id)
                     if frame_data is not None:
                         if isinstance(frame_data, bytes):
@@ -663,7 +667,7 @@ async def camera_feed(cam_id: int):
                             _, buf = await loop.run_in_executor(
                                 executor,
                                 cv2.imencode, '.jpg', frame_data,
-                                [cv2.IMWRITE_JPEG_QUALITY, 70, cv2.IMWRITE_JPEG_OPTIMIZE, 1]
+                                [cv2.IMWRITE_JPEG_QUALITY, 85, cv2.IMWRITE_JPEG_OPTIMIZE, 1]
                             )
                             yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + buf.tobytes() + b'\r\n')
                 await asyncio.sleep(0.033)
