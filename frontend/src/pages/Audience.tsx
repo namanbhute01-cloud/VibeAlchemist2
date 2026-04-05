@@ -109,8 +109,6 @@ export default function AudiencePage() {
                     style={{
                         height: '100%',
                         backgroundColor: colorMap[entry] || 'hsl(var(--muted))',
-                        animation: `float-in 0.3s ease-out ${i * 20}ms forwards`,
-                        opacity: 0
                     }}
                     title={entry}
                   />

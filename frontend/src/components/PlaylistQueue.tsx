@@ -1,6 +1,6 @@
 import { AnimatedCard } from "./AnimatedCard";
 import { ListMusic, Play, Pause, MoreHorizontal, Music, Plus } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import { api } from "@/lib/api";
 import { usePlayback } from "@/hooks/usePlayback";
 import { useVibeStream } from "@/hooks/useVibeStream";
@@ -13,7 +13,7 @@ interface Track {
   group: string;
 }
 
-export function PlaylistQueue() {
+export const PlaylistQueue = memo(function PlaylistQueue() {
   const navigate = useNavigate();
   const [tracks, setTracks] = useState<Track[]>([]);
   const [loading, setLoading] = useState(true);
@@ -113,10 +113,6 @@ export function PlaylistQueue() {
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 cursor-pointer group relative",
                 isCurrent ? "bg-[hsl(var(--violet)/0.1)] border border-[hsl(var(--violet)/0.15)]" : "hover:bg-muted/50 border border-transparent",
               )}
-              style={{
-                animation: `float-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) ${500 + i * 80}ms forwards`,
-                opacity: 0,
-              }}
               onClick={() => handlePlayTrack(i)}
               onMouseEnter={() => setHoveredIndex(i)}
               onMouseLeave={() => setHoveredIndex(null)}
@@ -168,7 +164,7 @@ export function PlaylistQueue() {
       </div>
     </AnimatedCard>
   );
-}
+});
 
 function cn(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(" ");

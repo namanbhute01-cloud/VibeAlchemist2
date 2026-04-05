@@ -3,8 +3,9 @@ import { Music, SkipBack, Play, Pause, SkipForward, Volume2 } from "lucide-react
 import { usePlayback } from "@/hooks/usePlayback";
 import { useVibeStream } from "@/hooks/useVibeStream";
 import { cn } from "@/lib/utils";
+import { memo } from "react";
 
-export function NowPlaying() {
+export const NowPlaying = memo(function NowPlaying() {
   const { status, play, pause, next, prev, setVol } = usePlayback();
   const vibeState = useVibeStream();
 
@@ -142,4 +143,4 @@ export function NowPlaying() {
       </div>
     </AnimatedCard>
   );
-}
+});

@@ -142,11 +142,11 @@ export default function AnalyticsPage() {
                     <div className="relative w-full flex gap-1 items-end" style={{ height: "100%" }}>
                       <div
                         className="flex-1 rounded-t-md transition-all duration-300 group-hover:opacity-80"
-                        style={{ height: `${barH}%`, background: `linear-gradient(to top, hsl(var(--info)), hsl(var(--info) / 0.3))`, animation: `float-in 0.6s ease-out ${350 + i * 60}ms forwards`, opacity: 0 }}
+                        style={{ height: `${barH}%`, background: `linear-gradient(to top, hsl(var(--info)), hsl(var(--info) / 0.3))` }}
                       />
                       <div
                         className="flex-1 rounded-t-md transition-all duration-300 group-hover:opacity-80"
-                        style={{ height: `${ageH}%`, background: `linear-gradient(to top, hsl(var(--primary)), hsl(var(--primary) / 0.3))`, animation: `float-in 0.6s ease-out ${400 + i * 60}ms forwards`, opacity: 0 }}
+                        style={{ height: `${ageH}%`, background: `linear-gradient(to top, hsl(var(--primary)), hsl(var(--primary) / 0.3))` }}
                       />
                     </div>
                     <span className="text-[10px] font-mono text-muted-foreground mt-1">{d.day}</span>
@@ -167,7 +167,7 @@ export default function AnalyticsPage() {
             </div>
             <div className="space-y-3">
               {genreData.map((g, i) => (
-                <div key={g.genre} className="group cursor-pointer" style={{ animation: `float-in 0.4s ease-out ${450 + i * 70}ms forwards`, opacity: 0 }}>
+                <div key={g.genre} className="group cursor-pointer">
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-sm font-medium group-hover:text-[hsl(var(--violet))] transition-colors">{g.genre}</span>
                     <span className="text-xs font-mono text-muted-foreground">{g.plays} detections</span>
@@ -186,7 +186,7 @@ export default function AnalyticsPage() {
               </div>
               <div className="space-y-2">
                 {peakHours.map((h, i) => (
-                  <div key={h.time} className="flex items-center gap-3 text-xs" style={{ animation: `float-in 0.3s ease-out ${550 + i * 50}ms forwards`, opacity: 0 }}>
+                  <div key={h.time} className="flex items-center gap-3 text-xs">
                     <span className="w-20 text-muted-foreground font-mono">{h.time}</span>
                     <div className="flex-1 h-1 rounded-full bg-muted overflow-hidden">
                       <div className="h-full rounded-full bg-primary/60" style={{ width: `${(h.avg / 52) * 100}%` }} />

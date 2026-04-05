@@ -1,19 +1,11 @@
 import { useCameras } from '@/hooks/useCameras'
 import { api } from '@/lib/api'
-import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Users, Eye } from 'lucide-react'
 
 export function CameraGrid() {
   const cameras = useCameras()
-  const [feedTimestamp, setFeedTimestamp] = useState(Date.now())
-
-  // Refresh feed URL every 30 seconds to prevent stale connections
-  useEffect(() => {
-    const interval = setInterval(() => setFeedTimestamp(Date.now()), 30000)
-    return () => clearInterval(interval)
-  }, [])
 
   if (cameras.length === 0) {
     return (
@@ -30,7 +22,7 @@ export function CameraGrid() {
           <Card key={cam.id} className="overflow-hidden bg-black/40 border-white/5 backdrop-blur-md">
             <div className="relative aspect-video bg-black">
               <img
-                src={`${api.feedUrl(cam.id)}?t=${feedTimestamp}`}
+                src={api.feedUrl(cam.id)}
                 className="w-full h-full object-contain"
                 onError={e => {
                   const t = e.target as HTMLImageElement

@@ -5,8 +5,9 @@ import { Slider } from '@/components/ui/slider'
 import { Badge } from '@/components/ui/badge'
 import { SkipBack, Play, Pause, SkipForward, Shuffle, Volume2, Music } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { memo } from 'react'
 
-export function MusicPlayer() {
+export const MusicPlayer = memo(function MusicPlayer() {
   const { status, pause, play, next, prev, shuffle, setVol } = usePlayback()
   const vibeState = useVibeStream()
 
@@ -92,4 +93,4 @@ export function MusicPlayer() {
       </div>
     </div>
   )
-}
+});

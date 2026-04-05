@@ -253,13 +253,13 @@ export default function SettingsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Env Variables */}
           <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center gap-3" style={{ animation: "float-in 0.5s ease-out 100ms forwards", opacity: 0 }}>
+            <div className="flex items-center gap-3">
               <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Environment Variables</h2>
               <div className="flex-1 h-px bg-border/30" />
             </div>
 
             {/* Category tabs */}
-            <div className="flex gap-2 flex-wrap" style={{ animation: "float-in 0.5s ease-out 150ms forwards", opacity: 0 }}>
+            <div className="flex gap-2 flex-wrap">
               {categories.map(cat => (
                 <button
                   key={cat.id}
@@ -326,7 +326,6 @@ export default function SettingsPage() {
                       <div
                         key={env.key}
                         className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 ${isEditing ? "bg-primary/5 border border-primary/20" : "hover:bg-muted/30 border border-transparent"}`}
-                        style={{ animation: `float-in 0.4s ease-out ${200 + i * 60}ms forwards`, opacity: 0 }}
                       >
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-mono font-medium text-[hsl(var(--info))]">{env.key}</p>
@@ -372,7 +371,7 @@ export default function SettingsPage() {
 
           {/* Preferences */}
           <div className="space-y-4">
-            <div className="flex items-center gap-3" style={{ animation: "float-in 0.5s ease-out 200ms forwards", opacity: 0 }}>
+            <div className="flex items-center gap-3">
               <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Preferences</h2>
               <div className="flex-1 h-px bg-border/30" />
             </div>
@@ -383,7 +382,6 @@ export default function SettingsPage() {
                   <div
                     key={setting.key}
                     className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-muted/30 transition-colors"
-                    style={{ animation: `float-in 0.4s ease-out ${300 + i * 60}ms forwards`, opacity: 0 }}
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium">{setting.label}</p>

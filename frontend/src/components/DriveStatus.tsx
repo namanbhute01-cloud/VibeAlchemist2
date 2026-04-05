@@ -1,8 +1,9 @@
 import { useDriveStatus } from '@/hooks/useDriveStatus'
 import { Badge } from '@/components/ui/badge'
 import { Cloud, CloudOff, RefreshCw } from 'lucide-react'
+import { memo } from 'react'
 
-export function DriveStatus() {
+export const DriveStatus = memo(function DriveStatus() {
   const data = useDriveStatus()
 
   if (!data) return null
@@ -30,4 +31,4 @@ export function DriveStatus() {
       </div>
     </div>
   )
-}
+});

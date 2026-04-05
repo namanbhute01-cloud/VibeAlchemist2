@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { AnimatedCard } from "./AnimatedCard";
 import { LucideIcon, TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, memo } from "react";
 
 interface StatCardProps {
   icon: LucideIcon;
@@ -45,23 +45,27 @@ const colorMap = {
   },
 };
 
-function useAnimatedCounter(target: number, duration = 1200) {
-  const [count, setCount] = useState(0);
-  const prevTarget = useRef(0);
+function useAnimatedCounter(target: number, duration = 600) {
+  const [count, setCount] = useState(target);
+  const prevTarget = useRef(target);
+  const currentCount = useRef(target);
   const ref = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
-    // Reset and re-animate when target changes
     if (prevTarget.current !== target) {
+      const from = currentCount.current;
+      const delta = target - from;
       prevTarget.current = target;
-      setCount(0);
       const start = performance.now();
       const animate = (now: number) => {
         const elapsed = now - start;
         const progress = Math.min(elapsed / duration, 1);
         const eased = 1 - Math.pow(1 - progress, 3);
-        setCount(Math.round(eased * target));
+        const val = Math.round(from + delta * eased);
+        currentCount.current = val;
+        setCount(val);
         if (progress < 1) requestAnimationFrame(animate);
+        else { currentCount.current = target; setCount(target); }
       };
       requestAnimationFrame(animate);
     }
@@ -70,7 +74,7 @@ function useAnimatedCounter(target: number, duration = 1200) {
   return { count, ref };
 }
 
-export function StatCard({ icon: Icon, label, value, sub, delay = 0, glow, trend, color = "amber" }: StatCardProps) {
+export const StatCard = memo(function StatCard({ icon: Icon, label, value, sub, delay = 0, glow, trend, color = "amber" }: StatCardProps) {
   const TrendIcon = trend === "up" ? TrendingUp : trend === "down" ? TrendingDown : Minus;
   const trendColor = trend === "up" ? "text-[hsl(var(--success))]" : trend === "down" ? "text-[hsl(var(--rose))]" : "text-muted-foreground";
   const c = colorMap[color];
@@ -121,4 +125,4 @@ export function StatCard({ icon: Icon, label, value, sub, delay = 0, glow, trend
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-transparent to-transparent group-hover:via-current opacity-0 group-hover:opacity-20 transition-opacity duration-500" style={{ color: `hsl(var(--${color === 'amber' ? 'primary' : color === 'teal' ? 'info' : color}))` }} />
     </AnimatedCard>
   );
-}
+});

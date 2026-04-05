@@ -10,7 +10,12 @@ interface AnimatedCardProps {
 export function AnimatedCard({ children, className, delay = 0 }: AnimatedCardProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
-  const [animKey, setAnimKey] = useState(0);
+
+  useEffect(() => {
+    // Animate once on mount
+    const timer = setTimeout(() => setVisible(true), 50);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -21,17 +26,8 @@ export function AnimatedCard({ children, className, delay = 0 }: AnimatedCardPro
     return () => observer.disconnect();
   }, []);
 
-  // Re-trigger animation when children change
-  useEffect(() => {
-    setVisible(false);
-    setAnimKey(k => k + 1);
-    const timer = setTimeout(() => setVisible(true), 50);
-    return () => clearTimeout(timer);
-  }, [children]);
-
   return (
     <div
-      key={animKey}
       ref={ref}
       className={cn(
         "rounded-xl border border-border/50 bg-card p-5 transition-all duration-300",

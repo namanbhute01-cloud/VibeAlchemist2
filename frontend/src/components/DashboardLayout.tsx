@@ -4,8 +4,9 @@ import { DriveStatus } from "./DriveStatus";
 import { useVibeStream } from "@/hooks/useVibeStream";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { memo } from "react";
 
-export function DashboardLayout({ children }: { children: React.ReactNode }) {
+export const DashboardLayout = memo(function DashboardLayout({ children }: { children: React.ReactNode }) {
   const vibeState = useVibeStream();
   
   // Use vibeState directly (it's flat now)
@@ -54,4 +55,4 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       </div>
     </SidebarProvider>
   );
-}
+});

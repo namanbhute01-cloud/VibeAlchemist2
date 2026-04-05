@@ -172,7 +172,7 @@ export default function PlaylistPage() {
         </div>
 
         {/* Search & Filter */}
-        <div className="flex flex-col sm:flex-row gap-3" style={{ animation: "float-in 0.5s ease-out 100ms forwards", opacity: 0 }}>
+        <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
@@ -248,7 +248,6 @@ export default function PlaylistPage() {
                       isCurrent ? "bg-[hsl(var(--violet))/0.08] border border-[hsl(var(--violet))/0.2]" : "hover:bg-muted/30 border border-transparent"
                     }`}
                     onClick={() => handlePlayTrack(track)}
-                    style={{ animation: `float-in 0.4s ease-out ${200 + i * 50}ms forwards`, opacity: 0 }}
                   >
                     {/* Play indicator */}
                     <div className="w-5 h-5 flex items-center justify-center shrink-0">

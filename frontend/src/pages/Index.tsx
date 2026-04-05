@@ -43,13 +43,6 @@ const Dashboard = () => {
     { range: "Seniors", count: faceStats.by_group?.seniors || 0, color: "hsl(346 72% 58%)" },
   ];
 
-  // Debug logging
-  useEffect(() => {
-    console.log('[Dashboard] vibeState:', vibeState);
-    console.log('[Dashboard] cameras:', cameras.length);
-    console.log('[Dashboard] faceStats:', faceStats);
-  }, [vibeState, cameras, faceStats]);
-
   return (
     <DashboardLayout>
       <div className="max-w-7xl mx-auto space-y-8 pb-24">

@@ -1,5 +1,6 @@
 import { AnimatedCard } from "./AnimatedCard";
 import { Users } from "lucide-react";
+import { memo } from "react";
 
 interface AgeGaugeProps {
   avgAge: string | number;
@@ -7,7 +8,7 @@ interface AgeGaugeProps {
   delay?: number;
 }
 
-export function AgeGauge({ avgAge, ageBreakdown, delay = 0 }: AgeGaugeProps) {
+export const AgeGauge = memo(function AgeGauge({ avgAge, ageBreakdown, delay = 0 }: AgeGaugeProps) {
   const total = ageBreakdown.reduce((s, b) => s + b.count, 0);
   const ageNum = typeof avgAge === 'string' ? parseFloat(avgAge) || 0 : avgAge;
 
@@ -52,7 +53,6 @@ export function AgeGauge({ avgAge, ageBreakdown, delay = 0 }: AgeGaugeProps) {
                   style={{
                     width: `${total ? (group.count / total) * 100 : 0}%`,
                     backgroundColor: group.color,
-                    animation: `float-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) ${(delay || 0) + i * 100}ms forwards`,
                     boxShadow: `0 0 8px ${group.color}40`,
                   }}
                 />
@@ -64,4 +64,4 @@ export function AgeGauge({ avgAge, ageBreakdown, delay = 0 }: AgeGaugeProps) {
       </div>
     </AnimatedCard>
   );
-}
+});

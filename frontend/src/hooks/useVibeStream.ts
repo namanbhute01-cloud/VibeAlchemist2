@@ -48,7 +48,14 @@ export function useVibeStream(): VibeState | null {
       ws.onmessage = (e) => {
         try {
           const data = JSON.parse(e.data)
-          setState(data)
+          // Only update if data actually changed (shallow comparison)
+          setState(prev => {
+            if (!prev) return data;
+            // Quick shallow compare of top-level keys
+            const keys = Object.keys(data) as (keyof VibeState)[];
+            const changed = keys.some(k => prev[k] !== data[k]);
+            return changed ? data : prev;
+          })
         } catch (err) {
           console.error('[VibeStream] Parse error:', err)
         }
