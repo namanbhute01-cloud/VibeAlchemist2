@@ -74,9 +74,13 @@ if __name__ == "__main__":
     # Configuration
     host = os.getenv("API_HOST", "0.0.0.0")
     port = int(os.getenv("API_PORT", 8000))
-    reload = os.getenv("DEBUG", "false").lower() == "true"  # Disable reload for proper signal handling
+    # reload=True causes uvicorn to restart on ANY file change (including logs, temp_faces)
+    # This causes crashes and UI flickering. Default to False for stability.
+    reload = os.getenv("DEBUG", "false").lower() == "true"
+    if reload:
+        print("WARNING: DEBUG mode with reload enabled — NOT recommended for production")
 
-    print(f"--- VIBE ALCHEMIST V2 STARTING ON {host}:{port} ---")
+    print(f"--- VIBE ALCHEMIST V2 STARTING ON {host}:{port} (reload={reload}) ---")
     print("--- Press Ctrl+C to stop and cleanup temp_faces ---")
 
     try:
@@ -85,6 +89,8 @@ if __name__ == "__main__":
             host=host,
             port=port,
             reload=reload,
+            # Exclude non-Python files from reload watcher to prevent spurious restarts
+            reload_excludes=["logs/*", "temp_faces/*", "*.log", "*.json", "static/*", "frontend/*"] if reload else None,
             log_level="info"
         )
     finally:

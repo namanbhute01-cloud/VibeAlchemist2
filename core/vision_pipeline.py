@@ -249,8 +249,8 @@ class VisionPipeline:
             try:
                 yolo_faces = self.face_model(
                     person_crop,
-                    conf=0.30,     # Higher confidence threshold
-                    iou=0.35,      # Stricter NMS
+                    conf=0.40,     # Increased from 0.30 — only high-confidence faces
+                    iou=0.30,      # Stricter NMS to avoid duplicates
                     verbose=False,
                     augment=False,
                     half=False
@@ -259,7 +259,8 @@ class VisionPipeline:
                     fx1, fy1, fx2, fy2 = map(int, box.xyxy[0])
                     conf = float(box.conf[0])
 
-                    if conf < 0.30:
+                    # Strict confidence threshold
+                    if conf < 0.40:
                         continue
 
                     gx1, gy1 = offset_x + fx1, offset_y + fy1
@@ -268,11 +269,11 @@ class VisionPipeline:
                     face_w = gx2 - gx1
                     face_h = gy2 - gy1
 
-                    # Minimum face size
+                    # Minimum face size — reject tiny faces
                     if face_w < self.min_face_size or face_h < self.min_face_size:
                         continue
 
-                    # Aspect ratio validation
+                    # Aspect ratio validation — faces should be roughly square
                     aspect = max(face_w, face_h) / min(face_w, face_h)
                     if aspect > self.max_aspect_ratio:
                         continue
@@ -284,7 +285,7 @@ class VisionPipeline:
             except Exception as e:
                 logger.debug(f"YOLO face detection error: {e}")
 
-        # ── Haar Cascade Fallback ──
+        # ── Haar Cascade Fallback (stricter settings) ──
         if self.haar_cascade is not None and not self.haar_cascade.empty():
             try:
                 gray = cv2.cvtColor(person_crop, cv2.COLOR_BGR2GRAY)
@@ -292,8 +293,8 @@ class VisionPipeline:
 
                 haar_faces = self.haar_cascade.detectMultiScale(
                     gray,
-                    scaleFactor=1.08,
-                    minNeighbors=5,
+                    scaleFactor=1.1,       # Increased from 1.08 — fewer false positives
+                    minNeighbors=6,        # Increased from 5 — stricter
                     minSize=(self.min_face_size, self.min_face_size),
                     flags=cv2.CASCADE_SCALE_IMAGE
                 )
@@ -367,17 +368,18 @@ class VisionPipeline:
         """
         Predict age with multi-crop approach and quality assessment.
         Returns (age, confidence).
+        Only accepts high-quality faces for reliable age estimation.
         """
         if not self.age_sess:
             return 25, 0.0
 
         try:
-            # Assess quality first
+            # Assess quality first — stricter thresholds
             is_good, blur, brightness, size = self.assess_face_quality(face)
             quality_score = (min(1.0, blur / 200.0) + brightness + size) / 3.0
 
-            # Reject very low quality faces
-            if not is_good:
+            # Reject very low quality faces — stricter threshold
+            if not is_good or quality_score < 0.25:
                 return 25, max(0.0, quality_score * 0.5)
 
             # Align face for better age estimation
@@ -588,12 +590,12 @@ class VisionPipeline:
         h, w = frame.shape[:2]
 
         # ── STEP 2: Human Detection (detect ALL persons) ──
-        # Lower confidence to catch more people, especially at distance
+        # Strict settings: only detect actual humans, reject false positives
         persons = self.person_model(
             enhanced,
-            classes=[0],       # Only person
-            conf=0.25,         # Lowered from 0.35 to detect more people
-            iou=0.40,          # Stricter NMS to avoid duplicate boxes
+            classes=[0],       # Only person class (class 0 = human)
+            conf=0.30,         # Minimum confidence for person detection
+            iou=0.45,          # Stricter NMS to avoid duplicate boxes
             verbose=False,
             augment=False,
             half=False
@@ -604,8 +606,8 @@ class VisionPipeline:
             for box in result.boxes:
                 conf = float(box.conf[0])
 
-                # Allow lower confidence (0.25) to catch more people
-                if conf < 0.25:
+                # Strict confidence threshold
+                if conf < 0.30:
                     continue
 
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
@@ -615,17 +617,17 @@ class VisionPipeline:
                 box_w = x2 - x1
                 box_h = y2 - y1
 
-                # Lowered minimum size to detect distant people
-                if box_w < 50 or box_h < 50:
+                # Minimum person size — reject tiny detections
+                if box_w < 60 or box_h < 60:
                     continue
 
-                # Aspect ratio validation (humans are roughly vertical)
+                # Aspect ratio validation — humans are roughly vertical
                 aspect = max(box_w, box_h) / min(box_w, box_h)
-                if aspect > 4.0:  # Relaxed from 3.0
+                if aspect > 3.5:  # Strict: reject extremely wide/tall boxes
                     continue
 
-                # Relaxed body proportion check
-                if box_h < box_w * 0.3:
+                # Body proportion check — height should be greater than width for humans
+                if box_h < box_w * 0.4:
                     continue  # Too wide, likely not a human
 
                 person_crop = enhanced[y1:y2, x1:x2]

@@ -158,7 +158,8 @@ class CameraPool:
         self.queue = frame_queue
         self.target_height = target_height
         self.workers = []
-        self.latest_frames = {}
+        self.latest_frames = {}       # Raw frames from camera workers
+        self.annotated_frames = {}    # Annotated frames with bounding boxes (updated by processing loop)
 
     def start(self):
         logger.info(f"Starting CameraPool: {len(self.sources)} source(s)")
@@ -168,6 +169,17 @@ class CameraPool:
             self.workers.append(worker)
 
     def get_latest_frame(self, cam_id: int):
+        """
+        Return annotated frame if available (with bounding boxes),
+        otherwise return raw camera frame.
+        Annotated frames take priority so UI shows face detection boxes.
+        """
+        # First check for annotated frame (with face bounding boxes)
+        annotated = self.annotated_frames.get(cam_id)
+        if annotated is not None:
+            return annotated
+
+        # Fall back to raw camera frame
         return self.latest_frames.get(cam_id, None)
 
     def get_status(self) -> list:
@@ -193,3 +205,4 @@ class CameraPool:
             worker.join(timeout=2)
         self.workers.clear()
         self.latest_frames.clear()
+        self.annotated_frames.clear()

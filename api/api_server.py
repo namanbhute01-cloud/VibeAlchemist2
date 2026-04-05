@@ -74,7 +74,30 @@ def music_handover_loop():
                 logger.debug(f"New song: {current_song}")
 
             if current_song == 'None':
-                time.sleep(0.2)
+                # No song playing — start music
+                target_group = vibe_engine.get_current_group()
+                started = False
+                with _playback_lock:
+                    try:
+                        success = player.next(target_group)
+                        if success:
+                            time.sleep(0.8)
+                            verify = player.get_status()
+                            if verify.get('percent', 0) > 0:
+                                started = True
+                                logger.info(f"Music started: {target_group}")
+                            else:
+                                logger.warning(f"next() succeeded but percent=0")
+                        else:
+                            logger.error(f"player.next() returned False — playback failed")
+                    except Exception as e:
+                        logger.warning(f"Failed to start music: {e}")
+
+                if not started:
+                    time.sleep(3)  # Longer wait before retry
+                else:
+                    time.sleep(1)
+                last_monitored_song = None  # Force re-detect
                 continue
 
             # ── Detect song ended (percent dropped from high to low) ──
@@ -97,12 +120,33 @@ def music_handover_loop():
                 target_group = vibe_engine.commit_handover()
 
                 with _playback_lock:
-                    if target_group != current_group:
-                        logger.info(f"HANDOVER: {current_group} -> {target_group}")
-                        player.next(target_group)
-                    else:
-                        logger.info(f"HANDOVER: Continuing {target_group}")
-                        player.continue_current_folder()
+                    try:
+                        if target_group != current_group:
+                            logger.info(f"HANDOVER: {current_group} -> {target_group}")
+                            success = player.next(target_group)
+                        else:
+                            logger.info(f"HANDOVER: Continuing {current_group}")
+                            success = player.continue_current_folder()
+
+                        if not success:
+                            logger.error(f"Handover: player returned False — will retry")
+                            last_monitored_song = None
+                            song_ended = False
+                            continue
+
+                        # Verify playback actually started
+                        time.sleep(0.5)
+                        verify = player.get_status()
+                        if verify.get('percent', 0) < 1:
+                            logger.warning(f"Handover: music not playing after handover — retrying")
+                            last_monitored_song = None
+                            song_ended = False
+                            continue
+                    except Exception as e:
+                        logger.error(f"Song handover failed: {e}")
+                        last_monitored_song = None
+                        song_ended = False
+                        continue
 
                 # Reset for next song
                 handover_age_samples = []
@@ -249,96 +293,108 @@ def _log_detections(detections, vibe_engine, cam_id):
 
 
 def _handle_playback(good_detections, vibe_engine, player):
-    """Start or resume music playback when detections occur."""
+    """
+    Resume playback when detections occur — ONLY resume, never start new songs.
+    Song transitions are handled by music_handover_loop (prevents race conditions).
+    """
     if not good_detections or not player or not vibe_engine:
         return
 
     with _playback_lock:
-        current_status = player.get_status()
-        current_song = current_status.get('song', 'None')
-        is_paused = current_status.get('paused', True)
+        try:
+            current_status = player.get_status()
+            current_song = current_status.get('song', 'None')
+            is_paused = current_status.get('paused', True)
 
-        if current_song == 'None' or current_song is None:
-            target_group = vibe_engine.get_current_group()
-            logger.info(f"First detection — starting music: {target_group}")
-            player.next(target_group)
-        elif is_paused:
-            player.toggle_pause()
-            logger.info("Resuming playback")
+            # ONLY resume if paused — don't start new songs (music_handover_loop does that)
+            if current_song != 'None' and is_paused:
+                player.toggle_pause()
+                logger.info("Resuming playback on detection")
+        except Exception as e:
+            logger.warning(f"_handle_playback error (non-fatal): {e}")
 
 
 def _draw_bounding_boxes(detections, cam_id, pipeline):
-    """Draw annotated bounding boxes on the latest frame and store it."""
-    frame = pipeline.pool.get_latest_frame(cam_id)
-    if frame is None or not isinstance(frame, np.ndarray):
-        return
+    """Draw annotated bounding boxes on the latest frame and store in annotated_frames dict."""
+    try:
+        # Get raw frame from camera pool
+        raw_frame = pipeline.pool.latest_frames.get(cam_id)
+        if raw_frame is None or not isinstance(raw_frame, np.ndarray):
+            return
 
-    annotated_frame = frame.copy()
-    h, w = annotated_frame.shape[:2]
-    good_count = sum(1 for d in detections if d.get('is_good_quality', True))
+        annotated_frame = raw_frame.copy()
+        h, w = annotated_frame.shape[:2]
+        good_count = sum(1 for d in detections if d.get('is_good_quality', True))
 
-    for det in detections:
-        x1, y1, x2, y2 = det['bbox']
-        x1, y1 = max(0, x1), max(0, y1)
-        x2, y2 = min(w, x2), min(h, y2)
+        for det in detections:
+            x1, y1, x2, y2 = det['bbox']
+            x1, y1 = max(0, x1), max(0, y1)
+            x2, y2 = min(w, x2), min(h, y2)
 
-        is_good = det.get('is_good_quality', True)
-        quality = det.get('quality', 0)
+            is_good = det.get('is_good_quality', True)
+            quality = det.get('quality', 0)
 
-        color = (0, 255, 0) if is_good else (0, 255, 255)
-        thickness = 3 if is_good else 2
+            color = (0, 255, 0) if is_good else (0, 255, 255)
+            thickness = 3 if is_good else 2
 
-        cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), color, thickness)
+            cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), color, thickness)
 
-        label = f"Age:{det['age']} {det['group']} ({quality:.1f})"
-        (label_w, label_h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+            label = f"Age:{det['age']} {det['group']} ({quality:.1f})"
+            (label_w, label_h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
 
-        cv2.rectangle(
-            annotated_frame,
-            (x1, y1 - label_h - 8),
-            (x1 + label_w + 6, y1),
-            color, -1
-        )
+            cv2.rectangle(
+                annotated_frame,
+                (x1, y1 - label_h - 8),
+                (x1 + label_w + 6, y1),
+                color, -1
+            )
 
-        cv2.putText(
-            annotated_frame, label,
-            (x1 + 3, y1 - 4),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1
-        )
+            cv2.putText(
+                annotated_frame, label,
+                (x1 + 3, y1 - 4),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1
+            )
 
-    # Detection counter badge
-    total = len(detections)
-    if total > 0:
-        counter_text = f"Faces: {good_count}/{total}"
-        (cw, ch), _ = cv2.getTextSize(counter_text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
-        cv2.rectangle(
-            annotated_frame,
-            (w - cw - 20, 8),
-            (w - 8, 8 + ch + 8),
-            (0, 255, 0) if good_count == total else (0, 165, 255), -1
-        )
-        cv2.putText(
-            annotated_frame, counter_text,
-            (w - cw - 15, 8 + ch + 3),
-            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1
-        )
+        # Detection counter badge
+        total = len(detections)
+        if total > 0:
+            counter_text = f"Faces: {good_count}/{total}"
+            (cw, ch), _ = cv2.getTextSize(counter_text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+            cv2.rectangle(
+                annotated_frame,
+                (w - cw - 20, 8),
+                (w - 8, 8 + ch + 8),
+                (0, 255, 0) if good_count == total else (0, 165, 255), -1
+            )
+            cv2.putText(
+                annotated_frame, counter_text,
+                (w - cw - 15, 8 + ch + 3),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1
+            )
 
-    ret, buffer = cv2.imencode('.jpg', annotated_frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
-    if ret:
-        pipeline.pool.latest_frames[cam_id] = buffer.tobytes()
+        # Encode and store in annotated_frames (separate from raw camera frames)
+        ret, buffer = cv2.imencode('.jpg', annotated_frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+        if ret:
+            pipeline.pool.annotated_frames[cam_id] = buffer.tobytes()
+    except Exception as e:
+        logger.warning(f"_draw_bounding_boxes error (non-fatal): {e}")
 
 
 def process_detections(detections, cam_id, pipeline, vibe_engine, player, face_vault, face_registry):
     """
     Process detections: delegate to specialized sub-functions.
     Music handover (song transitions) is handled by music_handover_loop() thread.
+    All operations wrapped in try/except to prevent server crashes.
     """
     if not detections:
         return
 
-    good_detections = _log_detections(detections, vibe_engine, cam_id)
-    _handle_playback(good_detections, vibe_engine, player)
-    _draw_bounding_boxes(detections, cam_id, pipeline)
+    try:
+        good_detections = _log_detections(detections, vibe_engine, cam_id)
+        _handle_playback(good_detections, vibe_engine, player)
+        _draw_bounding_boxes(detections, cam_id, pipeline)
+    except Exception as e:
+        logger.error(f"process_detections error (non-fatal): {e}")
 
 # --- LIFECYCLE ---
 @asynccontextmanager
@@ -487,24 +543,52 @@ app.include_router(settings.router, prefix="/api")
 @app.websocket("/ws/vibe-stream")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
+    last_state_time = 0
+    min_interval = 1.0  # Send state at most once per second (prevents flickering)
+
     try:
         while True:
-            if vibe_engine:
-                # Fetch counts for real-time StatCards
-                cam_count = len(cam_pool.sources) if cam_pool else 0
-                face_count = face_registry.get_summary().get('total_unique', 0) if face_registry else 0
-                saved_count = face_registry.get_saved_count() if face_registry else 0
+            try:
+                now = time.time()
+                if now - last_state_time >= min_interval:
+                    # Send state — throttled to prevent UI flickering
+                    if vibe_engine:
+                        cam_count = len(cam_pool.sources) if cam_pool else 0
+                        face_count = face_registry.get_summary().get('total_unique', 0) if face_registry else 0
+                        saved_count = face_registry.get_saved_count() if face_registry else 0
 
-                state = vibe_engine.get_state(
-                    player=player,
-                    camera_count=cam_count,
-                    face_count=face_count
-                )
-                # Override with actual saved faces count for UI
-                state['unique_faces'] = saved_count
-                state['active_cameras'] = cam_count
-                await websocket.send_json(state)
-            await asyncio.sleep(0.5)
+                        state = vibe_engine.get_state(
+                            player=player,
+                            camera_count=cam_count,
+                            face_count=face_count
+                        )
+                        state['unique_faces'] = saved_count
+                        state['active_cameras'] = cam_count
+                    else:
+                        state = {
+                            "status": "initializing",
+                            "detected_group": "None",
+                            "current_vibe": "None",
+                            "age": "...",
+                            "average_age": 0,
+                            "journal_count": 0,
+                            "percent_pos": 0,
+                            "is_playing": False,
+                            "paused": True,
+                            "shuffle": True,
+                            "current_song": "",
+                            "next_vibe": None,
+                            "active_cameras": 0,
+                            "unique_faces": 0,
+                        }
+                    await websocket.send_json(state)
+                    last_state_time = now
+
+                # Heartbeat — keeps connection alive without triggering re-renders
+                await asyncio.sleep(0.5)
+            except Exception:
+                # Connection lost — exit loop, client will reconnect
+                break
     except WebSocketDisconnect:
         logger.info("WebSocket client disconnected")
     except Exception as e:
@@ -513,23 +597,33 @@ async def websocket_endpoint(websocket: WebSocket):
 # 4. MJPEG /feed/{cam_id} - Serves frames with bounding boxes
 @app.get("/feed/{cam_id}")
 async def camera_feed(cam_id: int):
+    loop = asyncio.get_event_loop()
+    executor = None  # default ThreadPoolExecutor
+
     async def generate():
         while True:
-            if cam_pool:
-                frame_data = cam_pool.get_latest_frame(cam_id)
-                if frame_data is not None:
-                    if isinstance(frame_data, bytes):
-                        # Already encoded (annotated frame from process_detections)
-                        yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame_data + b'\r\n')
-                    elif isinstance(frame_data, np.ndarray):
-                        # Raw frame from camera worker — encode quickly
-                        _, buf = cv2.imencode('.jpg', frame_data, [
-                            cv2.IMWRITE_JPEG_QUALITY, 70,
-                            cv2.IMWRITE_JPEG_OPTIMIZE, 1,
-                        ])
-                        yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + buf.tobytes() + b'\r\n')
-            # 33ms = ~30 FPS for smooth feed display
-            await asyncio.sleep(0.033)
+            try:
+                if cam_pool:
+                    # Priority: annotated frame (with bounding boxes) > raw frame
+                    frame_data = cam_pool.get_latest_frame(cam_id)
+                    if frame_data is not None:
+                        if isinstance(frame_data, bytes):
+                            # Already encoded (annotated frame with bounding boxes)
+                            if len(frame_data) > 100:
+                                yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame_data + b'\r\n')
+                        elif isinstance(frame_data, np.ndarray):
+                            # Raw frame from camera — encode in thread pool
+                            _, buf = await loop.run_in_executor(
+                                executor,
+                                cv2.imencode, '.jpg', frame_data,
+                                [cv2.IMWRITE_JPEG_QUALITY, 70, cv2.IMWRITE_JPEG_OPTIMIZE, 1]
+                            )
+                            yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + buf.tobytes() + b'\r\n')
+                await asyncio.sleep(0.033)
+            except Exception:
+                # Client disconnected — exit generator gracefully
+                return
+
     return StreamingResponse(
         generate(),
         media_type="multipart/x-mixed-replace;boundary=frame",

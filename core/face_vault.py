@@ -169,31 +169,46 @@ class FaceVault:
                 self.sync_now()
 
     def sync_now(self):
-        """Triggers an immediate upload cycle."""
-        if not self.service: return
+        """Triggers an immediate upload cycle.
         
+        Files uploaded to Google Drive are NEVER deleted from Drive.
+        Only local temp_faces files are removed after successful upload.
+        On server termination, remaining temp_faces are cleaned up.
+        """
+        if not self.service:
+            return
+
         files = list(self.temp_dir.glob("*.png"))
-        if not files: return
-        
+        if not files:
+            return
+
         logger.info(f"Starting Drive Sync: {len(files)} files pending...")
         uploaded = 0
-        
+
         for f in files:
             try:
                 file_metadata = {'name': f.name, 'parents': [self.drive_folder_id]}
                 media = MediaFileUpload(str(f), mimetype='image/png')
-                
-                self.service.files().create(body=file_metadata, media_body=media, fields='id').execute()
-                
-                # Delete local after success
+
+                result = self.service.files().create(
+                    body=file_metadata, 
+                    media_body=media, 
+                    fields='id'
+                ).execute()
+
+                # File uploaded successfully — delete LOCAL copy only
+                # Drive files are NEVER deleted
                 f.unlink()
                 uploaded += 1
+                logger.info(f"Uploaded to Drive: {f.name} (ID: {result.get('id')})")
+
             except Exception as e:
-                logger.error(f"Failed to upload {f.name}: {e}")
-        
+                logger.error(f"Failed to upload {f.name} to Drive: {e}")
+                # Keep local file — retry next sync cycle
+
         self.last_sync = time.time()
         self.upload_count += uploaded
-        logger.info(f"Drive Sync Complete. Uploaded: {uploaded}/{len(files)}")
+        logger.info(f"Drive Sync Complete. Uploaded: {uploaded}/{len(files)} (total: {self.upload_count})")
 
     def get_status(self) -> dict:
         pending = len(list(self.temp_dir.glob("*.png"))) if self.temp_dir.exists() else 0

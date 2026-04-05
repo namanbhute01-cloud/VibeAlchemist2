@@ -9,8 +9,11 @@ env/
 .idea/
 
 # Models
-models/*.onnx
-models/*.pt
+models/**/*.onnx
+models/**/*.pt
+models/**/*.pth
+models/**/
+!models/.gitkeep
 
 # Face Storage
 temp_faces/

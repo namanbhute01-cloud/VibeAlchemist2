@@ -137,6 +137,22 @@ class AlchemistPlayer:
         if not self.process:
             return None
 
+        # Check if MPV process is still alive BEFORE trying to connect
+        if self.process.poll() is not None:
+            logger.warning("MPV process died — restarting before IPC")
+            self._start_mpv()
+            time.sleep(0.5)
+            if not self.process or self.process.poll() is not None:
+                return None
+        else:
+            # MPV is alive — if socket doesn't exist, restart MPV
+            if not os.path.exists(self.socket_path):
+                logger.warning("MPV alive but socket missing — restarting")
+                self._start_mpv()
+                time.sleep(0.5)
+                if not self.process or self.process.poll() is not None:
+                    return None
+
         try:
             msg = json.dumps({"command": command}) + "\n"
 
@@ -146,12 +162,12 @@ class AlchemistPlayer:
                     return None
             else:
                 with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
-                    s.settimeout(0.05)  # 50ms timeout — much faster
+                    s.settimeout(0.05)  # 50ms timeout
                     s.connect(self.socket_path)
                     s.sendall(msg.encode())
                     data = s.recv(4096).decode()
                     return json.loads(data.split('\n')[0])
-        except (socket.timeout, ConnectionRefusedError, BrokenPipeError):
+        except (socket.timeout, ConnectionRefusedError, BrokenPipeError, FileNotFoundError):
             return None
         except Exception:
             return None
@@ -160,6 +176,22 @@ class AlchemistPlayer:
         """Standard IPC with moderate timeout (100ms for queries)."""
         if not self.process:
             return None
+
+        # Check if MPV process is still alive BEFORE trying to connect
+        if self.process.poll() is not None:
+            logger.warning("MPV process died — restarting before IPC")
+            self._start_mpv()
+            time.sleep(0.5)
+            if not self.process or self.process.poll() is not None:
+                return None
+        else:
+            # MPV is alive — if socket doesn't exist, restart MPV
+            if not os.path.exists(self.socket_path):
+                logger.warning("MPV alive but socket missing — restarting")
+                self._start_mpv()
+                time.sleep(0.5)
+                if not self.process or self.process.poll() is not None:
+                    return None
 
         try:
             msg = json.dumps({"command": command}) + "\n"
@@ -175,14 +207,24 @@ class AlchemistPlayer:
                     s.sendall(msg.encode())
                     data = s.recv(4096).decode()
                     return json.loads(data.split('\n')[0])
-        except (socket.timeout, ConnectionRefusedError, BrokenPipeError):
+        except (socket.timeout, ConnectionRefusedError, BrokenPipeError, FileNotFoundError):
             return None
         except Exception:
             return None
 
     def play(self, filepath: str):
-        """Plays a specific file."""
-        self._send_ipc(["loadfile", filepath])
+        """Plays a specific file. Returns True if playback started successfully."""
+        result = self._send_ipc(["loadfile", filepath])
+        if result is None:
+            logger.error(f"Failed to load file via IPC: {filepath} — MPV may be unresponsive")
+            # Try to restart MPV
+            self._start_mpv()
+            time.sleep(0.5)
+            result = self._send_ipc(["loadfile", filepath])
+            if result is None:
+                logger.error(f"Still failed after MPV restart: {filepath}")
+                return False
+
         with self._lock:
             self.current_song = Path(filepath).stem
             self.song_history.append(filepath)
@@ -190,9 +232,10 @@ class AlchemistPlayer:
             self.paused = False
             self._cached_percent = 0.0
         logger.info(f"Now Playing: {self.current_song}")
+        return True
 
     def next(self, group: str):
-        """Plays a song from the specified group."""
+        """Plays a song from the specified group. Returns True if playback started."""
         with self._lock:
             self.current_folder = group
 
@@ -203,7 +246,7 @@ class AlchemistPlayer:
 
         if not songs:
             logger.warning(f"No songs in {group}")
-            return
+            return False
 
         # Pick a song NOT in recent history (avoid repeats)
         recent_files = set(str(s) for s in list(self.song_history)[-5:])
@@ -217,17 +260,18 @@ class AlchemistPlayer:
             # Sequential: pick next song not in history
             next_song = available[0]
 
-        self.play(str(next_song))
+        return self.play(str(next_song))
 
     def continue_current_folder(self):
         """
         Play next song from the CURRENT folder.
         Used when a song finishes — keeps playing from same folder
         until the vibe engine signals a group change.
+        Returns True if playback started.
         """
         with self._lock:
             folder = self.current_folder
-        self.next(folder)
+        return self.next(folder)
 
     def prev(self):
         """Plays the previous song from history."""
