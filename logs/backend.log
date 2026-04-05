@@ -1,666 +1,230 @@
 --- VIBE ALCHEMIST V2 STARTING ON 0.0.0.0:8000 (reload=False) ---
 --- Press Ctrl+C to stop and cleanup temp_faces ---
-2026-04-05 15:26:48,526 | INFO | [STATIC] Serving static files from: /home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/static
-INFO:     Started server process [7129]
+2026-04-06 00:45:04,967 | INFO | [STATIC] Serving static files from: /home/naman/Projects/Vibe Alchemist/vibe_alchemist_v2/static
+INFO:     Started server process [15322]
 INFO:     Waiting for application startup.
-2026-04-05 15:26:48,528 | INFO | Initializing Vibe Alchemist V2 Systems...
-2026-04-05 15:26:51,934 | INFO | VibeEngine V2 initialized with quality-weighted detection
-2026-04-05 15:26:52,441 | INFO | MPV Engine Started
-2026-04-05 15:26:52,443 | INFO | FaceRegistry V2 initialized (threshold=0.55, prune=3600s)
-2026-04-05 15:26:52,443 | WARNING | Google Drive credentials not configured. Running in local-only mode.
-2026-04-05 15:26:52,444 | INFO | Loading yolov8n.onnx (ONNX)
-2026-04-05 15:26:52,451 | INFO | Loading yolov8n-face.onnx (ONNX)
-2026-04-05 15:26:52,925 | INFO | Loaded arcface_r100.onnx
-2026-04-05 15:26:52,937 | INFO | Loaded dex_age.onnx
-2026-04-05 15:26:52,943 | INFO | VisionPipeline V2 initialized with improved accuracy settings
-2026-04-05 15:26:52,943 | INFO | Starting CameraPool: 2 source(s)
-2026-04-05 15:26:52,943 | INFO | [Cam 0] Connecting: 0
-2026-04-05 15:26:52,943 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
-2026-04-05 15:26:52,945 | INFO | Music handover monitor started
-2026-04-05 15:26:52,945 | INFO | [STARTUP] All core modules initialized.
+2026-04-06 00:45:04,970 | INFO | Initializing Vibe Alchemist V2 Systems...
+2026-04-06 00:45:09,959 | INFO | VibeEngine V2 initialized with quality-weighted detection
+2026-04-06 00:45:10,460 | INFO | MPV Engine Started
+2026-04-06 00:45:10,462 | INFO | FaceRegistry V2 initialized (threshold=0.55, prune=3600s)
+2026-04-06 00:45:10,463 | WARNING | Google Drive credentials not configured. Running in local-only mode.
+2026-04-06 00:45:10,463 | INFO | Loading yolov8n.onnx (ONNX)
+2026-04-06 00:45:10,477 | INFO | Loading yolov8n-face.onnx (ONNX)
+2026-04-06 00:45:11,241 | INFO | Loaded arcface_r100.onnx
+2026-04-06 00:45:11,258 | INFO | Loaded dex_age.onnx
+2026-04-06 00:45:11,265 | INFO | VisionPipeline V2 initialized with improved accuracy settings
+2026-04-06 00:45:11,265 | INFO | Starting CameraPool: 2 source(s)
+2026-04-06 00:45:11,266 | INFO | [Cam 0] Connecting: 0
+2026-04-06 00:45:11,267 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
+2026-04-06 00:45:11,267 | INFO | Music handover monitor started
+2026-04-06 00:45:11,268 | INFO | [STARTUP] All core modules initialized.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-2026-04-05 15:26:52,947 | INFO | Now Playing: Rakhlo Tum Chupaake
-INFO:     127.0.0.1:52406 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52408 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     127.0.0.1:52420 - "GET / HTTP/1.1" 200 OK
-2026-04-05 15:26:53,225 | INFO | [Cam 0] Connected
-INFO:     10.167.82.64:63727 - "GET / HTTP/1.1" 200 OK
-INFO:     10.167.82.64:63727 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50116 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:54713 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60999 - "WebSocket /ws" [accepted]
-INFO:     connection open
-INFO:     10.167.82.64:63727 - "GET /api/playback/library HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50116 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:54713 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:54713 - "GET /favicon.ico HTTP/1.1" 200 OK
-INFO:     10.167.82.64:55453 - "WebSocket /ws" [accepted]
-INFO:     connection open
-INFO:     10.167.82.64:50116 - "GET /feed/0?t=1775383022506 HTTP/1.1" 200 OK
-INFO:     10.167.82.64:63727 - "GET /feed/1?t=1775383022506 HTTP/1.1" 200 OK
-INFO:     10.167.82.64:52567 - "WebSocket /ws" [accepted]
-INFO:     connection open
-INFO:     10.167.82.64:63195 - "WebSocket /ws" [accepted]
-INFO:     connection open
+2026-04-06 00:45:11,272 | INFO | Now Playing: Coke Studio Season 14 Pasoori Ali Sethi x Shae Gill
+2026-04-06 00:45:11,553 | INFO | [Cam 0] Connected
 Loading models/yolov8n.onnx for ONNX Runtime inference...
 Using ONNX Runtime 1.24.4 with CPUExecutionProvider
-INFO:     10.167.82.64:58335 - "WebSocket /ws" [accepted]
-INFO:     connection open
-INFO:     10.167.82.64:54713 - "GET / HTTP/1.1" 200 OK
-INFO:     connection closed
-INFO:     connection closed
-INFO:     connection closed
-INFO:     connection closed
-INFO:     connection closed
-INFO:     10.167.82.64:54713 - "GET /assets/index-CUpUyo76.js HTTP/1.1" 200 OK
-INFO:     10.167.82.64:49771 - "GET /assets/index-C5IcW44D.css HTTP/1.1" 200 OK
-2026-04-05 15:26:53,747 | INFO | Music started: adults
-INFO:     10.167.82.64:54713 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:49771 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57137 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/playback/library HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57137 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:49398 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:54721 - "WebSocket /ws" [accepted]
-INFO:     connection open
-INFO:     10.167.82.64:54713 - "GET /favicon.ico HTTP/1.1" 200 OK
-INFO:     10.167.82.64:49398 - "GET /feed/0?t=1775383023113 HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57137 - "GET /feed/1?t=1775383023113 HTTP/1.1" 200 OK
-INFO:     10.167.82.64:51586 - "WebSocket /ws" [accepted]
-INFO:     connection open
-INFO:     10.167.82.64:65285 - "WebSocket /ws" [accepted]
-INFO:     connection open
-INFO:     10.167.82.64:52402 - "WebSocket /ws" [accepted]
-INFO:     connection open
-INFO:     10.167.82.64:61182 - "WebSocket /ws" [accepted]
-INFO:     connection open
+2026-04-06 00:45:12,072 | INFO | Music started: adults
+INFO:     127.0.0.1:34626 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34634 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34644 - "GET / HTTP/1.1" 200 OK
 Loading models/yolov8n-face.onnx for ONNX Runtime inference...
 Using ONNX Runtime 1.24.4 with CPUExecutionProvider
-INFO:     10.167.82.64:54713 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:54713 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:54713 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:49771 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x72eaa8004840] Connection to tcp://192.168.29.203:8000 failed: Connection timed out
-[ WARN:0@9.804] global cap.cpp:215 open VIDEOIO(FFMPEG): backend is generally available but can't be used to capture by name
-2026-04-05 15:26:57,956 | ERROR | [Cam 1] Failed to open
-2026-04-05 15:26:57,956 | WARNING | [Cam 1] Reconnecting in 2s...
-INFO:     10.167.82.64:60722 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:49771 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:54713 - "GET /api/faces HTTP/1.1" 200 OK
-2026-04-05 15:26:59,957 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
-INFO:     10.167.82.64:49771 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:49771 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:27:01,462 | INFO | Saved face: pending_0 | Group: adults | Quality: 0.31 | Age: 25 | Size: 179x252
-2026-04-05 15:27:01,462 | INFO | Face saved: pending_0 (Group: adults, Age: 25, Quality: 0.31)
-2026-04-05 15:27:01,462 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.31
-INFO:     10.167.82.64:49771 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:49771 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:54713 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:54713 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:54713 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:27:04,858 | INFO | Saved face: pending_1 | Group: adults | Quality: 0.28 | Age: 25 | Size: 265x221
-2026-04-05 15:27:04,858 | INFO | Face saved: pending_1 (Group: adults, Age: 25, Quality: 0.28)
-2026-04-05 15:27:04,859 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.28
-INFO:     10.167.82.64:54713 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x72eaa8004840] Connection to tcp://192.168.29.203:8000 failed: Connection timed out
-[ WARN:0@16.815] global cap.cpp:215 open VIDEOIO(FFMPEG): backend is generally available but can't be used to capture by name
-2026-04-05 15:27:04,967 | ERROR | [Cam 1] Failed to open
-2026-04-05 15:27:04,967 | WARNING | [Cam 1] Reconnecting in 3.0s...
-INFO:     10.167.82.64:54713 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:49771 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:62173 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:62173 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:62173 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:27:07,967 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
-INFO:     10.167.82.64:62173 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:49771 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:49771 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:49771 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:27:10,007 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.29
-INFO:     10.167.82.64:49771 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:49771 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:62173 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x72eaa8004840] Connection to tcp://192.168.29.203:8000 failed: Connection timed out
-[ WARN:0@24.823] global cap.cpp:215 open VIDEOIO(FFMPEG): backend is generally available but can't be used to capture by name
-2026-04-05 15:27:12,975 | ERROR | [Cam 1] Failed to open
-2026-04-05 15:27:12,975 | WARNING | [Cam 1] Reconnecting in 4.5s...
-INFO:     10.167.82.64:60722 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:62173 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:49771 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/cameras HTTP/1.1" 200 OK
-2026-04-05 15:27:15,796 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.27
-INFO:     10.167.82.64:60722 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:27:17,475 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
-INFO:     10.167.82.64:60722 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:49771 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:62173 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:27:19,263 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.27
-INFO:     10.167.82.64:60722 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:62173 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:49771 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x72eaa8004840] Connection to tcp://192.168.29.203:8000 failed: Connection timed out
-[ WARN:0@34.332] global cap.cpp:215 open VIDEOIO(FFMPEG): backend is generally available but can't be used to capture by name
-2026-04-05 15:27:22,484 | ERROR | [Cam 1] Failed to open
-2026-04-05 15:27:22,484 | WARNING | [Cam 1] Reconnecting in 6.75s...
-2026-04-05 15:27:22,706 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.27
-INFO:     10.167.82.64:60722 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:62173 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:49771 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57756 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:49771 - "GET /feed/0?t=1775383053115 HTTP/1.1" 200 OK
-INFO:     10.167.82.64:62173 - "GET /feed/1?t=1775383053115 HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:27:25,945 | INFO | New Identity: adults_25_3 | Group: adults | Age: 25 | Cam: 0
-2026-04-05 15:27:25,948 | INFO | Saved face: adults_25_3 | Group: adults | Quality: 0.24 | Age: 25 | Size: 180x163
-2026-04-05 15:27:25,948 | INFO | Face saved: adults_25_3 (Group: adults, Age: 25, Quality: 0.24)
-2026-04-05 15:27:26,599 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.24
-INFO:     10.167.82.64:60722 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57756 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57756 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57756 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57756 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:27:29,235 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
-2026-04-05 15:27:29,840 | INFO | Saved face: pending_3 | Group: adults | Quality: 0.26 | Age: 25 | Size: 272x195
-2026-04-05 15:27:29,841 | INFO | Face saved: pending_3 (Group: adults, Age: 25, Quality: 0.26)
-2026-04-05 15:27:29,841 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.26
-INFO:     10.167.82.64:57756 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57756 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/cameras HTTP/1.1" 200 OK
-2026-04-05 15:27:33,184 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.26
-INFO:     10.167.82.64:50866 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x72eaa8004840] Connection to tcp://192.168.29.203:8000 failed: Connection timed out
-[ WARN:0@46.091] global cap.cpp:215 open VIDEOIO(FFMPEG): backend is generally available but can't be used to capture by name
-2026-04-05 15:27:34,243 | ERROR | [Cam 1] Failed to open
-2026-04-05 15:27:34,243 | WARNING | [Cam 1] Reconnecting in 10s...
-INFO:     10.167.82.64:50866 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57756 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57756 - "GET /api/cameras HTTP/1.1" 200 OK
-2026-04-05 15:27:36,508 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.27
-INFO:     10.167.82.64:57756 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57756 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57756 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57756 - "GET /api/cameras HTTP/1.1" 200 OK
-2026-04-05 15:27:39,798 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.26
-INFO:     10.167.82.64:57756 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57756 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57756 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:27:43,294 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.24
-INFO:     10.167.82.64:50866 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:27:44,243 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
-INFO:     10.167.82.64:50866 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57756 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:27:46,700 | INFO | New Identity: adults_25_5 | Group: adults | Age: 25 | Cam: 0
-2026-04-05 15:27:46,703 | INFO | Saved face: adults_25_5 | Group: adults | Quality: 0.24 | Age: 25 | Size: 243x181
-2026-04-05 15:27:46,703 | INFO | Face saved: adults_25_5 (Group: adults, Age: 25, Quality: 0.24)
-2026-04-05 15:27:46,703 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.24
-INFO:     10.167.82.64:50866 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57756 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57756 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57756 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x72eaa8004840] Connection to tcp://192.168.29.203:8000 failed: Connection timed out
-[ WARN:0@61.099] global cap.cpp:215 open VIDEOIO(FFMPEG): backend is generally available but can't be used to capture by name
-2026-04-05 15:27:49,251 | ERROR | [Cam 1] Failed to open
-2026-04-05 15:27:49,251 | WARNING | [Cam 1] Reconnecting in 10s...
-INFO:     10.167.82.64:57756 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:27:50,083 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.24
-INFO:     10.167.82.64:57756 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57756 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57756 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57756 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:27:53,438 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.24
-INFO:     10.167.82.64:57756 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60722 - "GET /feed/0?t=1775383083115 HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57756 - "GET /feed/1?t=1775383083115 HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-2026-04-05 15:27:56,936 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.24
-INFO:     10.167.82.64:57062 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:27:59,251 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57062 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-2026-04-05 15:28:00,789 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.24
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57062 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x72eaa8004840] Connection to tcp://192.168.29.203:8000 failed: Connection timed out
-[ WARN:0@76.107] global cap.cpp:215 open VIDEOIO(FFMPEG): backend is generally available but can't be used to capture by name
-2026-04-05 15:28:04,259 | ERROR | [Cam 1] Failed to open
-2026-04-05 15:28:04,259 | WARNING | [Cam 1] Reconnecting in 10s...
-2026-04-05 15:28:04,521 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.26
-INFO:     10.167.82.64:50866 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57062 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57062 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57062 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57062 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:28:08,216 | INFO | New Identity: adults_25_6 | Group: adults | Age: 25 | Cam: 0
-2026-04-05 15:28:08,221 | INFO | Saved face: adults_25_6 | Group: adults | Quality: 0.27 | Age: 25 | Size: 283x194
-2026-04-05 15:28:08,221 | INFO | Face saved: adults_25_6 (Group: adults, Age: 25, Quality: 0.27)
-2026-04-05 15:28:08,221 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.27
-INFO:     10.167.82.64:57062 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:28:11,793 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.26
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57062 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:28:14,260 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57062 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57062 - "GET /api/cameras HTTP/1.1" 200 OK
-2026-04-05 15:28:15,426 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.26
-INFO:     10.167.82.64:57062 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57062 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57062 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:28:18,952 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.26
-[tcp @ 0x72eaa8004840] Connection to tcp://192.168.29.203:8000 failed: Connection timed out
-[ WARN:0@91.119] global cap.cpp:215 open VIDEOIO(FFMPEG): backend is generally available but can't be used to capture by name
-2026-04-05 15:28:19,270 | ERROR | [Cam 1] Failed to open
-2026-04-05 15:28:19,271 | WARNING | [Cam 1] Reconnecting in 10s...
-INFO:     10.167.82.64:50866 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57062 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:28:22,524 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.26
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57062 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61423 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:50866 - "GET /feed/0?t=1775383113115 HTTP/1.1" 200 OK
-INFO:     10.167.82.64:57062 - "GET /feed/1?t=1775383113115 HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:28:26,084 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.26
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61423 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56785 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:28:29,271 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
-2026-04-05 15:28:29,703 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.27
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56785 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61423 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56785 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56785 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56785 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56785 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61423 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61423 - "GET /api/cameras HTTP/1.1" 200 OK
-2026-04-05 15:28:33,288 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.27
-INFO:     10.167.82.64:61423 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x72eaa8004840] Connection to tcp://192.168.29.203:8000 failed: Connection timed out
-[ WARN:0@106.127] global cap.cpp:215 open VIDEOIO(FFMPEG): backend is generally available but can't be used to capture by name
-2026-04-05 15:28:34,279 | ERROR | [Cam 1] Failed to open
-2026-04-05 15:28:34,279 | WARNING | [Cam 1] Reconnecting in 10s...
-INFO:     10.167.82.64:61423 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61423 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56785 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:28:36,937 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.27
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56785 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61423 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:28:41,085 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.27
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61423 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56785 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61423 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61423 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61423 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:28:44,280 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
-2026-04-05 15:28:44,768 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.26
-INFO:     10.167.82.64:61423 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56785 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56785 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56785 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56785 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56785 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61423 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-2026-04-05 15:28:48,411 | INFO | Cam 0: 1 face(s) | Ages: [24] (avg: 24.0) | Groups: ['adults'] | Avg quality: 0.26
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x72eaa8004840] Connection to tcp://192.168.29.203:8000 failed: Connection timed out
-[ WARN:0@121.147] global cap.cpp:215 open VIDEOIO(FFMPEG): backend is generally available but can't be used to capture by name
-2026-04-05 15:28:49,299 | ERROR | [Cam 1] Failed to open
-2026-04-05 15:28:49,299 | WARNING | [Cam 1] Reconnecting in 10s...
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61423 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56785 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61423 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61423 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:28:51,998 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.26
-INFO:     10.167.82.64:61423 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61423 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56785 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:51512 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56785 - "GET /feed/0?t=1775383143115 HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61423 - "GET /feed/1?t=1775383143115 HTTP/1.1" 200 OK
-INFO:     10.167.82.64:51512 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:28:55,621 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.26
-INFO:     10.167.82.64:51512 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:51512 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:59899 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:28:59,252 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.26
-2026-04-05 15:28:59,299 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:59899 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:51512 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:59899 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:59899 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:59899 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:29:02,898 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.26
-INFO:     10.167.82.64:59899 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:51512 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:51512 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:51512 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x72eaa8004840] Connection to tcp://192.168.29.203:8000 failed: Connection timed out
-[ WARN:0@136.166] global cap.cpp:215 open VIDEOIO(FFMPEG): backend is generally available but can't be used to capture by name
-2026-04-05 15:29:04,318 | ERROR | [Cam 1] Failed to open
-2026-04-05 15:29:04,318 | WARNING | [Cam 1] Reconnecting in 10s...
-INFO:     10.167.82.64:51512 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:51512 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:59899 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-2026-04-05 15:29:06,517 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.26
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:59899 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:51512 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:59899 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:59899 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:29:10,167 | INFO | Cam 0: 1 face(s) | Ages: [24] (avg: 24.0) | Groups: ['adults'] | Avg quality: 0.27
-INFO:     10.167.82.64:59899 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:59899 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:51512 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:51512 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:51512 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:29:13,732 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.26
-INFO:     10.167.82.64:51512 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:29:14,318 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
-INFO:     10.167.82.64:51512 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:59899 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:29:17,486 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.26
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:59899 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:51512 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x72eaa8004840] Connection to tcp://192.168.29.203:8000 failed: Connection timed out
-[ WARN:0@151.177] global cap.cpp:215 open VIDEOIO(FFMPEG): backend is generally available but can't be used to capture by name
-2026-04-05 15:29:19,329 | ERROR | [Cam 1] Failed to open
-2026-04-05 15:29:19,329 | WARNING | [Cam 1] Reconnecting in 10s...
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:51512 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:59899 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:51512 - "GET /api/cameras HTTP/1.1" 200 OK
-2026-04-05 15:29:21,082 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.26
-INFO:     10.167.82.64:51512 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:51512 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:51512 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:59899 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61437 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:51512 - "GET /feed/0?t=1775383173115 HTTP/1.1" 200 OK
-INFO:     10.167.82.64:59899 - "GET /feed/1?t=1775383173115 HTTP/1.1" 200 OK
-2026-04-05 15:29:24,673 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.27
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61437 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56485 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61437 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61437 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:29:28,559 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.27
-INFO:     10.167.82.64:61437 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:29:29,330 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
-INFO:     10.167.82.64:61437 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56485 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61437 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61437 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61437 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:29:32,187 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.27
-INFO:     10.167.82.64:61437 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56485 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61437 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61437 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x72eaa8004840] Connection to tcp://192.168.29.203:8000 failed: Connection timed out
-[ WARN:0@166.203] global cap.cpp:215 open VIDEOIO(FFMPEG): backend is generally available but can't be used to capture by name
-2026-04-05 15:29:34,355 | ERROR | [Cam 1] Failed to open
-2026-04-05 15:29:34,355 | WARNING | [Cam 1] Reconnecting in 10s...
-INFO:     10.167.82.64:61437 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:29:35,787 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.27
-INFO:     10.167.82.64:61437 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56485 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61437 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61437 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61437 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61437 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56485 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-2026-04-05 15:29:39,480 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.27
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56485 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61437 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:29:43,159 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.27
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:29:44,356 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61437 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56485 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:29:46,873 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.27
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56485 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61437 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56485 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56485 - "GET /api/playback/status HTTP/1.1" 200 OK
-[tcp @ 0x72eaa8004840] Connection to tcp://192.168.29.203:8000 failed: Connection timed out
-[ WARN:0@181.225] global cap.cpp:215 open VIDEOIO(FFMPEG): backend is generally available but can't be used to capture by name
-2026-04-05 15:29:49,377 | ERROR | [Cam 1] Failed to open
-2026-04-05 15:29:49,377 | WARNING | [Cam 1] Reconnecting in 10s...
-INFO:     10.167.82.64:56485 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:29:50,517 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.27
-INFO:     10.167.82.64:56485 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61437 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61437 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61437 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61437 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61437 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56485 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:65233 - "GET /feed/0?t=1775383203114 HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56485 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:61437 - "GET /feed/1?t=1775383203114 HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60800 - "GET /api/faces HTTP/1.1" 200 OK
-2026-04-05 15:29:54,223 | INFO | Cam 0: 1 face(s) | Ages: [24] (avg: 24.0) | Groups: ['adults'] | Avg quality: 0.27
-INFO:     10.167.82.64:60800 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60800 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60800 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56485 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60800 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:51755 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:51755 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:29:58,022 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.27
-INFO:     10.167.82.64:51755 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:29:59,377 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
-INFO:     10.167.82.64:51755 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60800 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56485 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60800 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60800 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:60800 - "GET /api/playback/status HTTP/1.1" 200 OK
-2026-04-05 15:30:02,194 | INFO | Cam 0: 1 face(s) | Ages: [24] (avg: 24.0) | Groups: ['adults'] | Avg quality: 0.28
-INFO:     10.167.82.64:60800 - "GET /api/playback/status HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56485 - "GET /api/cameras HTTP/1.1" 200 OK
-INFO:     10.167.82.64:51755 - "GET /api/faces HTTP/1.1" 200 OK
-INFO:     10.167.82.64:56485 - "GET /api/cameras HTTP/1.1" 200 OK
-[tcp @ 0x72eaa8004840] Connection to tcp://192.168.29.203:8000 failed: Connection timed out
-[ WARN:0@196.255] global cap.cpp:215 open VIDEOIO(FFMPEG): backend is generally available but can't be used to capture by name
-2026-04-05 15:30:04,407 | ERROR | [Cam 1] Failed to open
-2026-04-05 15:30:04,407 | WARNING | [Cam 1] Reconnecting in 10s...
-2026-04-05 15:30:05,841 | INFO | Cam 0: 1 face(s) | Ages: [24] (avg: 24.0) | Groups: ['adults'] | Avg quality: 0.26
-2026-04-05 15:30:09,294 | INFO | Cam 0: 1 face(s) | Ages: [24] (avg: 24.0) | Groups: ['adults'] | Avg quality: 0.26
-2026-04-05 15:30:12,568 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.26
-2026-04-05 15:30:14,407 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
-2026-04-05 15:30:16,075 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.27
-[tcp @ 0x72eaa8004840] Connection to tcp://192.168.29.203:8000 failed: Connection timed out
-[ WARN:0@211.279] global cap.cpp:215 open VIDEOIO(FFMPEG): backend is generally available but can't be used to capture by name
-2026-04-05 15:30:19,431 | ERROR | [Cam 1] Failed to open
-2026-04-05 15:30:19,431 | WARNING | [Cam 1] Reconnecting in 10s...
-2026-04-05 15:30:19,511 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.27
-2026-04-05 15:30:22,936 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.27
-2026-04-05 15:30:26,341 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.28
-2026-04-05 15:30:29,432 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
-2026-04-05 15:30:29,587 | INFO | Cam 0: 1 face(s) | Ages: [24] (avg: 24.0) | Groups: ['adults'] | Avg quality: 0.27
-2026-04-05 15:30:32,987 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.27
-2026-04-05 15:30:33,165 | WARNING | MPV process died — restarting before IPC
-2026-04-05 15:30:33,668 | INFO | MPV Engine Started
-[tcp @ 0x72eaa8004840] Connection to tcp://192.168.29.203:8000 failed: Connection timed out
-[ WARN:0@226.312] global cap.cpp:215 open VIDEOIO(FFMPEG): backend is generally available but can't be used to capture by name
-2026-04-05 15:30:34,464 | ERROR | [Cam 1] Failed to open
-2026-04-05 15:30:34,464 | WARNING | [Cam 1] Reconnecting in 10s...
-2026-04-05 15:30:34,504 | WARNING | MPV process died (exit code: -2), restarting...
-2026-04-05 15:30:34,755 | WARNING | MPV alive but socket missing — restarting
-2026-04-05 15:30:35,005 | INFO | MPV Engine Started
-2026-04-05 15:30:35,006 | WARNING | MPV alive but socket missing — restarting
-2026-04-05 15:30:35,277 | INFO | MPV Engine Started
-2026-04-05 15:30:35,516 | INFO | MPV Engine Started
-2026-04-05 15:30:38,685 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.29
-2026-04-05 15:30:40,047 | WARNING | MPV process died — restarting before IPC
-2026-04-05 15:30:40,317 | WARNING | MPV process died — restarting before IPC
-2026-04-05 15:30:40,548 | INFO | MPV Engine Started
-2026-04-05 15:30:40,821 | INFO | MPV Engine Started
-2026-04-05 15:30:41,009 | WARNING | MPV process died (exit code: -2), restarting...
-2026-04-05 15:30:41,517 | INFO | MPV Engine Started
-2026-04-05 15:30:41,838 | WARNING | MPV process died — restarting before IPC
-2026-04-05 15:30:42,025 | WARNING | MPV process died — restarting before IPC
-2026-04-05 15:30:42,054 | WARNING | MPV alive but socket missing — restarting
-2026-04-05 15:30:42,343 | INFO | MPV Engine Started
-2026-04-05 15:30:42,529 | INFO | MPV Engine Started
-2026-04-05 15:30:42,565 | INFO | MPV Engine Started
-2026-04-05 15:30:42,899 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.23
-2026-04-05 15:30:43,345 | WARNING | MPV process died — restarting before IPC
-2026-04-05 15:30:43,848 | INFO | MPV Engine Started
-2026-04-05 15:30:44,466 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
-2026-04-05 15:30:46,723 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.23
-[tcp @ 0x72eaa8004840] Connection to tcp://192.168.29.203:8000 failed: Connection timed out
-[ WARN:0@241.346] global cap.cpp:215 open VIDEOIO(FFMPEG): backend is generally available but can't be used to capture by name
-2026-04-05 15:30:49,498 | ERROR | [Cam 1] Failed to open
-2026-04-05 15:30:49,498 | WARNING | [Cam 1] Reconnecting in 10s...
-2026-04-05 15:30:50,468 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.23
-2026-04-05 15:30:54,543 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.23
-2026-04-05 15:30:58,069 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.24
+[tcp @ 0x7f819c004840] Connection to tcp://192.168.29.203:8000 failed: Connection timed out
+[ WARN:0@11.793] global cap.cpp:215 open VIDEOIO(FFMPEG): backend is generally available but can't be used to capture by name
+2026-04-06 00:45:16,279 | ERROR | [Cam 1] Failed to open
+2026-04-06 00:45:16,279 | WARNING | [Cam 1] Reconnecting in 2s...
+2026-04-06 00:45:18,280 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
+2026-04-06 00:45:22,013 | INFO | Saved face: pending_0 | Group: youths | Quality: 0.23 | Age: 16 | Size: 55x55
+2026-04-06 00:45:22,013 | INFO | Face saved: pending_0 (Group: youths, Age: 16, Quality: 0.23)
+[tcp @ 0x7f819c004840] Connection to tcp://192.168.29.203:8000 failed: Connection timed out
+[ WARN:0@18.806] global cap.cpp:215 open VIDEOIO(FFMPEG): backend is generally available but can't be used to capture by name
+2026-04-06 00:45:23,292 | ERROR | [Cam 1] Failed to open
+2026-04-06 00:45:23,292 | WARNING | [Cam 1] Reconnecting in 3.0s...
+2026-04-06 00:45:23,476 | INFO | Saved face: pending_1 | Group: adults | Quality: 0.24 | Age: 25 | Size: 160x160
+2026-04-06 00:45:23,476 | INFO | Face saved: pending_1 (Group: adults, Age: 25, Quality: 0.24)
+2026-04-06 00:45:23,477 | INFO | Cam 0: 2 face(s) | Ages: [25, 16] (avg: 20.5) | Groups: ['adults', 'youths'] | Avg quality: 0.23
+2026-04-06 00:45:26,292 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
+[tcp @ 0x7f819c004840] Connection to tcp://192.168.29.203:8000 failed: Connection timed out
+[ WARN:0@26.820] global cap.cpp:215 open VIDEOIO(FFMPEG): backend is generally available but can't be used to capture by name
+2026-04-06 00:45:31,306 | ERROR | [Cam 1] Failed to open
+2026-04-06 00:45:31,306 | WARNING | [Cam 1] Reconnecting in 4.5s...
+2026-04-06 00:45:35,610 | INFO | Cam 0: 1 face(s) | Ages: [18] (avg: 18.0) | Groups: ['youths'] | Avg quality: 0.19
+2026-04-06 00:45:35,806 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
+[tcp @ 0x7f819c004840] Connection to tcp://192.168.29.203:8000 failed: Connection timed out
+[ WARN:0@36.350] global cap.cpp:215 open VIDEOIO(FFMPEG): backend is generally available but can't be used to capture by name
+2026-04-06 00:45:40,836 | ERROR | [Cam 1] Failed to open
+2026-04-06 00:45:40,836 | WARNING | [Cam 1] Reconnecting in 6.75s...
+2026-04-06 00:45:46,570 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.24
+INFO:     10.54.130.95:48078 - "GET / HTTP/1.1" 200 OK
+2026-04-06 00:45:47,601 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
+INFO:     10.54.130.95:48078 - "GET /assets/index-DrMe0uN8.js HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48084 - "GET /assets/index-d8J1-8ka.css HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48078 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48084 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48078 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48084 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48078 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/library HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48096 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     10.54.130.95:48078 - "GET /feed/0 HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48084 - "GET /feed/1 HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48108 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     10.54.130.95:48120 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     10.54.130.95:48134 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     10.54.130.95:48150 - "WebSocket /ws" [accepted]
+INFO:     connection open
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /favicon.ico HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48100 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48100 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+[tcp @ 0x7f819c004840] Connection to tcp://192.168.29.203:8000 failed: Connection timed out
+[ WARN:0@48.612] global cap.cpp:215 open VIDEOIO(FFMPEG): backend is generally available but can't be used to capture by name
+2026-04-06 00:45:53,098 | ERROR | [Cam 1] Failed to open
+2026-04-06 00:45:53,099 | WARNING | [Cam 1] Reconnecting in 10s...
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48100 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48100 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-04-06 00:45:58,276 | INFO | Saved face: pending_2 | Group: adults | Quality: 0.21 | Age: 25 | Size: 141x95
+2026-04-06 00:45:58,279 | INFO | Face saved: pending_2 (Group: adults, Age: 25, Quality: 0.21)
+2026-04-06 00:45:58,279 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.21
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48100 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-04-06 00:46:03,111 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48100 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-04-06 00:46:05,351 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.22
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48100 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+[tcp @ 0x7f819c004840] Connection to tcp://192.168.29.203:8000 failed: Connection timed out
+[ WARN:0@63.945] global cap.cpp:215 open VIDEOIO(FFMPEG): backend is generally available but can't be used to capture by name
+2026-04-06 00:46:08,431 | ERROR | [Cam 1] Failed to open
+2026-04-06 00:46:08,432 | WARNING | [Cam 1] Reconnecting in 10s...
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48100 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:55742 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+2026-04-06 00:46:11,383 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.25
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48100 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+2026-04-06 00:46:16,948 | INFO | New Identity: adults_25_4 | Group: adults | Age: 25 | Cam: 0
+2026-04-06 00:46:16,951 | INFO | Saved face: adults_25_4 | Group: adults | Quality: 0.28 | Age: 25 | Size: 173x133
+2026-04-06 00:46:16,951 | INFO | Face saved: adults_25_4 (Group: adults, Age: 25, Quality: 0.28)
+2026-04-06 00:46:16,951 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.28
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-04-06 00:46:18,453 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
+INFO:     10.54.130.95:48098 - "GET /api/faces/drive/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:56636 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     10.54.130.95:56636 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+[tcp @ 0x7f819c004840] Connection to tcp://192.168.29.203:8000 failed: Connection timed out
+[ WARN:0@79.523] global cap.cpp:215 open VIDEOIO(FFMPEG): backend is generally available but can't be used to capture by name
+2026-04-06 00:46:24,009 | ERROR | [Cam 1] Failed to open
+2026-04-06 00:46:24,009 | WARNING | [Cam 1] Reconnecting in 10s...
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:56636 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:56636 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:56636 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+2026-04-06 00:46:32,666 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.27
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-04-06 00:46:34,009 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:56636 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:56636 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+2026-04-06 00:46:39,129 | INFO | Cam 0: 1 face(s) | Ages: [25] (avg: 25.0) | Groups: ['adults'] | Avg quality: 0.27
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:56636 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     10.54.130.95:34406 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+[tcp @ 0x7f819c004840] Connection to tcp://192.168.29.203:8000 failed: Connection timed out
+[ WARN:0@95.250] global cap.cpp:215 open VIDEOIO(FFMPEG): backend is generally available but can't be used to capture by name
+2026-04-06 00:46:39,736 | ERROR | [Cam 1] Failed to open
+2026-04-06 00:46:39,736 | WARNING | [Cam 1] Reconnecting in 10s...
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:56636 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:56636 - "GET /api/faces HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/cameras HTTP/1.1" 200 OK
+INFO:     10.54.130.95:52498 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     10.54.130.95:48098 - "GET /api/playback/status HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     connection closed
+INFO:     connection closed
+INFO:     connection closed
+INFO:     connection closed
+INFO:     connection closed
+INFO:     Waiting for connections to close. (CTRL+C to force quit)
+2026-04-06 00:46:46,364 | WARNING | MPV process died — restarting before IPC
+2026-04-06 00:46:46,875 | INFO | MPV Engine Started
+2026-04-06 00:46:47,878 | WARNING | MPV alive but socket missing — restarting
+2026-04-06 00:46:48,603 | INFO | MPV Engine Started
+2026-04-06 00:46:49,743 | INFO | [Cam 1] Connecting: http://192.168.29.203:8000/video
