@@ -95,15 +95,52 @@ class AlchemistPlayer:
             logger.critical(f"Failed to start MPV: {e}")
 
     def _start_pos_poller(self):
-        """Background thread to poll MPV for position without blocking API calls."""
+        """
+        Background thread to poll MPV for position without blocking API calls.
+        Also detects song-end events: when percent-pos returns null or stays at 100,
+        clears current_song so the handover loop can queue the next song.
+        """
+        high_count = 0  # Consecutive polls at >= 99%
+
         def poller():
+            nonlocal high_count
             while self.process is not None:
                 try:
                     res = self._send_ipc_fast(["get_property", "percent-pos"])
                     if res and "data" in res and res["data"] is not None:
+                        pos = float(res["data"])
                         with self._lock:
-                            self._cached_percent = float(res["data"])
+                            self._cached_percent = pos
                             self._last_pos_update = time.time()
+
+                        # ── Song-end detection ──
+                        # MPV in --idle mode: when a song finishes, percent-pos
+                        # either returns null or stays at ~100. We detect consecutive
+                        # high readings and auto-clear the current song.
+                        if pos >= 99:
+                            high_count += 1
+                            if high_count >= 4:  # ~2 seconds at 99%+ = song ended
+                                with self._lock:
+                                    if self.is_playing and not self.paused:
+                                        self.current_song = None
+                                        self.is_playing = False
+                                        self.paused = False
+                                        self._cached_percent = 0.0
+                                        logger.info("Song ended (position poller)")
+                                high_count = 0
+                        else:
+                            high_count = 0
+                    else:
+                        # null response = MPV has no active file (idle mode)
+                        # Treat as song-end
+                        with self._lock:
+                            if self.is_playing:
+                                self.current_song = None
+                                self.is_playing = False
+                                self.paused = False
+                                self._cached_percent = 0.0
+                                logger.info("Song ended (null position = idle)")
+                        high_count = 0
                 except Exception:
                     pass
                 time.sleep(0.5)  # Poll every 500ms
