@@ -5,8 +5,12 @@ import signal
 from dotenv import load_dotenv
 
 # Suppress noisy low-level library warnings (NNPACK, etc.)
-os.environ["nnpack_limit"] = "0"
+os.environ["NNPACK_LIMIT"] = "0"
 os.environ["OMP_NUM_THREADS"] = "1"
+
+# Run hardware detection BEFORE importing any ML library
+from core.capability_detector import PROFILE
+PROFILE.detect()  # Auto-detects CPU/RAM/GPU and selects tier
 
 # Track whether cleanup has already run (prevent double/triple cleanup)
 _cleanup_done = False
@@ -80,7 +84,8 @@ if __name__ == "__main__":
     if reload:
         print("WARNING: DEBUG mode with reload enabled — NOT recommended for production")
 
-    print(f"--- VIBE ALCHEMIST V2 STARTING ON {host}:{port} (reload={reload}) ---")
+    print(f"--- VIBE ALCHEMIST V5 | Tier {PROFILE.tier} ({PROFILE.summary()['tier_name']}) ---")
+    print(f"--- VIBE ALCHEMIST V5 STARTING ON {host}:{port} (reload={reload}) ---")
     print("--- Press Ctrl+C to stop and cleanup temp_faces ---")
 
     try:
