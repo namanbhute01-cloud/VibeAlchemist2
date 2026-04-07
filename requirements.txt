@@ -14,7 +14,8 @@ google-api-python-client>=2.150.0
 python-multipart>=0.0.18
 
 # ── V4 Upgrade: Tracking, Fuzzy Logic, Audio ──
-bytetracker>=0.1.2
+# bytetracker>=0.1.2  # Optional - has build issues on some systems, install manually if needed
+setuptools>=69.0.0
 scikit-fuzzy>=0.4.2
 pyloudnorm>=0.1.1
 soundfile>=0.12.0
