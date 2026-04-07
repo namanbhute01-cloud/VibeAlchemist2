@@ -262,6 +262,9 @@ class AlchemistPlayer:
                 logger.error(f"Still failed after MPV restart: {filepath}")
                 return False
 
+        # Apply LUFS-based volume adjustment
+        self._apply_lufs_gain(filepath)
+
         with self._lock:
             self.current_song = Path(filepath).stem
             self.song_history.append(filepath)
@@ -270,6 +273,31 @@ class AlchemistPlayer:
             self._cached_percent = 0.0
         logger.info(f"Now Playing: {self.current_song}")
         return True
+
+    def _apply_lufs_gain(self, track_path: str):
+        """
+        Read LUFS sidecar and adjust pygame/mpv volume accordingly.
+        Sidecar format: {track_path}.lufs → {"lufs": -23.5, "gain_db": +9.5, "target": -14.0}
+        """
+        sidecar = track_path + ".lufs"
+        if not os.path.exists(sidecar):
+            return  # no sidecar — play at default volume
+
+        try:
+            with open(sidecar) as f:
+                data = json.load(f)
+            gain_db = float(data.get("gain_db", 0.0))
+            # Convert dB gain to linear multiplier
+            linear = 10 ** (gain_db / 20.0)
+            # Apply to current volume setting
+            adjusted_volume = max(0, min(100, self.volume * linear))
+            self._send_ipc_fast(["set_property", "volume", round(adjusted_volume, 1)])
+            logger.debug(
+                f"LUFS gain: {gain_db:+.1f} dB → volume {self.volume} → {adjusted_volume:.1f}"
+            )
+        except Exception as e:
+            logger.debug(f"LUFS sidecar read failed for {os.path.basename(track_path)}: {e}")
+            # Keep current volume — no harm done
 
     def next(self, group: str):
         """Plays a song from the specified group. Returns True if playback started."""
@@ -375,3 +403,71 @@ class AlchemistPlayer:
         with self._lock:
             self.is_playing = False
             self._cached_percent = 0.0
+
+    def load_playlist(self, folder_path: str, shuffle: bool = True) -> bool:
+        """
+        Load all audio files from a folder into the player's context.
+        Does NOT start playback — call play() separately.
+        :param folder_path: Path to folder containing music files.
+        :param shuffle: Whether to enable shuffle mode for this playlist.
+        :returns: True if files were found, False if folder is empty/invalid.
+        """
+        from pathlib import Path
+
+        folder = Path(folder_path)
+        if not folder.is_dir():
+            logger.warning(f"Playlist folder not found: {folder_path}")
+            return False
+
+        valid_exts = {".mp3", ".wav", ".flac", ".m4a", ".ogg", ".opus"}
+        songs = [s for s in folder.iterdir() if s.suffix.lower() in valid_exts]
+
+        if not songs:
+            logger.warning(f"No audio files in: {folder_path}")
+            return False
+
+        self.shuffle_mode = shuffle
+        self._playlist = songs
+        self._playlist_index = 0
+        logger.info(f"Loaded {len(songs)} tracks from {folder_path}")
+        return True
+
+    def play(self, filepath: str = None):
+        """
+        Plays a specific file, or the next track from the loaded playlist.
+        Returns True if playback started successfully.
+        """
+        # If no filepath given, pick next from playlist
+        if filepath is None:
+            if not hasattr(self, "_playlist") or not self._playlist:
+                logger.warning("No playlist loaded")
+                return False
+
+            if self.shuffle_mode:
+                filepath = str(random.choice(self._playlist))
+            else:
+                filepath = str(self._playlist[self._playlist_index % len(self._playlist)])
+                self._playlist_index = (self._playlist_index + 1) % len(self._playlist)
+
+        result = self._send_ipc(["loadfile", filepath])
+        if result is None:
+            logger.error(f"Failed to load file via IPC: {filepath} — MPV may be unresponsive")
+            # Try to restart MPV
+            self._start_mpv()
+            time.sleep(0.5)
+            result = self._send_ipc(["loadfile", filepath])
+            if result is None:
+                logger.error(f"Still failed after MPV restart: {filepath}")
+                return False
+
+        # Apply LUFS-based volume adjustment
+        self._apply_lufs_gain(filepath)
+
+        with self._lock:
+            self.current_song = Path(filepath).stem
+            self.song_history.append(filepath)
+            self.is_playing = True
+            self.paused = False
+            self._cached_percent = 0.0
+        logger.info(f"Now Playing: {self.current_song}")
+        return True
