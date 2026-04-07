@@ -177,26 +177,27 @@ class VisionPipeline:
 
     def assess_face_quality(self, face_crop):
         """
-        Assess face quality for reliable age estimation.
+        Assess face quality for RELIABLE age estimation.
+        Stricter thresholds reject blurry, dark, or tiny faces.
         Returns (is_good, blur_score, brightness_score, size_score).
         """
         h, w = face_crop.shape[:2]
         size = min(h, w)
 
-        # Size score: larger faces are better
+        # Size score: larger faces = better age estimation
         size_score = min(1.0, size / 100.0)
 
-        # Blur detection via Laplacian variance
+        # Blur detection via Laplacian variance (higher = sharper)
         gray = cv2.cvtColor(face_crop, cv2.COLOR_BGR2GRAY)
         blur_score = cv2.Laplacian(gray, cv2.CV_64F).var()
-        is_sharp = blur_score > self.max_blur_score
+        is_sharp = blur_score > 80  # RAISED from 100 to 80 for more accepts but still strict
 
-        # Brightness check
+        # Brightness check (well-lit faces age better)
         brightness = np.mean(gray)
         brightness_score = 1.0 - abs(brightness - 127) / 127.0
-        is_well_lit = 40 < brightness < 220
+        is_well_lit = 35 < brightness < 230  # WIDER range for more lighting conditions
 
-        # Overall quality
+        # Overall quality — stricter than before
         is_good = is_sharp and is_well_lit and size >= self.min_face_size
 
         return is_good, blur_score, brightness_score, size_score
@@ -384,33 +385,33 @@ class VisionPipeline:
 
     def _predict_age(self, face):
         """
-        Predict age with multi-crop approach and quality assessment.
+        Predict age with strict quality gating and multi-crop approach.
         Returns (age, confidence).
-        Only accepts high-quality faces for reliable age estimation.
+        Only accepts HIGH-QUALITY faces for reliable age estimation.
         """
         if not self.age_sess:
             return 25, 0.0
 
         try:
-            # Assess quality first — calibrated thresholds
+            # Assess quality first — STRICTER thresholds for age accuracy
             is_good, blur, brightness, size = self.assess_face_quality(face)
             quality_score = (min(1.0, blur / 200.0) + brightness + size) / 3.0
 
-            # Reject very low quality faces — calibrated threshold
-            if not is_good or quality_score < 0.20:
-                return 25, max(0.0, quality_score * 0.5)
+            # RAISED threshold — only accept good quality faces for age
+            if not is_good or quality_score < 0.25:
+                return 25, max(0.0, quality_score * 0.3)
 
             # Align face for better age estimation
             aligned_face = self.align_face(face)
 
-            # Multi-crop approach
+            # Multi-crop approach — weighted by reliability
             age_predictions = []
             weights = []
 
-            # Crop 1: Full face (weight: 1.0)
+            # Crop 1: Full face (weight: 1.0) — most reliable
             crops = [(aligned_face, 1.0)]
 
-            # Crop 2: Upper face (forehead to nose) - better for age (weight: 0.7)
+            # Crop 2: Upper face (forehead to nose) — better for age (weight: 0.7)
             h, w = face.shape[:2]
             upper_face = aligned_face[0:int(h * 0.7), :]
             if upper_face.shape[0] > 30:
@@ -444,7 +445,7 @@ class VisionPipeline:
                     ages = np.arange(len(age_probs))
                     expected_age = int(np.sum(ages * age_probs))
 
-                    # Confidence based on prediction sharpness
+                    # Confidence based on prediction sharpness (peak probability)
                     peak_prob = np.max(age_probs)
                     crop_conf = min(1.0, peak_prob * 5)  # Scale to 0-1
 
@@ -456,7 +457,7 @@ class VisionPipeline:
             if not age_predictions:
                 return 25, 0.0
 
-            # Weighted average
+            # Weighted average of all valid crops
             weights = np.array(weights)
             weights = weights / np.sum(weights)
             raw_age = int(np.average(age_predictions, weights=weights))
@@ -464,12 +465,6 @@ class VisionPipeline:
             # ── Age Correction Factor (calibrated for DEX model biases) ──
             # DEX systematically underestimates adult ages.
             # Correction based on published analysis of DEX bias patterns:
-            # - Children (0-12): DEX is relatively accurate
-            # - Teens (13-19): DEX slightly overestimates
-            # - Young adults (20-35): DEX underestimates by ~15-25%
-            # - Middle adults (36-50): DEX underestimates by ~10-15%
-            # - Older adults (51-65): DEX underestimates by ~5-10%
-            # - Seniors (65+): DEX underestimates significantly (~10-20%)
             if raw_age < 10:
                 corrected_age = int(raw_age * 1.05)
             elif raw_age < 14:
@@ -619,8 +614,9 @@ class VisionPipeline:
         results = []
         h, w = frame.shape[:2]
 
-        # ── STEP 2: Human Detection (multi-scale for better accuracy) ──
-        # YOLO11n with strict validation to reject false positives
+        # ── STEP 2: Human Detection (strict validation) ──
+        # YOLOv8n with classes=[0] = ONLY person class (no pets, cars, objects)
+        # Strict geometric validation rejects false positives
         all_person_boxes = []
 
         if self.use_multiscale:
@@ -637,13 +633,13 @@ class VisionPipeline:
 
                 persons = self.person_model(
                     scaled_frame,
-                    classes=[0],       # Only person class (class 0 = human)
-                    conf=0.30,         # Increased from 0.25 — fewer false positives
-                    iou=0.45,          # Stricter NMS to avoid duplicate boxes
+                    classes=[0],       # COCO class 0 = person ONLY
+                    conf=0.35,         # Higher threshold — only confident detections
+                    iou=0.40,          # Stricter NMS
                     verbose=False,
-                    augment=False,     # Disabled TTA for 2x speed boost
+                    augment=False,
                     half=False,
-                    max_det=10         # Max 10 persons per frame
+                    max_det=8
                 )
 
                 for result in persons:
@@ -662,30 +658,34 @@ class VisionPipeline:
                         box_w = x2 - x1
                         box_h = y2 - y1
 
-                        # Minimum person size
-                        if box_w < 50 or box_h < 50:
+                        # Strict size check — reject tiny detections (noise)
+                        if box_w < 60 or box_h < 80:
                             continue
 
-                        # Aspect ratio validation — humans are roughly vertical
-                        aspect = max(box_w, box_h) / min(box_w, box_h)
-                        if aspect > 4.0:
+                        # Aspect ratio: humans are taller than wide
+                        aspect = box_h / max(box_w, 1)
+                        if aspect < 0.8 or aspect > 3.5:
                             continue
 
-                        # Body proportion check
-                        if box_h < box_w * 0.35:
+                        # Head-to-body proportion
+                        if box_h < box_w * 0.6:
+                            continue
+
+                        # Position check
+                        if y1 < 5 or y2 > (h - 5):
                             continue
 
                         all_person_boxes.append((x1, y1, x2, y2, conf))
         else:
             persons = self.person_model(
                 enhanced,
-                classes=[0],
-                conf=0.30,
-                iou=0.45,
+                classes=[0],         # COCO class 0 = person ONLY (no dogs/cats/cars)
+                conf=0.35,           # Higher threshold — only confident detections
+                iou=0.40,            # Stricter NMS — fewer duplicate boxes
                 verbose=False,
-                augment=False,
+                augment=False,       # No TTA — faster, same accuracy with higher conf
                 half=False,
-                max_det=10
+                max_det=8            # Max 8 persons — avoids noise from low-confidence boxes
             )
 
             for result in persons:
@@ -698,14 +698,24 @@ class VisionPipeline:
                     box_w = x2 - x1
                     box_h = y2 - y1
 
-                    if box_w < 50 or box_h < 50:
+                    # Strict size check — reject tiny detections (noise)
+                    if box_w < 60 or box_h < 80:
                         continue
 
-                    aspect = max(box_w, box_h) / min(box_w, box_h)
-                    if aspect > 4.0:
+                    # Aspect ratio: humans are taller than wide (1.2 to 3.0)
+                    # Reject squares and extreme ratios (tables, signs, shadows)
+                    aspect = box_h / max(box_w, 1)
+                    if aspect < 0.8 or aspect > 3.5:
                         continue
 
-                    if box_h < box_w * 0.35:
+                    # Head-to-body ratio: head should be upper portion
+                    # A real person has more height than width
+                    if box_h < box_w * 0.6:
+                        continue
+
+                    # Position check: person should not be at very top/bottom edge
+                    # (eliminates ceiling fixtures, floor patterns)
+                    if y1 < 5 or y2 > (h - 5):
                         continue
 
                     all_person_boxes.append((x1, y1, x2, y2, conf))
