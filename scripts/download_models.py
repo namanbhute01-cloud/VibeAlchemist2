@@ -1,160 +1,178 @@
 #!/usr/bin/env python3
 """
-Download all VibeAlchemist2 V5 upgrade models into models/ directory.
-Run once before starting the server.
+Download and setup all VibeAlchemist2 V5 upgrade models.
 
 Usage:
     python scripts/download_models.py
 
-Models downloaded:
-    - retinaface_mobilenet_int8.onnx — Robust face detector (profile views)
-    - YOLOv8n-face.pt                — Fallback face detector
-    - mivolo_xxs.onnx                — Age + gender from face+body crops
-    - mobilenet_fer_int8.onnx        — Facial emotion recognition (7 classes)
+Models used:
+    - yolov8n-face.onnx/pt    — Face detection (already present: 12MB)
+    - arcface_r100.onnx        — Face recognition (already present: 131MB)
+    - dex_age.onnx             — Age estimation (already present: 1.3MB)
+    - yolov8n.onnx/pt          — Person detection (already present: 13MB)
 
-The server will still START even if some models are missing (graceful degradation).
+V5 Upgrade Models (download or export manually):
+    - retinaface_mobilenet_int8.onnx — Profile-view robust face detector
+    - mivolo_xxs.onnx                — Age+gender from face+body (MAE~5.1)
+    - mobilenet_fer_int8.onnx        — Emotion recognition (7 classes)
+
+NOTE: The official release URLs for V5 models don't exist yet on GitHub.
+The server will start and run with the existing V3 models (YOLOv8n-face,
+DEX-Age, ArcFace). V5 models activate automatically when placed in models/.
 """
 import os
 import sys
-import urllib.request
-import urllib.error
 
-# Allow override via environment variable
-MODELS_DIR = os.getenv("MODELS_DIR", "models")
-
-# Resolve relative to project root (parent of scripts/)
-if not os.path.isabs(MODELS_DIR):
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.dirname(script_dir)
-    MODELS_DIR = os.path.join(project_root, MODELS_DIR)
-
+# Resolve paths
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(script_dir)
+MODELS_DIR = os.getenv("MODELS_DIR", os.path.join(project_root, "models"))
 os.makedirs(MODELS_DIR, exist_ok=True)
 
-MODELS = [
-    {
-        "name": "RetinaFace MobileNet INT8",
-        "filename": "retinaface_mobilenet_int8.onnx",
-        "urls": [
-            "https://github.com/biubug6/Pytorch_Retinaface/releases/download/v0.1/RetinaFace_mobilenet.onnx",
-        ],
-        "note": "Robust face detector — profile views, occlusion, low-light",
-        "required": False,  # falls back to YOLOv8n-face
-    },
-    {
-        "name": "YOLOv8n-face",
-        "filename": "yolov8n-face.pt",
-        "urls": [
-            "https://github.com/derronqi/yolov8-face/releases/download/v1.0/yolov8n-face.pt",
-        ],
-        "note": "Fallback face detector for 240p tiered inference",
-        "required": False,  # already have yolov8n-face.onnx
-    },
-    {
-        "name": "MiVOLO XX-Small",
-        "filename": "mivolo_xxs.onnx",
-        "urls": [
-            "https://github.com/WildChlamydia/MiVOLO/releases/download/v1.0/mivolo_xxs.onnx",
-        ],
-        "note": "Age + gender from face+body crops (MAE~5.1 years)",
-        "required": False,  # demographics disabled if missing
-    },
-    {
-        "name": "MobileNet FER INT8",
-        "filename": "mobilenet_fer_int8.onnx",
-        "urls": [
-            "https://github.com/WildChlamydia/MiVOLO/releases/download/fer/mobilenet_fer_int8.onnx",
-        ],
-        "note": "Facial emotion recognition — 7 classes",
-        "required": False,  # emotion disabled if missing
-    },
+# V3 models — already present and working
+EXISTING_MODELS = [
+    "arcface_r100.onnx",
+    "dex_age.onnx",
+    "yolov8n-face.onnx",
+    "yolov8n.onnx",
+    "yolov8n.pt",
 ]
 
+# V5 models — need manual download/export
+V5_MODELS = {
+    "retinaface_mobilenet_int8.onnx": {
+        "note": "RetinaFace — profile view robust face detection",
+        "instructions": """
+  Option 1: Export from PyTorch RetinaFace
+    pip install retina-face
+    # Model downloads automatically on first use
 
-def download_one(url: str, dest: str, max_retries: int = 2) -> bool:
-    """Try downloading from a single URL with retries."""
-    for attempt in range(1, max_retries + 1):
-        try:
-            print(f"    Attempt {attempt}/{max_retries}…")
-            urllib.request.urlretrieve(
-                url, dest,
-                reporthook=lambda b, bs, t: print(
-                    f"\r    {min(100, int(b * bs * 100 / max(t, 1)))}%",
-                    end="", flush=True,
-                ),
-            )
-            print()  # newline after progress
-            return True
-        except (urllib.error.HTTPError, urllib.error.URLError, OSError) as e:
-            print(f"\r    Attempt {attempt} failed: {e}")
-            if os.path.exists(dest):
-                os.remove(dest)
-    return False
+  Option 2: Download ONNX from Ultralytics
+    pip install ultralytics
+    python -c "from ultralytics import YOLO; YOLO('yolov8n-face.pt').export(format='onnx')"
+
+  Option 3: Export from biubug6/Pytorch_Retinaface
+    git clone https://github.com/biubug6/Pytorch_Retinaface.git
+    cd Pytorch_Retinaface
+    # Convert mobilenet0.25 to ONNX using their export script
+    # Place output at: {models_dir}/retinaface_mobilenet_int8.onnx
+""",
+    },
+    "mivolo_xxs.onnx": {
+        "note": "MiVOLO XX-Small — age+gender from face+body (MAE~5.1 years)",
+        "instructions": """
+  Export from MiVOLO PyTorch checkpoint:
+    git clone https://github.com/wildchlamydia/mivolo.git
+    cd mivolo
+    pip install -e .
+    python -c "
+    from mivolo import MiVOLO
+    model = MiVOLO.from_pretrained('mivolo_d1_224')
+    model.export('mivolo_xxs.onnx', opset=18)
+    "
+    # Place output at: {models_dir}/mivolo_xxs.onnx
+
+  NOTE: ONNX export requires opset 18 and may need torch/onnx/utils.py patch.
+  See: https://github.com/WildChlamydia/MiVOLO/issues/8
+""",
+    },
+    "mobilenet_fer_int8.onnx": {
+        "note": "MobileNet FER INT8 — emotion recognition (7 classes)",
+        "instructions": """
+  Export from HuggingFace FER model:
+    from transformers import AutoModelForImageClassification
+    model = AutoModelForImageClassification.from_pretrained(
+        "trpakov/vit-face-expression"
+    )
+    # Export to ONNX with opset 18
+    # Place at: {models_dir}/mobilenet_fer_int8.onnx
+
+  Or use any pre-trained FER ONNX model (AffectNet/FER2013 trained).
+""",
+    },
+}
 
 
-def download(model: dict) -> bool:
-    """Download a single model, trying multiple URLs. Returns True on success."""
-    path = os.path.join(MODELS_DIR, model["filename"])
-    if os.path.exists(path):
-        size_mb = os.path.getsize(path) / (1024 * 1024)
-        print(f"  [SKIP] {model['filename']} already exists ({size_mb:.1f} MB)")
-        return True
-
-    print(f"  [DOWN] {model['name']} → {path}")
-    print(f"         {model['note']}")
-
-    for url in model["urls"]:
-        if download_one(url, path):
+def check_existing():
+    """Check which V3 models are already present."""
+    print("=== Checking existing V3 models ===")
+    all_present = True
+    for model in EXISTING_MODELS:
+        path = os.path.join(MODELS_DIR, model)
+        if os.path.exists(path):
             size_mb = os.path.getsize(path) / (1024 * 1024)
-            print(f"  [OK]   {model['filename']} ({size_mb:.1f} MB)")
-            return True
+            print(f"  [OK] {model} ({size_mb:.1f} MB)")
+        else:
+            print(f"  [MISSING] {model}")
+            all_present = False
+    return all_present
 
-    print(f"  [FAIL] Could not download {model['filename']} from any source.")
-    print(f"         Please manually download from one of these URLs:")
-    for url in model["urls"]:
-        print(f"           {url}")
-    print(f"         Then place the file at: {path}")
-    if model["required"]:
-        print(f"  [WARN] This model is REQUIRED for the server to function.")
+
+def check_v5():
+    """Check which V5 models are present."""
+    print("\n=== Checking V5 upgrade models ===")
+    present = []
+    missing = []
+    for model, info in V5_MODELS.items():
+        path = os.path.join(MODELS_DIR, model)
+        if os.path.exists(path):
+            size_mb = os.path.getsize(path) / (1024 * 1024)
+            print(f"  [OK] {model} ({size_mb:.1f} MB) — {info['note']}")
+            present.append(model)
+        else:
+            print(f"  [MISSING] {model} — {info['note']}")
+            missing.append(model)
+    return present, missing
+
+
+def print_v5_instructions(missing):
+    """Print instructions for downloading missing V5 models."""
+    if not missing:
+        print("\n✅ All V5 models are present!")
+        return
+
+    print(f"\n⚠ {len(missing)} V5 model(s) missing:")
+    for model in missing:
+        info = V5_MODELS[model]
+        print(f"\n  ┌─ {model}")
+        print(f"  │  {info['note']}")
+        print(info["instructions"].replace("{models_dir}", MODELS_DIR))
+        print(f"  └─")
+
+
+def main():
+    print("=" * 60)
+    print("  VibeAlchemist2 V5 Model Setup")
+    print("=" * 60)
+    print(f"\nModels directory: {MODELS_DIR}\n")
+
+    # Check V3 models
+    v3_ok = check_existing()
+
+    # Check V5 models
+    present, missing = check_v5()
+
+    # Print instructions for missing models
+    print_v5_instructions(missing)
+
+    # Summary
+    print("\n" + "=" * 60)
+    if v3_ok:
+        print("  ✅ V3 models are all present — server is fully functional")
     else:
-        print(f"  [INFO] The server will still start — this feature will be disabled.")
-    return False
+        print("  ⚠ Some V3 models are missing — server may have limited features")
+
+    if not missing:
+        print("  ✅ All V5 upgrade models are ready — run: python main.py")
+    else:
+        print(f"  ℹ {len(missing)} V5 model(s) need manual download (see above)")
+        print("  ℹ Server will still start with existing V3 models")
+        print("  ℹ V5 features activate automatically when models are added")
+
+    print("=" * 60)
+
+    return 0 if v3_ok and not missing else 1
 
 
 if __name__ == "__main__":
-    print("=== VibeAlchemist2 V4 Model Downloader ===")
-    print(f"Models directory: {MODELS_DIR}")
-    print()
-
-    success_count = 0
-    fail_count = 0
-    skip_count = 0
-
-    for m in MODELS:
-        try:
-            result = download(m)
-            if result:
-                if os.path.exists(os.path.join(MODELS_DIR, m["filename"])):
-                    success_count += 1
-                else:
-                    skip_count += 1
-            else:
-                fail_count += 1
-        except KeyboardInterrupt:
-            print("\n\n[ABORT] Download interrupted by user.")
-            sys.exit(1)
-
-    print()
-    print("=" * 45)
-    print(f"  Downloaded: {success_count}")
-    print(f"  Skipped:    {skip_count}")
-    print(f"  Failed:     {fail_count}")
-    print("=" * 45)
-
-    if fail_count > 0:
-        print()
-        print("Some models failed to download.")
-        print("You can still start the server — missing models will disable features gracefully.")
-        print("Run: python main.py")
-    else:
-        print()
-        print("All models are ready. Run: python main.py")
+    sys.exit(main())
