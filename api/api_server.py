@@ -37,22 +37,26 @@ face_registry = None
 def music_handover_loop():
     """
     Background thread that monitors song playback position.
-    - At 90%+: collects age samples continuously
-    - At 92%: prepares handover (locks in next vibe)
-    - At song end (percent drops from high to low): immediately queues next song
-    - If vibe changed: switches folder; if same: continues current folder
-    - Runs every 100ms for instant response
+
+    CORRECT LOGIC:
+    1. On startup: NO song starts automatically
+    2. While song plays: Collect ALL face detections in vibe_engine.journal
+    3. At song end (percent drops OR player clears current_song):
+       a. Calculate average age from all detections collected during this song
+       b. Determine target group from that average age
+       c. Start ONE new song from that group
+    4. NEVER start overlapping songs — only one song plays at a time
+    5. If no faces detected yet: use default 'adults' group
     """
     global vibe_engine, player
 
+    has_played_once = False  # Prevent auto-start on boot
     last_monitored_song = None
-    handover_age_samples = []
-    handover_prepared = False
     last_percent = 0
-    song_ended = False
-    stuck_at_end_count = 0  # Detect song stuck at 99%+
+    song_ending = False  # True when we've decided to end and are waiting for clean state
+    end_attempted_time = 0
 
-    logger.info("Music handover monitor started")
+    logger.info("Music handover monitor started (no auto-start)")
 
     while True:
         try:
@@ -63,170 +67,110 @@ def music_handover_loop():
             status = player.get_status()
             current_song = status.get('song', 'None')
             percent_pos = status.get('percent', 0)
-            current_group = status.get('group', 'adults')
 
-            # ── Detect new song started ──
-            if current_song != last_monitored_song and current_song != 'None':
-                last_monitored_song = current_song
-                handover_age_samples = []
-                handover_prepared = False
-                last_percent = 0
-                song_ended = False
-                logger.debug(f"New song: {current_song}")
-
-            # ── Detect song ended (primary: player cleared current_song) ──
-            # The position poller in alchemist_player.py clears current_song when
-            # the song finishes (percent-pos >= 99 for 4 consecutive polls or null).
+            # ── CASE 1: No song playing ──
             if current_song == 'None':
-                # No song playing — prepare handover and start next song
-                vibe_engine.prepare_handover()
-                target_group = vibe_engine.commit_handover()
-                started = False
-                with _playback_lock:
-                    try:
-                        success = player.next(target_group)
-                        if success:
-                            time.sleep(0.8)
-                            verify = player.get_status()
-                            if verify.get('percent', 0) > 0:
-                                started = True
-                                logger.info(f"Music started: {target_group}")
-                            else:
-                                logger.warning(f"next() succeeded but percent=0")
-                        else:
-                            logger.error(f"player.next() returned False — playback failed")
-                    except Exception as e:
-                        logger.warning(f"Failed to start music: {e}")
+                # Only start a song if:
+                # a) We've played before AND a song just ended (percent was high)
+                # b) OR user manually triggered playback
+                # NOT on first boot — wait for face detections first
+                should_start = False
 
-                if not started:
-                    time.sleep(3)  # Longer wait before retry
-                else:
+                if not has_played_once:
+                    # First boot: DON'T auto-start. Wait for faces.
                     time.sleep(1)
-                last_monitored_song = None  # Force re-detect
-                continue
+                    continue
 
-            # ── Detect song ended (primary: percent dropped from high to low) ──
-            # This catches the case where MPV jumps from 91% → 100% → 0%
-            if last_percent > 85 and percent_pos < 10 and not song_ended:
-                song_ended = True
-                logger.info(f"Song ended at {last_percent:.0f}% — triggering handover")
-
-                # Collect final age sample
-                avg_age = vibe_engine.average_age
-                if avg_age and avg_age > 0:
-                    handover_age_samples.append(avg_age)
-
-                # Prepare if not already done
-                if not handover_prepared:
-                    vibe_engine.prepare_handover()
-                    handover_prepared = True
-
-                # Commit and queue next song
-                target_group = vibe_engine.commit_handover()
-
-                with _playback_lock:
-                    try:
-                        if target_group != current_group:
-                            logger.info(f"HANDOVER: {current_group} -> {target_group}")
-                            success = player.next(target_group)
-                        else:
-                            logger.info(f"HANDOVER: Continuing {current_group}")
-                            success = player.continue_current_folder()
-
-                        if not success:
-                            logger.error(f"Handover: player returned False — will retry")
-                            last_monitored_song = None
-                            song_ended = False
-                            continue
-
-                        # Verify playback actually started
-                        time.sleep(0.5)
-                        verify = player.get_status()
-                        if verify.get('percent', 0) < 1:
-                            logger.warning(f"Handover: music not playing after handover — retrying")
-                            last_monitored_song = None
-                            song_ended = False
-                            continue
-                    except Exception as e:
-                        logger.error(f"Song handover failed: {e}")
-                        last_monitored_song = None
-                        song_ended = False
-                        continue
-
-                # Reset for next song
-                handover_age_samples = []
-                handover_prepared = False
-                last_monitored_song = None  # Force re-detect
-                last_percent = 0
-                stuck_at_end_count = 0
-                time.sleep(0.5)  # Let new song start
-                continue
-
-            # ── Secondary detection: stuck at end (99%+ for 3+ seconds) ──
-            # Fallback if the player's position poller hasn't cleared current_song yet
-            if percent_pos >= 99:
-                stuck_at_end_count += 1
-                if stuck_at_end_count >= 30 and not song_ended:  # 30 * 100ms = 3 seconds
-                    stuck_at_end_count = 0
-                    song_ended = True
-                    logger.info(f"Song stuck at {percent_pos:.0f}% for 3s — forcing handover")
-
-                    # Prepare and commit handover
-                    vibe_engine.prepare_handover()
-                    target_group = vibe_engine.commit_handover()
+                # Song just ended — calculate vibe from detections during this song
+                if last_percent > 50 or song_ending:
+                    song_ending = False
+                    target_group = _calculate_target_group()
+                    logger.info(f"Song ended. Detections during song -> target: {target_group}")
 
                     with _playback_lock:
                         try:
-                            if target_group != current_group:
-                                logger.info(f"HANDOVER (forced): {current_group} -> {target_group}")
-                                success = player.next(target_group)
-                            else:
-                                logger.info(f"HANDOVER (forced): Continuing {current_group}")
-                                success = player.continue_current_folder()
-
+                            success = player.next(target_group)
                             if success:
                                 time.sleep(0.5)
                                 verify = player.get_status()
-                                if verify.get('percent', 0) < 1:
-                                    logger.warning(f"Forced handover: retry needed")
-                                    last_monitored_song = None
-                                    song_ended = False
+                                if verify.get('percent', 0) > 0:
+                                    last_monitored_song = verify.get('song', 'None')
+                                    last_percent = 0
+                                    logger.info(f"Next song started: {target_group}")
+                                    continue
+                                else:
+                                    logger.warning(f"next() succeeded but percent=0, retrying in 3s")
+                                    time.sleep(3)
                                     continue
                         except Exception as e:
-                            logger.error(f"Forced handover failed: {e}")
-                            last_monitored_song = None
-                            song_ended = False
+                            logger.warning(f"Failed to start next song: {e}")
+                            time.sleep(2)
                             continue
-
-                    handover_age_samples = []
-                    handover_prepared = False
-                    last_monitored_song = None
-                    last_percent = 0
-                    time.sleep(0.5)
+                else:
+                    # No song and we're not ending one — idle
+                    time.sleep(1)
                     continue
+
+            # ── CASE 2: Song is playing — monitor for end ──
+            # Detect new song started (by user or by our handover)
+            if current_song != last_monitored_song:
+                last_monitored_song = current_song
+                last_percent = 0
+                song_ending = False
+                has_played_once = True  # Mark that we've played at least once
+                logger.info(f"Now playing: {current_song}")
+
+            # Detect song ending: percent dropped from high to low
+            if last_percent > 85 and percent_pos < 10 and not song_ending:
+                song_ending = True
+                logger.info(f"Song ending (was at {last_percent:.0f}%)")
+
+            # Detect song stuck at 99%+ for 5+ seconds
+            if percent_pos >= 99 and not song_ending:
+                if not hasattr(music_handover_loop, '_stuck_start'):
+                    music_handover_loop._stuck_start = time.time()
+                elif time.time() - music_handover_loop._stuck_start >= 5:
+                    song_ending = True
+                    logger.info(f"Song stuck at {percent_pos:.0f}% for 5s — ending")
+                    music_handover_loop._stuck_start = None
             else:
-                stuck_at_end_count = 0
+                music_handover_loop._stuck_start = None
 
-            # ── 90%+ window: collect age samples ──
-            if percent_pos >= 90:
-                avg_age = vibe_engine.average_age
-                if avg_age and avg_age > 0:
-                    handover_age_samples.append(avg_age)
-
-                # Prepare handover at 92%
-                if not handover_prepared and percent_pos >= 92:
-                    handover_prepared = True
-                    vibe_engine.prepare_handover()
-                    logger.info(f"Handover prepared at {percent_pos:.0f}% ({len(handover_age_samples)} samples)")
+            # ── CASE 3: Song ended naturally (player cleared it) ──
+            # This is caught by CASE 1 on next iteration when current_song == 'None'
 
             last_percent = percent_pos
 
-            # Poll every 100ms for instant response
-            time.sleep(0.1)
+            # Poll every 200ms
+            time.sleep(0.2)
 
         except Exception as e:
             logger.error(f"Music handover error: {e}")
             time.sleep(1)
+
+
+def _calculate_target_group() -> str:
+    """
+    Calculate the target music group from all face detections collected
+    during the current song. Uses vibe_engine's journal and average_age.
+    """
+    avg_age = vibe_engine.average_age
+
+    if avg_age and avg_age > 0:
+        logger.info(f"Average age during song: {avg_age:.1f}")
+    else:
+        logger.info("No faces detected during song — using default 'adults'")
+        return "adults"
+
+    # Map average age to group with fuzzy boundaries
+    if avg_age < 14:
+        return "kids"
+    elif avg_age < 22:
+        return "youths"
+    elif avg_age < 55:
+        return "adults"
+    else:
+        return "seniors"
 
 
 # --- VISION PROCESSING LOOP ---

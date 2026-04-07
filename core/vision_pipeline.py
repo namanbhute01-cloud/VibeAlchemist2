@@ -82,10 +82,11 @@ class VisionPipeline:
         self.max_person_aspect = 3.5
 
         # ── Multi-scale inference for better small/distant detection ──
-        self.use_multiscale = True
-        self.scales = [1.0, 0.667]  # Full + 2/3 scale
+        # DISABLED for performance - 240p tiered detection handles this better
+        self.use_multiscale = False
+        self.scales = [1.0]  # Single scale only
 
-        logger.info("VisionPipeline V3 initialized: YOLO11n + improved age calibration")
+        logger.info("VisionPipeline V3 initialized: YOLO + improved age calibration")
 
     # ═══════════════════════════════════════════════════════════════
     # Model Loading
@@ -133,7 +134,7 @@ class VisionPipeline:
     # ═══════════════════════════════════════════════════════════════
 
     def auto_enhance_frame(self, frame):
-        """Enhance frame based on lighting analysis."""
+        """Enhance frame only if lighting is poor (saves CPU)."""
         lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
         l, a, b = cv2.split(lab)
 
@@ -143,9 +144,12 @@ class VisionPipeline:
             self.frame_brightness_history.pop(0)
 
         avg_brightness = np.mean(self.frame_brightness_history)
-        std_dev = np.std(l)
 
-        # CLAHE for adaptive contrast
+        # Only enhance if lighting is poor — skip on well-lit frames
+        if 70 < avg_brightness < 190:
+            return frame  # Frame is fine as-is
+
+        # CLAHE for adaptive contrast (only when needed)
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
         cl = clahe.apply(l)
 
@@ -634,12 +638,12 @@ class VisionPipeline:
                 persons = self.person_model(
                     scaled_frame,
                     classes=[0],       # Only person class (class 0 = human)
-                    conf=0.25,         # Lower threshold — we'll validate later
+                    conf=0.30,         # Increased from 0.25 — fewer false positives
                     iou=0.45,          # Stricter NMS to avoid duplicate boxes
                     verbose=False,
-                    augment=True,      # TTA: flips + scales for +2% accuracy
+                    augment=False,     # Disabled TTA for 2x speed boost
                     half=False,
-                    max_det=20         # Max 20 persons per frame
+                    max_det=10         # Max 10 persons per frame
                 )
 
                 for result in persons:
@@ -676,12 +680,12 @@ class VisionPipeline:
             persons = self.person_model(
                 enhanced,
                 classes=[0],
-                conf=0.25,
+                conf=0.30,
                 iou=0.45,
                 verbose=False,
-                augment=True,
+                augment=False,
                 half=False,
-                max_det=20
+                max_det=10
             )
 
             for result in persons:

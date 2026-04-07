@@ -25,7 +25,7 @@ class VibeEngine:
     def __init__(self, history_len=50, consensus_threshold=8):
         # Rolling window of detected groups: ['youths', 'adults', 'kids', ...]
         self.journal = deque(maxlen=history_len)
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()  # Reentrant lock — get_state calls get_dominant_vibe which also acquires lock
 
         # Debounce/Consensus logic
         self.consensus_threshold = consensus_threshold

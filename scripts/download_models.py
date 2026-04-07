@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-Download all VibeAlchemist2 V4 upgrade models into models/ directory.
+Download all VibeAlchemist2 V5 upgrade models into models/ directory.
 Run once before starting the server.
 
 Usage:
     python scripts/download_models.py
 
 Models downloaded:
-    - YOLOv8n-face.pt         — Fast face+person detector for 240p tiered inference
-    - edgeface_xxs_int8.onnx  — 1.24M param face recognition (replaces buffalo_l)
-    - mivolo_xxs.onnx         — Age + gender from face+body crops
-    - mobilenet_fer_int8.onnx — Facial emotion recognition (7 classes)
+    - retinaface_mobilenet_int8.onnx — Robust face detector (profile views)
+    - YOLOv8n-face.pt                — Fallback face detector
+    - mivolo_xxs.onnx                — Age + gender from face+body crops
+    - mobilenet_fer_int8.onnx        — Facial emotion recognition (7 classes)
 
 The server will still START even if some models are missing (graceful degradation).
 """
@@ -32,22 +32,22 @@ os.makedirs(MODELS_DIR, exist_ok=True)
 
 MODELS = [
     {
+        "name": "RetinaFace MobileNet INT8",
+        "filename": "retinaface_mobilenet_int8.onnx",
+        "urls": [
+            "https://github.com/biubug6/Pytorch_Retinaface/releases/download/v0.1/RetinaFace_mobilenet.onnx",
+        ],
+        "note": "Robust face detector — profile views, occlusion, low-light",
+        "required": False,  # falls back to YOLOv8n-face
+    },
+    {
         "name": "YOLOv8n-face",
         "filename": "yolov8n-face.pt",
         "urls": [
             "https://github.com/derronqi/yolov8-face/releases/download/v1.0/yolov8n-face.pt",
         ],
-        "note": "Fast face+person detector for 240p tiered inference",
-        "required": False,  # falls back to existing yolov8n-face.onnx
-    },
-    {
-        "name": "EdgeFace XX-Small INT8",
-        "filename": "edgeface_xxs_int8.onnx",
-        "urls": [
-            "https://github.com/otroshi/edgeface/releases/download/v1.0/edgeface_xxs_int8.onnx",
-        ],
-        "note": "1.24M param face recognition — replaces buffalo_l",
-        "required": False,  # falls back to buffalo_l
+        "note": "Fallback face detector for 240p tiered inference",
+        "required": False,  # already have yolov8n-face.onnx
     },
     {
         "name": "MiVOLO XX-Small",
@@ -55,7 +55,7 @@ MODELS = [
         "urls": [
             "https://github.com/WildChlamydia/MiVOLO/releases/download/v1.0/mivolo_xxs.onnx",
         ],
-        "note": "Age + gender from face+body crops",
+        "note": "Age + gender from face+body crops (MAE~5.1 years)",
         "required": False,  # demographics disabled if missing
     },
     {
