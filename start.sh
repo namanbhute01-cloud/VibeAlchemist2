@@ -178,6 +178,18 @@ if [ ! -d "$SCRIPT_DIR/venv" ]; then
     log_success "Virtual environment created"
 fi
 
+# Step 2b: Install Python dependencies
+log_info "Installing Python dependencies..."
+cd "$SCRIPT_DIR"
+source venv/bin/activate
+pip install -q -r requirements.txt
+if [ $? -ne 0 ]; then
+    log_error "Failed to install Python dependencies!"
+    exit 1
+fi
+log_success "Python dependencies installed"
+deactivate
+
 # Step 3: Build Frontend for production
 log_info "Building Frontend for production..."
 cd "$FRONTEND_DIR"
