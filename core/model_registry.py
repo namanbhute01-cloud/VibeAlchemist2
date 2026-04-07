@@ -12,7 +12,7 @@ def _env(key: str, default: str) -> str:
 
 def get_detection_config() -> dict:
     """YOLOv8 face/person detector config per tier."""
-    base = {"model": _env("YOLO_FACE_MODEL", "models/yolov8n-face.pt")}
+    base = {"model": _env("YOLO_FACE_MODEL", "models/yolov8n-face.onnx")}
     if PROFILE.tier == 1:
         return {**base, "imgsz": 240, "conf": 0.45}
     elif PROFILE.tier == 2:

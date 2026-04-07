@@ -29,6 +29,8 @@ vibe_engine = None
 face_vault = None
 player = None
 face_registry = None
+adaptive_pipeline = None  # V5 adaptive pipeline
+adaptive_vibe = None      # V5 adaptive vibe controller
 
 # --- MUSIC HANDOVER MONITOR (Background Thread) ---
 # Runs independently of face detection — ensures zero-gap song transitions.
@@ -391,11 +393,12 @@ def process_detections(detections, cam_id, pipeline, vibe_engine, player, face_v
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global pipeline, cam_pool, vibe_engine, face_vault, player, face_registry
-    logger.info("Initializing Vibe Alchemist V2 Systems...")
+    global adaptive_pipeline, adaptive_vibe
+    logger.info("Initializing Vibe Alchemist V5 Systems...")
     app.state.start_time = time.time()
-    
+
     music_dir = Path(os.getenv("ROOT_MUSIC_DIR", "./OfflinePlayback"))
-    for group in ["kids", "youths", "adults", "seniors"]:
+    for group in ["kids", "youths", "adults", "seniors", "default"]:
         (music_dir / group).mkdir(parents=True, exist_ok=True)
     Path(os.getenv("FACE_TEMP_DIR", "./temp_faces")).mkdir(exist_ok=True)
 
@@ -407,12 +410,22 @@ async def lifespan(app: FastAPI):
         from core.alchemist_player import AlchemistPlayer
         from core.face_registry import FaceRegistry
 
+        # V5: Import adaptive modules
+        from core.capability_detector import PROFILE
+        from core.adaptive_pipeline import AdaptivePipeline
+        from core.adaptive_vibe_controller import AdaptiveVibeController
+
         vibe_engine = VibeEngine()
         player = AlchemistPlayer(music_root=str(music_dir))
         face_registry = FaceRegistry()
         face_vault = FaceVault(temp_dir=os.getenv("FACE_TEMP_DIR", "temp_faces"))
         pipeline = VisionPipeline(models_dir=os.getenv("MODELS_DIR", "models"), pool=None, engine=vibe_engine, vault=face_vault, registry=face_registry)
-        
+
+        # V5: Initialize adaptive pipeline
+        adaptive_pipeline = AdaptivePipeline()
+        logger.info(f"V5 AdaptivePipeline: Tier {PROFILE.tier} ({PROFILE.summary()['tier_name']})")
+        logger.info(f"V5 AdaptiveVibeController: fuzzy={'ON' if PROFILE.tier >= 2 else 'OFF'}")
+
         cam_pool = CameraPool(target_height=int(os.getenv("TARGET_HEIGHT", "720")), frame_queue=frame_queue)
         pipeline.pool = cam_pool
         cam_pool.start()
@@ -424,7 +437,7 @@ async def lifespan(app: FastAPI):
         threading.Thread(target=music_handover_loop, daemon=True).start()
 
         logger.info("[STARTUP] All core modules initialized.")
-        
+
         # Set global references for API routes
         cameras.set_cam_pool(cam_pool)
         playback.set_refs(player, vibe_engine)
@@ -654,6 +667,23 @@ async def camera_status():
             ]
         }
     return {"ok": False, "cameras": []}
+
+# 4d. V5 System tier info endpoint
+@app.get("/api/system/tier")
+async def system_tier_info():
+    """Returns hardware profile and adaptive tier information."""
+    if adaptive_pipeline:
+        return {
+            "ok": True,
+            **adaptive_pipeline.get_tier_info()
+        }
+    # Fallback: return basic profile info
+    from core.capability_detector import PROFILE
+    return {
+        "ok": True,
+        **PROFILE.summary(),
+        "note": "AdaptivePipeline not initialized"
+    }
 
 # 5. Static Files & SPA Catch-all
 static_dir = Path(__file__).parent.parent / "static"

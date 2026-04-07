@@ -6,6 +6,7 @@ detectors, recognizers, demographics engines, and trackers.
 Replaces: separate detector + recognizer + demographics + emotion + tracker.
 All other modules call pipeline.process(frame) and get back a result.
 """
+import os
 import cv2
 import numpy as np
 import logging
