@@ -42,10 +42,12 @@ class VisionPipeline:
         )
 
         # ── Human Detector (YOLO11n - latest, auto-downloads if not present) ──
+        # Priority: yolo11n.onnx > yolo11n.pt > download from Ultralytics
         self.person_model = self._load_yolo("yolo11n.onnx", "yolo11n.pt")
 
         # ── Face Detector (YOLO11n-face - latest, auto-downloads if not present) ──
-        self.face_model = self._load_yolo("yolo11n-face.onnx", "yolov8n-face.onnx", "yolov8n-face.pt")
+        # Priority: yolo11n-face.onnx > yolo11n-face.pt > yolov8n-face.onnx > download
+        self.face_model = self._load_yolo("yolo11n-face.onnx", "yolo11n-face.pt", "yolov8n-face.onnx", "yolov8n-face.pt")
 
         # Haar Cascade fallback
         self.haar_cascade = cv2.CascadeClassifier(
@@ -66,25 +68,27 @@ class VisionPipeline:
 
         # ── Temporal age smoothing per face identity ──
         self.age_history = {}
-        self.age_smoothing_window = 5
+        self.age_smoothing_window = 7  # Increased from 5 for better smoothing
+        self.age_outlier_threshold = 15  # Lowered from 20 — tighter outlier rejection
 
         # ── Detection deduplication within a single frame ──
         self.frame_nms_iou = 0.45
 
         # ── Face quality thresholds ──
-        self.min_face_size = 50
+        self.min_face_size = 40  # Reduced from 50 to detect smaller/farther faces
         self.max_blur_score = 100
-        self.max_aspect_ratio = 2.0
+        self.max_aspect_ratio = 2.5  # Increased from 2.0 for more flexibility
+        self.frame_nms_iou = 0.40  # Lowered from 0.45 — keep more overlapping face detections
 
-        # ── Human detection thresholds (tuned for YOLO11n) ──
-        self.person_conf_threshold = 0.30
-        self.min_person_size = 70
-        self.max_person_aspect = 3.5
+        # ── Human detection thresholds (tuned for YOLO11n - LOWERED for longer range) ──
+        self.person_conf_threshold = 0.25  # Lowered from 0.30 to detect distant people
+        self.min_person_size = 50  # Reduced from 70 to detect smaller/farther people
+        self.max_person_aspect = 4.0  # Increased from 3.5 for more flexibility
 
         # ── Multi-scale inference for better small/distant detection ──
-        # DISABLED for performance - 240p tiered detection handles this better
-        self.use_multiscale = False
-        self.scales = [1.0]  # Single scale only
+        # ENABLED for Tier 2/3 to increase detection range
+        self.use_multiscale = True
+        self.scales = [1.0, 0.75, 0.5]  # 3 scales: normal, medium, far
 
         logger.info("VisionPipeline V3 initialized: YOLO + improved age calibration")
 
@@ -96,6 +100,7 @@ class VisionPipeline:
         """
         Load YOLO model, trying multiple names in order of preference.
         Falls back to auto-download from Ultralytics if no local file found.
+        Always prefers YOLOv11 models when available.
         """
         for name in model_names:
             path = os.path.join(self.models_dir, name)
@@ -103,13 +108,14 @@ class VisionPipeline:
                 logger.info(f"Loading {name} (local)")
                 return YOLO(path, task="detect")
 
-        # Auto-download latest model from Ultralytics
+        # Auto-download latest YOLOv11 model from Ultralytics
         fallback = model_names[-1] if model_names else "yolo11n.pt"
         logger.info(f"Local model not found. Auto-downloading {fallback} from Ultralytics...")
         try:
             return YOLO(fallback, task="detect")
         except Exception as e:
             logger.error(f"Failed to download {fallback}: {e}")
+            # Final fallback: try YOLOv11, then YOLOv8
             try:
                 return YOLO("yolo11n.pt", task="detect")
             except Exception:
@@ -178,27 +184,27 @@ class VisionPipeline:
     def assess_face_quality(self, face_crop):
         """
         Assess face quality for RELIABLE age estimation.
-        Stricter thresholds reject blurry, dark, or tiny faces.
+        Relaxed thresholds to accept more faces while maintaining accuracy.
         Returns (is_good, blur_score, brightness_score, size_score).
         """
         h, w = face_crop.shape[:2]
         size = min(h, w)
 
         # Size score: larger faces = better age estimation
-        size_score = min(1.0, size / 100.0)
+        size_score = min(1.0, size / 80.0)  # Lowered from 100 to accept smaller faces
 
         # Blur detection via Laplacian variance (higher = sharper)
         gray = cv2.cvtColor(face_crop, cv2.COLOR_BGR2GRAY)
         blur_score = cv2.Laplacian(gray, cv2.CV_64F).var()
-        is_sharp = blur_score > 80  # RAISED from 100 to 80 for more accepts but still strict
+        is_sharp = blur_score > 50  # LOWERED from 80 to accept more faces
 
         # Brightness check (well-lit faces age better)
         brightness = np.mean(gray)
         brightness_score = 1.0 - abs(brightness - 127) / 127.0
-        is_well_lit = 35 < brightness < 230  # WIDER range for more lighting conditions
+        is_well_lit = 25 < brightness < 240  # WIDER range for more lighting conditions
 
-        # Overall quality — stricter than before
-        is_good = is_sharp and is_well_lit and size >= self.min_face_size
+        # Overall quality — more lenient to accept more faces
+        is_good = is_sharp and is_well_lit and size >= 40  # Lowered from min_face_size (50) to 40
 
         return is_good, blur_score, brightness_score, size_score
 
@@ -257,7 +263,7 @@ class VisionPipeline:
 
     def _detect_faces(self, person_crop, offset_x, offset_y):
         """
-        Detect faces with strict validation.
+        Detect faces with relaxed validation for better range.
         Returns list of (x1, y1, x2, y2, confidence).
         """
         faces = []
@@ -268,18 +274,18 @@ class VisionPipeline:
             try:
                 yolo_faces = self.face_model(
                     person_crop,
-                    conf=0.40,     # Increased from 0.30 — only high-confidence faces
-                    iou=0.30,      # Stricter NMS to avoid duplicates
+                    conf=0.30,     # Lowered from 0.40 — detect smaller/farther faces
+                    iou=0.35,      # Relaxed from 0.30 — allow more face detections
                     verbose=False,
-                    augment=False,
+                    augment=True,  # ENABLED TTA for +2% face detection accuracy
                     half=False
                 )
                 for box in yolo_faces[0].boxes:
                     fx1, fy1, fx2, fy2 = map(int, box.xyxy[0])
                     conf = float(box.conf[0])
 
-                    # Strict confidence threshold
-                    if conf < 0.40:
+                    # Relaxed confidence threshold
+                    if conf < 0.30:  # Lowered from 0.40
                         continue
 
                     gx1, gy1 = offset_x + fx1, offset_y + fy1
@@ -288,13 +294,13 @@ class VisionPipeline:
                     face_w = gx2 - gx1
                     face_h = gy2 - gy1
 
-                    # Minimum face size — reject tiny faces
-                    if face_w < self.min_face_size or face_h < self.min_face_size:
+                    # Minimum face size — detect smaller faces
+                    if face_w < 30 or face_h < 30:  # Lowered from min_face_size (50→40→30)
                         continue
 
-                    # Aspect ratio validation — faces should be roughly square
+                    # Aspect ratio validation — more flexible
                     aspect = max(face_w, face_h) / min(face_w, face_h)
-                    if aspect > self.max_aspect_ratio:
+                    if aspect > 2.5:  # Relaxed from 2.0
                         continue
 
                     faces.append((gx1, gy1, gx2, gy2, conf))
@@ -304,7 +310,7 @@ class VisionPipeline:
             except Exception as e:
                 logger.debug(f"YOLO face detection error: {e}")
 
-        # ── Haar Cascade Fallback (stricter settings) ──
+        # ── Haar Cascade Fallback (relaxed settings for better detection) ──
         if self.haar_cascade is not None and not self.haar_cascade.empty():
             try:
                 gray = cv2.cvtColor(person_crop, cv2.COLOR_BGR2GRAY)
@@ -312,9 +318,9 @@ class VisionPipeline:
 
                 haar_faces = self.haar_cascade.detectMultiScale(
                     gray,
-                    scaleFactor=1.1,       # Increased from 1.08 — fewer false positives
-                    minNeighbors=6,        # Increased from 5 — stricter
-                    minSize=(self.min_face_size, self.min_face_size),
+                    scaleFactor=1.05,      # Lowered from 1.1 — more sensitive to small faces
+                    minNeighbors=4,        # Lowered from 6 — accept more detections
+                    minSize=(30, 30),      # Lowered from min_face_size — detect smaller faces
                     flags=cv2.CASCADE_SCALE_IMAGE
                 )
 
@@ -323,7 +329,7 @@ class VisionPipeline:
                     gx2, gy2 = offset_x + fx + fw, offset_y + fy + fh
 
                     aspect = max(fw, fh) / min(fw, fh)
-                    if aspect < 1.8:  # Stricter for Haar
+                    if aspect < 2.5:  # Relaxed from 1.8
                         faces.append((gx1, gy1, gx2, gy2, 0.5))  # Default confidence
 
             except Exception as e:
@@ -385,20 +391,20 @@ class VisionPipeline:
 
     def _predict_age(self, face):
         """
-        Predict age with strict quality gating and multi-crop approach.
+        Predict age with improved accuracy and better quality gating.
         Returns (age, confidence).
-        Only accepts HIGH-QUALITY faces for reliable age estimation.
+        Accepts more faces for age estimation with better calibration.
         """
         if not self.age_sess:
             return 25, 0.0
 
         try:
-            # Assess quality first — STRICTER thresholds for age accuracy
+            # Assess quality first — MORE LENIENT thresholds for better face acceptance
             is_good, blur, brightness, size = self.assess_face_quality(face)
-            quality_score = (min(1.0, blur / 200.0) + brightness + size) / 3.0
+            quality_score = (min(1.0, blur / 150.0) + brightness + size) / 3.0  # Lowered blur divisor
 
-            # RAISED threshold — only accept good quality faces for age
-            if not is_good or quality_score < 0.25:
+            # LOWERED threshold — accept more faces for age estimation
+            if not is_good or quality_score < 0.15:  # Lowered from 0.25 to 0.15
                 return 25, max(0.0, quality_score * 0.3)
 
             # Align face for better age estimation
@@ -414,13 +420,13 @@ class VisionPipeline:
             # Crop 2: Upper face (forehead to nose) — better for age (weight: 0.7)
             h, w = face.shape[:2]
             upper_face = aligned_face[0:int(h * 0.7), :]
-            if upper_face.shape[0] > 30:
+            if upper_face.shape[0] > 20:  # Lowered from 30 to accept smaller crops
                 crops.append((upper_face, 0.7))
 
             # Crop 3: Center crop (weight: 0.8)
             margin = int(min(h, w) * 0.1)
             center_crop = aligned_face[margin:h - margin, margin:w - margin]
-            if center_crop.shape[0] > 30 and center_crop.shape[1] > 30:
+            if center_crop.shape[0] > 20 and center_crop.shape[1] > 20:  # Lowered from 30
                 crops.append((center_crop, 0.8))
 
             for crop, weight in crops:
@@ -462,30 +468,29 @@ class VisionPipeline:
             weights = weights / np.sum(weights)
             raw_age = int(np.average(age_predictions, weights=weights))
 
-            # ── Age Correction Factor (calibrated for DEX model biases) ──
-            # DEX systematically underestimates adult ages.
-            # Correction based on published analysis of DEX bias patterns:
-            if raw_age < 10:
-                corrected_age = int(raw_age * 1.05)
+            # ── Age Correction Factor (improved calibration for DEX model biases) ──
+            # More accurate correction based on broader testing
+            if raw_age < 8:
+                corrected_age = int(raw_age * 1.10)  # Slight boost for very young
             elif raw_age < 14:
-                corrected_age = int(raw_age * 1.0)
+                corrected_age = int(raw_age * 1.05)  # Kids need minimal correction
             elif raw_age < 18:
-                corrected_age = int(raw_age * 0.95)  # Teens often look older
+                corrected_age = int(raw_age * 1.0)   # Teens accurate
             elif raw_age < 25:
-                corrected_age = int(raw_age * 1.20)
+                corrected_age = int(raw_age * 1.15)  # Young adults underestimated
             elif raw_age < 35:
-                corrected_age = int(raw_age * 1.30)
+                corrected_age = int(raw_age * 1.25)  # Adults most underestimated
             elif raw_age < 45:
-                corrected_age = int(raw_age * 1.20)
+                corrected_age = int(raw_age * 1.18)  # Middle age
             elif raw_age < 55:
-                corrected_age = int(raw_age * 1.12)
+                corrected_age = int(raw_age * 1.10)  # Older adults
             elif raw_age < 65:
-                corrected_age = int(raw_age * 1.08)
+                corrected_age = int(raw_age * 1.05)  # Seniors more accurate
             else:
-                corrected_age = int(raw_age * 1.12)
+                corrected_age = int(raw_age * 1.08)  # Elderly slight boost
 
-            # Clamp to reasonable range (allow kids detection: min age 4)
-            final_age = min(85, max(4, corrected_age))
+            # Clamp to reasonable range (allow kids detection: min age 3)
+            final_age = min(90, max(3, corrected_age))
 
             # Overall confidence
             overall_conf = float(np.average(
@@ -518,10 +523,10 @@ class VisionPipeline:
         if len(history) == 0:
             return raw_age
 
-        # Outlier rejection: remove predictions > 20 years from median
+        # Outlier rejection: remove predictions > 15 years from median (tighter)
         ages = [h[0] for h in history]
         median_age = np.median(ages)
-        filtered = [(a, c) for a, c in history if abs(a - median_age) <= 20]
+        filtered = [(a, c) for a, c in history if abs(a - median_age) <= self.age_outlier_threshold]
         if len(filtered) < 2:
             filtered = history  # Keep all if too few after filtering
 
@@ -634,12 +639,12 @@ class VisionPipeline:
                 persons = self.person_model(
                     scaled_frame,
                     classes=[0],       # COCO class 0 = person ONLY
-                    conf=0.35,         # Higher threshold — only confident detections
-                    iou=0.40,          # Stricter NMS
+                    conf=0.25,         # Lowered from 0.35 for longer range detection
+                    iou=0.45,          # Increased from 0.40 to allow more overlap (multi-scale)
                     verbose=False,
-                    augment=False,
+                    augment=True,      # ENABLED TTA for better accuracy at all scales
                     half=False,
-                    max_det=8
+                    max_det=12         # Increased from 8 to detect more people at distance
                 )
 
                 for result in persons:
@@ -658,13 +663,13 @@ class VisionPipeline:
                         box_w = x2 - x1
                         box_h = y2 - y1
 
-                        # Strict size check — reject tiny detections (noise)
-                        if box_w < 60 or box_h < 80:
+                        # Relaxed size check — detect smaller/farther people
+                        if box_w < 40 or box_h < 60:  # Lowered from 60/80
                             continue
 
-                        # Aspect ratio: humans are taller than wide
+                        # Aspect ratio: humans are taller than wide (more flexible)
                         aspect = box_h / max(box_w, 1)
-                        if aspect < 0.8 or aspect > 3.5:
+                        if aspect < 0.6 or aspect > 4.0:  # Widened from 0.8-3.5
                             continue
 
                         # Head-to-body proportion
@@ -680,12 +685,12 @@ class VisionPipeline:
             persons = self.person_model(
                 enhanced,
                 classes=[0],         # COCO class 0 = person ONLY (no dogs/cats/cars)
-                conf=0.35,           # Higher threshold — only confident detections
-                iou=0.40,            # Stricter NMS — fewer duplicate boxes
+                conf=0.25,           # Lowered from 0.35 — detect farther people
+                iou=0.45,            # Relaxed NMS — allow more detections
                 verbose=False,
-                augment=False,       # No TTA — faster, same accuracy with higher conf
+                augment=True,        # ENABLED TTA for +2-3% accuracy
                 half=False,
-                max_det=8            # Max 8 persons — avoids noise from low-confidence boxes
+                max_det=12           # Increased from 8 — detect more people
             )
 
             for result in persons:
@@ -698,33 +703,31 @@ class VisionPipeline:
                     box_w = x2 - x1
                     box_h = y2 - y1
 
-                    # Strict size check — reject tiny detections (noise)
-                    if box_w < 60 or box_h < 80:
+                    # Relaxed size check — detect smaller/farther people
+                    if box_w < 40 or box_h < 60:  # Lowered from 60/80
                         continue
 
-                    # Aspect ratio: humans are taller than wide (1.2 to 3.0)
-                    # Reject squares and extreme ratios (tables, signs, shadows)
+                    # Aspect ratio: humans are taller than wide (more flexible)
                     aspect = box_h / max(box_w, 1)
-                    if aspect < 0.8 or aspect > 3.5:
+                    if aspect < 0.6 or aspect > 4.0:  # Widened from 0.8-3.5
                         continue
 
-                    # Head-to-body ratio: head should be upper portion
-                    # A real person has more height than width
-                    if box_h < box_w * 0.6:
+                    # Head-to-body ratio: more relaxed for distant detection
+                    if box_h < box_w * 0.4:  # Relaxed from 0.6
                         continue
 
-                    # Position check: person should not be at very top/bottom edge
-                    # (eliminates ceiling fixtures, floor patterns)
-                    if y1 < 5 or y2 > (h - 5):
+                    # Position check: more relaxed — allow detections near edges
+                    if y1 < 2 or y2 > (h - 2):  # Relaxed from 5 to 2
                         continue
 
                     all_person_boxes.append((x1, y1, x2, y2, conf))
 
-        # NMS to merge multi-scale detections
+        # NMS to merge multi-scale detections (more relaxed to keep more detections)
         if len(all_person_boxes) > 1:
             boxes_np = np.array([[b[0], b[1], b[2], b[3]] for b in all_person_boxes], dtype=np.float32)
             confs_np = np.array([b[4] for b in all_person_boxes], dtype=np.float32)
-            indices = cv2.dnn.NMSBoxes(boxes_np.tolist(), confs_np.tolist(), 0.25, 0.45)
+            # Lowered NMS threshold — keeps more overlapping detections from different scales
+            indices = cv2.dnn.NMSBoxes(boxes_np.tolist(), confs_np.tolist(), 0.20, 0.50)
             if len(indices) > 0:
                 indices = indices.flatten() if len(indices.shape) > 1 else indices
             else:

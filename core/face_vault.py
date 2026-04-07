@@ -170,29 +170,38 @@ class FaceVault:
 
     def sync_now(self):
         """Triggers an immediate upload cycle.
-        
+
         Files uploaded to Google Drive are NEVER deleted from Drive.
         Only local temp_faces files are removed after successful upload.
         On server termination, remaining temp_faces are cleaned up.
         """
         if not self.service:
+            logger.info("Drive sync skipped: service not connected")
             return
 
-        files = list(self.temp_dir.glob("*.png"))
+        # Get ALL image files (png and jpg)
+        files = list(self.temp_dir.glob("*.png")) + list(self.temp_dir.glob("*.jpg"))
         if not files:
+            logger.info("Drive sync: No pending files")
             return
 
         logger.info(f"Starting Drive Sync: {len(files)} files pending...")
         uploaded = 0
+        failed = 0
 
         for f in files:
             try:
+                # Skip if file is being written (check if file is locked)
+                if not os.access(str(f), os.R_OK):
+                    logger.debug(f"Skipping {f.name}: file not readable")
+                    continue
+
                 file_metadata = {'name': f.name, 'parents': [self.drive_folder_id]}
-                media = MediaFileUpload(str(f), mimetype='image/png')
+                media = MediaFileUpload(str(f), mimetype='image/png' if f.suffix == '.png' else 'image/jpeg')
 
                 result = self.service.files().create(
-                    body=file_metadata, 
-                    media_body=media, 
+                    body=file_metadata,
+                    media_body=media,
                     fields='id'
                 ).execute()
 
@@ -200,15 +209,16 @@ class FaceVault:
                 # Drive files are NEVER deleted
                 f.unlink()
                 uploaded += 1
-                logger.info(f"Uploaded to Drive: {f.name} (ID: {result.get('id')})")
+                logger.debug(f"Uploaded to Drive: {f.name} (ID: {result.get('id')})")
 
             except Exception as e:
+                failed += 1
                 logger.error(f"Failed to upload {f.name} to Drive: {e}")
                 # Keep local file — retry next sync cycle
 
         self.last_sync = time.time()
         self.upload_count += uploaded
-        logger.info(f"Drive Sync Complete. Uploaded: {uploaded}/{len(files)} (total: {self.upload_count})")
+        logger.info(f"Drive Sync Complete. Uploaded: {uploaded}/{len(files)} (failed: {failed}, total: {self.upload_count})")
 
     def get_status(self) -> dict:
         pending = len(list(self.temp_dir.glob("*.png"))) if self.temp_dir.exists() else 0

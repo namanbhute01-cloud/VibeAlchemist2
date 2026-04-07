@@ -20,7 +20,7 @@ export function CameraGrid() {
         }
         return updated
       })
-    }, 5000)
+    }, 10000) // Increased from 5s to 10s to reduce flickering
     return () => clearInterval(interval)
   }, [feedErrors])
 
@@ -53,11 +53,11 @@ export function CameraGrid() {
               />
 
               {/* Error overlay with reconnecting indicator */}
-              {hasError && (
+              {hasError && errorCount >= 3 && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground bg-black/60">
                   <RefreshCw className="w-8 h-8 mb-2 opacity-50 animate-spin" />
-                  <p className="text-xs">Reconnecting...</p>
-                  <p className="text-[10px] opacity-50 mt-1">Attempt {errorCount}/3</p>
+                  <p className="text-xs">Feed unavailable</p>
+                  <p className="text-[10px] opacity-50 mt-1">Will retry automatically</p>
                 </div>
               )}
 

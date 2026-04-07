@@ -59,15 +59,16 @@ class AdaptivePipeline:
         cfg = get_detection_config()
         try:
             from ultralytics import YOLO
+            # Use YOLOv11 for all tiers
             self._detector = YOLO(cfg["model"])
             self._det_imgsz = cfg["imgsz"]
             self._det_conf = cfg["conf"]
-            logger.info(f"Detector: YOLOv8n-face @ {self._det_imgsz}p, conf={self._det_conf}")
+            logger.info(f"Detector: YOLOv11n-face @ {self._det_imgsz}p, conf={self._det_conf}")
         except Exception as e:
             logger.error(f"Detector init failed: {e} — detection disabled")
             self._detector = None
-            self._det_imgsz = 240
-            self._det_conf = 0.45
+            self._det_imgsz = 320
+            self._det_conf = 0.40
 
     def _init_recognizer(self):
         cfg = get_face_recognition_config()

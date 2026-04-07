@@ -40,15 +40,15 @@ def music_handover_loop():
     """
     Background thread that monitors song playback position.
 
-    CORRECT LOGIC:
-    1. On startup: NO song starts automatically
+    FIXED LOGIC:
+    1. On startup: Wait for face detections, then start first song
     2. While song plays: Collect ALL face detections in vibe_engine.journal
     3. At song end (percent drops OR player clears current_song):
        a. Calculate average age from all detections collected during this song
        b. Determine target group from that average age
        c. Start ONE new song from that group
     4. NEVER start overlapping songs — only one song plays at a time
-    5. If no faces detected yet: use default 'adults' group
+    5. If no faces detected yet: use default 'adults' group after 30s timeout
     """
     global vibe_engine, player
 
@@ -57,8 +57,11 @@ def music_handover_loop():
     last_percent = 0
     song_ending = False  # True when we've decided to end and are waiting for clean state
     end_attempted_time = 0
+    startup_time = time.time()
+    last_face_check_time = time.time()
+    faces_detected_at_start = 0
 
-    logger.info("Music handover monitor started (no auto-start)")
+    logger.info("Music handover monitor started (waits for faces before playing)")
 
     while True:
         try:
@@ -72,23 +75,52 @@ def music_handover_loop():
 
             # ── CASE 1: No song playing ──
             if current_song == 'None':
-                # Only start a song if:
+                # Start a song if:
                 # a) We've played before AND a song just ended (percent was high)
-                # b) OR user manually triggered playback
-                # NOT on first boot — wait for face detections first
+                # b) OR it's first boot AND we have face detections (or timeout reached)
                 should_start = False
+                target_group = "adults"  # Default
 
-                if not has_played_once:
-                    # First boot: DON'T auto-start. Wait for faces.
-                    time.sleep(1)
-                    continue
+                if has_played_once:
+                    # Song just ended — calculate vibe from detections during this song
+                    if last_percent > 50 or song_ending:
+                        song_ending = False
+                        target_group = _calculate_target_group()
+                        logger.info(f"Song ended. Detections during song -> target: {target_group}")
+                        should_start = True
+                    else:
+                        # No song and we're not ending one — idle
+                        time.sleep(1)
+                        continue
+                else:
+                    # First boot — wait for face detections before starting
+                    # Check if we have any face detections in the journal
+                    current_faces = vibe_engine.journal if hasattr(vibe_engine, 'journal') else []
+                    current_face_count = len(current_faces) if current_faces else 0
+                    
+                    # Also check quality_journal
+                    if hasattr(vibe_engine, 'quality_journal'):
+                        current_face_count = len(vibe_engine.quality_journal)
 
-                # Song just ended — calculate vibe from detections during this song
-                if last_percent > 50 or song_ending:
-                    song_ending = False
-                    target_group = _calculate_target_group()
-                    logger.info(f"Song ended. Detections during song -> target: {target_group}")
+                    time_since_startup = time.time() - startup_time
+                    
+                    # Start if we have faces OR timeout reached (30 seconds)
+                    if current_face_count > 0:
+                        target_group = _calculate_target_group()
+                        logger.info(f"First boot: {current_face_count} face(s) detected -> target: {target_group}")
+                        should_start = True
+                    elif time_since_startup > 30:
+                        # Timeout — start with default after 30 seconds
+                        logger.info(f"First boot timeout (30s). No faces detected -> target: adults (default)")
+                        target_group = "adults"
+                        should_start = True
+                    else:
+                        # Still waiting for faces
+                        time.sleep(1)
+                        continue
 
+                # Start the song
+                if should_start:
                     with _playback_lock:
                         try:
                             success = player.next(target_group)
@@ -96,6 +128,7 @@ def music_handover_loop():
                                 time.sleep(0.5)
                                 verify = player.get_status()
                                 if verify.get('percent', 0) > 0:
+                                    has_played_once = True
                                     last_monitored_song = verify.get('song', 'None')
                                     last_percent = 0
                                     logger.info(f"Next song started: {target_group}")
@@ -108,10 +141,6 @@ def music_handover_loop():
                             logger.warning(f"Failed to start next song: {e}")
                             time.sleep(2)
                             continue
-                else:
-                    # No song and we're not ending one — idle
-                    time.sleep(1)
-                    continue
 
             # ── CASE 2: Song is playing — monitor for end ──
             # Detect new song started (by user or by our handover)
@@ -180,9 +209,9 @@ def processing_loop():
     """
     Multi-camera processing loop with fair scheduling.
 
-    Improvements:
-    - Round-robin processing across all active cameras
-    - Quality-based filtering (only process good detections)
+    CRITICAL FIX: Process ALL cameras every cycle, not just one!
+    - Process frames from queue (all cameras)
+    - Fall back to latest_frames for ALL active cameras
     - Per-camera rate limiting with adaptive intervals
     - No race conditions with face registry (single-threaded)
     - Graceful handling of camera disconnects
@@ -193,9 +222,6 @@ def processing_loop():
     # Per-camera rate limiting
     camera_last_process = {}
     base_process_interval = 0.5  # Process each camera every 500ms
-
-    # Round-robin state
-    current_camera_index = 0
 
     while True:
         try:
@@ -208,8 +234,10 @@ def processing_loop():
                 time.sleep(1)
                 continue
 
-            # ── Process frames from queue first (newest frames) ──
-            processed_from_queue = False
+            current_time = time.time()
+            processed_any = False
+
+            # ── STEP 1: Process frames from queue (newest frames per camera) ──
             try:
                 # Drain queue but only process the latest frame per camera
                 latest_per_cam = {}
@@ -221,8 +249,7 @@ def processing_loop():
                     except queue.Empty:
                         break
 
-                # Process latest frames with rate limiting
-                current_time = time.time()
+                # Process latest frames from ALL cameras in queue
                 for cam_id, item in latest_per_cam.items():
                     last_process = camera_last_process.get(cam_id, 0)
                     if current_time - last_process >= base_process_interval:
@@ -230,19 +257,14 @@ def processing_loop():
                         detections = pipeline.process_frame(item["frame"], cam_id)
                         process_detections(detections, cam_id, pipeline, vibe_engine, player, face_vault, face_registry)
                         faces_detected_count += len(detections)
-                        processed_from_queue = True
+                        processed_any = True
 
             except queue.Empty:
                 pass
 
-            # ── Round-robin fallback: process latest frames from each camera ──
-            if not processed_from_queue:
-                current_time = time.time()
-
-                # Cycle through cameras in round-robin fashion
-                current_camera_index = current_camera_index % num_cameras
-                cam_id = current_camera_index
-
+            # ── STEP 2: Process ALL cameras from latest_frames (fallback) ──
+            # Process EVERY camera that has a frame available
+            for cam_id in range(num_cameras):
                 last_process = camera_last_process.get(cam_id, 0)
                 if current_time - last_process >= base_process_interval:
                     # Get raw frame only (numpy array) — NOT annotated bytes
@@ -252,9 +274,7 @@ def processing_loop():
                         detections = pipeline.process_frame(frame, cam_id)
                         process_detections(detections, cam_id, pipeline, vibe_engine, player, face_vault, face_registry)
                         faces_detected_count += len(detections)
-
-                # Always advance — prevent stall on disconnected camera
-                current_camera_index += 1
+                        processed_any = True
 
             # Small sleep to prevent CPU spinning
             time.sleep(0.05)
@@ -426,7 +446,17 @@ async def lifespan(app: FastAPI):
         logger.info(f"V5 AdaptivePipeline: Tier {PROFILE.tier} ({PROFILE.summary()['tier_name']})")
         logger.info(f"V5 AdaptiveVibeController: fuzzy={'ON' if PROFILE.tier >= 2 else 'OFF'}")
 
-        cam_pool = CameraPool(target_height=int(os.getenv("TARGET_HEIGHT", "720")), frame_queue=frame_queue)
+        cam_pool = CameraPool(
+            target_height=int(os.getenv("TARGET_HEIGHT", "720")),
+            frame_queue=frame_queue
+        )
+        
+        # Verify cameras were loaded
+        if len(cam_pool.sources) == 0:
+            logger.error("NO CAMERA SOURCES CONFIGURED! Check CAMERA_SOURCES in .env")
+        else:
+            logger.info(f"CameraPool configured with {len(cam_pool.sources)} source(s): {cam_pool.sources}")
+        
         pipeline.pool = cam_pool
         cam_pool.start()
 

@@ -11,14 +11,15 @@ def _env(key: str, default: str) -> str:
 
 
 def get_detection_config() -> dict:
-    """YOLOv8 face/person detector config per tier."""
-    base = {"model": _env("YOLO_FACE_MODEL", "models/yolov8n-face.onnx")}
+    """YOLOv11 face/person detector config per tier - OPTIMIZED for range + accuracy."""
+    # Use YOLOv11 for ALL tiers (lowest to highest)
+    base = {"model": _env("YOLO_FACE_MODEL", "models/yolo11n-face.pt")}
     if PROFILE.tier == 1:
-        return {**base, "imgsz": 240, "conf": 0.45}
+        return {**base, "imgsz": 384, "conf": 0.35}  # Increased from 320p for better range
     elif PROFILE.tier == 2:
-        return {**base, "imgsz": 480, "conf": 0.40}
+        return {**base, "imgsz": 512, "conf": 0.30}  # Increased from 480p
     else:
-        return {**base, "imgsz": 640, "conf": 0.35}
+        return {**base, "imgsz": 720, "conf": 0.25}  # Increased from 640p for maximum range
 
 
 def get_face_recognition_config() -> dict:
@@ -47,7 +48,11 @@ def get_face_recognition_config() -> dict:
 def get_demographics_config() -> dict:
     """MiVOLO model config per tier."""
     if PROFILE.tier == 1:
-        return {"enabled": False}
+        # Tier 1: Use lightweight MiVOLO XXS (still better than DEX alone)
+        return {
+            "enabled": True,
+            "model_path": _env("MIVOLO_XXS_MODEL", "models/mivolo_xxs.onnx"),
+        }
     elif PROFILE.tier == 2:
         return {
             "enabled": True,
@@ -93,9 +98,9 @@ def get_pipeline_schedule() -> dict:
     """
     if PROFILE.tier == 1:
         return {
-            "detection_every": 1,    # every frame (fast, 240p)
+            "detection_every": 1,    # every frame (fast, 320p)
             "recognition_every": 15, # every 15 frames
-            "demographics_every": 0, # disabled
+            "demographics_every": 10, # every 10 frames (enabled for MiVOLO)
             "emotion_every": 0,      # disabled
             "vibe_update_every": 30, # every 30 frames
             "motion_gate_iou": 0.92,
