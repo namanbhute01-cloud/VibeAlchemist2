@@ -86,6 +86,10 @@ services:
       # .env file - mount read-only so container can read but not modify it
       - ./.env:/app/.env:ro
 
+      # Google Drive credentials (service account key)
+      # Mount read-only — container needs to read but never modify
+      - ./credentials.json:/app/credentials.json:ro
+
     # ── Device Access (USB cameras) ──
     # Maps USB webcam devices into the container so OpenCV can read them.
     # Supports up to 4 USB cameras (/dev/video0 through /dev/video3).
