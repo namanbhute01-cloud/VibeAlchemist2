@@ -1,0 +1,43 @@
+{
+  "benchmark_duration_sec": 38.2,
+  "total_frames_processed": 0,
+  "person_detection": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1_score": 0.0,
+    "true_positives": 0,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "accuracy_percent": 0.0
+  },
+  "face_detection": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1_score": 0.0,
+    "true_positives": 0,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "accuracy_percent": 0.0
+  },
+  "age_estimation": {
+    "mae_years": 0.0,
+    "accuracy_\u00b13yr": 0.0,
+    "accuracy_\u00b15yr": 0.0,
+    "accuracy_\u00b110yr": 0.0,
+    "samples": 0
+  },
+  "age_group_classification": {
+    "accuracy_percent": 0.0,
+    "samples": 0
+  },
+  "latencies_ms": {
+    "person_det": 0,
+    "face_det": 0,
+    "age_est": 0,
+    "total": 0
+  },
+  "average_quality_score": 0.0,
+  "overall_system_accuracy": 0.0,
+  "timestamp": "2026-04-08T19:00:37.734182",
+  "target_accuracy": "90-95%"
+}

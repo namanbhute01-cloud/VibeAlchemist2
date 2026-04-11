@@ -147,6 +147,8 @@ async def control_playback(action: str, request: Request):
 
     if action == "pause" or action == "play":
         player.toggle_pause()
+    elif action == "stop":
+        player.stop()  # Actually stops playback (doesn't auto-restart)
     elif action == "next":
         group = body.get("group") or (vibe_engine.current_vibe if vibe_engine else "adults")
         player.next(group)

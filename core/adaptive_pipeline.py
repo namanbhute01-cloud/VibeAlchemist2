@@ -59,11 +59,19 @@ class AdaptivePipeline:
         cfg = get_detection_config()
         try:
             from ultralytics import YOLO
-            # Use YOLOv11 for all tiers
-            self._detector = YOLO(cfg["model"])
+            # Try the configured model first, fall back to existing yolov8n-face.onnx
+            model_path = cfg["model"]
+            if not os.path.exists(model_path):
+                # Fallback to existing model
+                for fallback in ["models/yolov8n-face.onnx", "models/yolov8n-face.pt", "yolo11n-face.pt"]:
+                    if os.path.exists(fallback):
+                        model_path = fallback
+                        break
+
+            self._detector = YOLO(model_path)
             self._det_imgsz = cfg["imgsz"]
             self._det_conf = cfg["conf"]
-            logger.info(f"Detector: YOLOv11n-face @ {self._det_imgsz}p, conf={self._det_conf}")
+            logger.info(f"Detector: {model_path} @ {self._det_imgsz}p, conf={self._det_conf}")
         except Exception as e:
             logger.error(f"Detector init failed: {e} — detection disabled")
             self._detector = None

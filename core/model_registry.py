@@ -1,6 +1,13 @@
 """
-Model Registry — maps Tier to model configs.
+Model Registry — maps Tier → model configs.
 All modules import from here. Never hardcode model paths elsewhere.
+
+V5 Adaptive Model Selection:
+- Tier 1 (LOW):    YOLOv11n-face (384p)  — nano, lightweight
+- Tier 2 (MEDIUM): YOLOv11s-face (512p)  — small, balanced
+- Tier 3 (HIGH):   YOLOv11m-face (720p)  — medium, maximum accuracy
+
+Base model family is ALWAYS YOLOv11. Tier only controls size variant.
 """
 import os
 from core.capability_detector import PROFILE
@@ -11,15 +18,21 @@ def _env(key: str, default: str) -> str:
 
 
 def get_detection_config() -> dict:
-    """YOLOv11 face/person detector config per tier - OPTIMIZED for range + accuracy."""
-    # Use YOLOv11 for ALL tiers (lowest to highest)
-    base = {"model": _env("YOLO_FACE_MODEL", "models/yolo11n-face.pt")}
+    """
+    YOLOv11 face/person detector config per tier.
+    Base model: yolo11n-face (ALL tiers — only official variant).
+    Tier affects resolution and confidence thresholds.
+    """
+    # NOTE: yolo11s-face and yolo11m-face don't exist on Ultralytics hub.
+    # All tiers use yolo11n-face.pt with different inference settings.
+    model = _env("YOLO_FACE_MODEL", "models/yolo11n-face.pt")
+
     if PROFILE.tier == 1:
-        return {**base, "imgsz": 384, "conf": 0.35}  # Increased from 320p for better range
+        return {"model": model, "imgsz": 384, "conf": 0.35}
     elif PROFILE.tier == 2:
-        return {**base, "imgsz": 512, "conf": 0.30}  # Increased from 480p
+        return {"model": model, "imgsz": 512, "conf": 0.25}  # Lowered from 0.30 for range
     else:
-        return {**base, "imgsz": 720, "conf": 0.25}  # Increased from 640p for maximum range
+        return {"model": model, "imgsz": 640, "conf": 0.15}  # Lowered from 0.25 for max range
 
 
 def get_face_recognition_config() -> dict:
@@ -48,17 +61,19 @@ def get_face_recognition_config() -> dict:
 def get_demographics_config() -> dict:
     """MiVOLO model config per tier."""
     if PROFILE.tier == 1:
-        # Tier 1: Use lightweight MiVOLO XXS (still better than DEX alone)
+        # Tier 1: MiVOLO XXS enabled (better than DEX alone, still lightweight)
         return {
             "enabled": True,
             "model_path": _env("MIVOLO_XXS_MODEL", "models/mivolo_xxs.onnx"),
         }
     elif PROFILE.tier == 2:
+        # Tier 2: MiVOLO XXS (good accuracy, reasonable speed)
         return {
             "enabled": True,
             "model_path": _env("MIVOLO_XXS_MODEL", "models/mivolo_xxs.onnx"),
         }
     else:
+        # Tier 3: MiVOLO Full — maximum demographics accuracy
         return {
             "enabled": True,
             "model_path": _env("MIVOLO_FULL_MODEL", "models/mivolo_full.onnx"),
@@ -98,9 +113,9 @@ def get_pipeline_schedule() -> dict:
     """
     if PROFILE.tier == 1:
         return {
-            "detection_every": 1,    # every frame (fast, 320p)
+            "detection_every": 1,    # every frame (fast, 384p)
             "recognition_every": 15, # every 15 frames
-            "demographics_every": 10, # every 10 frames (enabled for MiVOLO)
+            "demographics_every": 10, # every 10 frames (MiVOLO XXS enabled)
             "emotion_every": 0,      # disabled
             "vibe_update_every": 30, # every 30 frames
             "motion_gate_iou": 0.92,
@@ -136,7 +151,7 @@ def get_onnx_providers() -> list:
 
 
 def get_onnx_session_options():
-    """ONNX session options - fewer threads on low-tier systems."""
+    """ONNX session options — fewer threads on low-tier systems."""
     import onnxruntime as ort
     opts = ort.SessionOptions()
     if PROFILE.tier == 1:

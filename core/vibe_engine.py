@@ -78,13 +78,19 @@ class VibeEngine:
                 self.camera_detections[cam_id] = time.time()
                 self.active_cameras.add(cam_id)
 
-            # Track age
+            # Track age — use MEDIAN (robust to outliers) instead of mean
             if age != "...":
                 try:
                     age_num = int(age)
                     self.recent_ages.append(age_num)
                     if len(self.recent_ages) > 0:
-                        self.average_age = int(sum(self.recent_ages) / len(self.recent_ages))
+                        # Median is more robust than mean — not affected by single bad detections
+                        sorted_ages = sorted(self.recent_ages)
+                        n = len(sorted_ages)
+                        if n % 2 == 0:
+                            self.average_age = int((sorted_ages[n // 2 - 1] + sorted_ages[n // 2]) / 2)
+                        else:
+                            self.average_age = sorted_ages[n // 2]
                         self.current_age = str(self.average_age)
                 except (ValueError, TypeError):
                     pass

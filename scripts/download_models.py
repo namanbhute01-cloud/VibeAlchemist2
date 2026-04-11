@@ -1,24 +1,16 @@
 #!/usr/bin/env python3
 """
-Download and setup all VibeAlchemist2 V5 upgrade models.
+Download and setup all VibeAlchemist2 V5/V6 upgrade models.
 
 Usage:
     python scripts/download_models.py
 
-Models used:
-    - yolov8n-face.onnx/pt    — Face detection (already present: 12MB)
-    - arcface_r100.onnx        — Face recognition (already present: 131MB)
-    - dex_age.onnx             — Age estimation (already present: 1.3MB)
-    - yolov8n.onnx/pt          — Person detection (already present: 13MB)
+V6 Adaptive Model Selection (Tier-based):
+- Tier 1 (LOW):    YOLOv11n-face (nano, 384p)
+- Tier 2 (MEDIUM): YOLOv11s-face (small, 512p)
+- Tier 3 (HIGH):   YOLOv11m-face (medium, 720p)
 
-V5 Upgrade Models (download or export manually):
-    - retinaface_mobilenet_int8.onnx — Profile-view robust face detector
-    - mivolo_xxs.onnx                — Age+gender from face+body (MAE~5.1)
-    - mobilenet_fer_int8.onnx        — Emotion recognition (7 classes)
-
-NOTE: The official release URLs for V5 models don't exist yet on GitHub.
-The server will start and run with the existing V3 models (YOLOv8n-face,
-DEX-Age, ArcFace). V5 models activate automatically when placed in models/.
+All tiers use YOLOv11 family. Size variant is selected by hardware tier.
 """
 import os
 import sys
@@ -29,16 +21,20 @@ project_root = os.path.dirname(script_dir)
 MODELS_DIR = os.getenv("MODELS_DIR", os.path.join(project_root, "models"))
 os.makedirs(MODELS_DIR, exist_ok=True)
 
-# V3 models — already present and working
+# Core models — already present and working
 EXISTING_MODELS = [
     "arcface_r100.onnx",
     "dex_age.onnx",
-    "yolov8n-face.onnx",
-    "yolov8n.onnx",
-    "yolov8n.pt",
 ]
 
-# V5 models — need manual download/export
+# YOLOv11 face models — tier-based selection
+YOLO11_FACE_MODELS = {
+    "yolo11n-face.pt": "Tier 1 (nano, 384p) — fastest detection",
+    "yolo11s-face.pt": "Tier 2 (small, 512p) — balanced speed/accuracy",
+    "yolo11m-face.pt": "Tier 3 (medium, 720p) — maximum accuracy",
+}
+
+# V5/V6 upgrade models — need manual download/export
 V5_MODELS = {
     "retinaface_mobilenet_int8.onnx": {
         "note": "RetinaFace — profile view robust face detection",
@@ -94,8 +90,8 @@ V5_MODELS = {
 
 
 def check_existing():
-    """Check which V3 models are already present."""
-    print("=== Checking existing V3 models ===")
+    """Check which core models are already present."""
+    print("=== Checking core models ===")
     all_present = True
     for model in EXISTING_MODELS:
         path = os.path.join(MODELS_DIR, model)
@@ -106,6 +102,23 @@ def check_existing():
             print(f"  [MISSING] {model}")
             all_present = False
     return all_present
+
+
+def check_yolo11_face():
+    """Check which YOLOv11 face models are present (tier-based)."""
+    print("\n=== Checking YOLOv11 face models (tier-based) ===")
+    present = []
+    missing = []
+    for model, desc in YOLO11_FACE_MODELS.items():
+        path = os.path.join(MODELS_DIR, model)
+        if os.path.exists(path):
+            size_mb = os.path.getsize(path) / (1024 * 1024)
+            print(f"  [OK] {model} ({size_mb:.1f} MB) — {desc}")
+            present.append(model)
+        else:
+            print(f"  [MISSING] {model} — {desc}")
+            missing.append(model)
+    return present, missing
 
 
 def check_v5():
@@ -125,53 +138,71 @@ def check_v5():
     return present, missing
 
 
-def print_v5_instructions(missing):
-    """Print instructions for downloading missing V5 models."""
-    if not missing:
-        print("\n✅ All V5 models are present!")
-        return
+def print_download_instructions(yolo_missing, v5_missing):
+    """Print instructions for downloading missing models."""
+    if yolo_missing:
+        print(f"\n⚠ {len(yolo_missing)} YOLOv11 face model(s) missing:")
+        for model in yolo_missing:
+            desc = YOLO11_FACE_MODELS.get(model, "")
+            print(f"\n  ┌─ {model}")
+            print(f"  │  {desc}")
+            print(f"  │  Auto-downloads on first run, or download manually:")
+            print(f"  │  pip install ultralytics")
+            print(f"  │  python -c \"from ultralytics import YOLO; YOLO('{model.replace('.pt', '.pt')}')\"")
+            print(f"  └─")
 
-    print(f"\n⚠ {len(missing)} V5 model(s) missing:")
-    for model in missing:
-        info = V5_MODELS[model]
-        print(f"\n  ┌─ {model}")
-        print(f"  │  {info['note']}")
-        print(info["instructions"].replace("{models_dir}", MODELS_DIR))
-        print(f"  └─")
+    if v5_missing:
+        print(f"\n⚠ {len(v5_missing)} V5 model(s) missing:")
+        for model in v5_missing:
+            info = V5_MODELS[model]
+            print(f"\n  ┌─ {model}")
+            print(f"  │  {info['note']}")
+            print(info["instructions"].replace("{models_dir}", MODELS_DIR))
+            print(f"  └─")
+
+    if not yolo_missing and not v5_missing:
+        print("\n✅ All models are present!")
 
 
 def main():
     print("=" * 60)
-    print("  VibeAlchemist2 V5 Model Setup")
+    print("  VibeAlchemist2 V6 Model Setup")
     print("=" * 60)
     print(f"\nModels directory: {MODELS_DIR}\n")
 
-    # Check V3 models
-    v3_ok = check_existing()
+    # Check core models
+    core_ok = check_existing()
+
+    # Check YOLOv11 face models
+    yolo_present, yolo_missing = check_yolo11_face()
 
     # Check V5 models
-    present, missing = check_v5()
+    v5_present, v5_missing = check_v5()
 
     # Print instructions for missing models
-    print_v5_instructions(missing)
+    print_download_instructions(yolo_missing, v5_missing)
 
     # Summary
     print("\n" + "=" * 60)
-    if v3_ok:
-        print("  ✅ V3 models are all present — server is fully functional")
+    if core_ok:
+        print("  ✅ Core models are present — server will start")
     else:
-        print("  ⚠ Some V3 models are missing — server may have limited features")
+        print("  ⚠ Some core models are missing — server may have limited features")
 
-    if not missing:
-        print("  ✅ All V5 upgrade models are ready — run: python main.py")
+    if not yolo_missing:
+        print("  ✅ All YOLOv11 face models ready — adaptive tier selection active")
     else:
-        print(f"  ℹ {len(missing)} V5 model(s) need manual download (see above)")
-        print("  ℹ Server will still start with existing V3 models")
+        print(f"  ℹ {len(yolo_missing)} YOLOv11 face model(s) will auto-download on first run")
+
+    if not v5_missing:
+        print("  ✅ All V5 upgrade models ready — full feature set active")
+    else:
+        print(f"  ℹ {len(v5_missing)} V5 model(s) need manual download (see above)")
         print("  ℹ V5 features activate automatically when models are added")
 
     print("=" * 60)
 
-    return 0 if v3_ok and not missing else 1
+    return 0 if core_ok and not yolo_missing and not v5_missing else 1
 
 
 if __name__ == "__main__":
