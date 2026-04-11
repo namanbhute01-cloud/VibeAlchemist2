@@ -28,25 +28,33 @@ class FaceVault:
     - Background worker uploads to Google Drive every N minutes.
     - Auto-wipes local files after successful sync.
     """
-    def __init__(self, temp_dir="temp_faces", drive_folder_id=None, credentials_file="credentials.json", upload_interval=900):
+    def __init__(self, temp_dir="temp_faces", drive_folder_id=None, credentials_file="credentials.json", upload_interval=300):
+        """
+        Args:
+            upload_interval: Seconds between Drive syncs (default 5 minutes, lowered from 15)
+        """
         self.temp_dir = Path(temp_dir)
         self.temp_dir.mkdir(parents=True, exist_ok=True)
-        
+
         self.drive_folder_id = drive_folder_id or os.getenv("GDRIVE_FOLDER_ID")
         self.creds_file = credentials_file or os.getenv("GDRIVE_CREDENTIALS_FILE")
-        self.upload_interval = int(upload_interval) # Seconds (default 15m)
-        
+        self.upload_interval = int(upload_interval)
+
         self.service = None
         self.running = False
         self.last_sync = 0
         self.upload_count = 0
-        
+
         # Start background syncer if credentials exist
         if self.drive_folder_id and self.creds_file and os.path.exists(self.creds_file):
             self._authenticate()
             threading.Thread(target=self._sync_loop, daemon=True).start()
+            logger.info(f"Drive sync configured: every {self.upload_interval}s")
         else:
-            logger.warning("Google Drive credentials not configured. Running in local-only mode.")
+            logger.warning(
+                "Google Drive credentials not configured. "
+                "Faces saved locally only. Set GDRIVE_FOLDER_ID + credentials.json in .env to enable Drive sync."
+            )
 
     def _authenticate(self):
         if not _GDRIVE_AVAILABLE:
@@ -65,6 +73,7 @@ class FaceVault:
     def save_face(self, face_img, face_id, group, quality=0.0, age=None):
         """
         Save a face crop locally with quality metadata.
+        ONLY saves if this face_id hasn't been saved in the last 10 seconds.
 
         Args:
             face_img: Face image to save
@@ -72,7 +81,6 @@ class FaceVault:
             group: Age group (kids/youths/adults/seniors)
             quality: Detection quality score (0.0-1.0)
             age: Estimated age
-            force_save: If True, save even if already exists (default False)
         """
         if face_img is None:
             logger.warning(f"Cannot save face {face_id}: image is None")
@@ -81,16 +89,25 @@ class FaceVault:
             logger.warning(f"Cannot save face {face_id}: image is empty")
             return False
 
-        # Check if this face_id has already been saved
-        existing = list(self.temp_dir.glob(f"*_{face_id}_*.png"))
+        # Check if this face_id was recently saved (prevent duplicates within 10s)
+        now = int(time.time())
+        existing = list(self.temp_dir.glob(f"*_{face_id}_*"))
         if existing:
-            logger.debug(f"Face {face_id} already saved, skipping duplicate")
-            return False
+            # Check if any existing file was saved recently (within 10 seconds)
+            for f in existing:
+                # Extract timestamp from filename: {group}_{face_id}_q{quality}_age{age}_{timestamp}.png
+                try:
+                    timestamp = int(f.stem.split('_')[-1])
+                    if now - timestamp < 10:
+                        logger.debug(f"Face {face_id} recently saved ({now - timestamp}s ago), skipping")
+                        return False
+                except (ValueError, IndexError):
+                    pass
 
         # Include quality and age in filename for metadata
         quality_str = f"{quality:.2f}" if quality else "0.00"
         age_str = str(age) if age is not None else "unknown"
-        filename = f"{group}_{face_id}_q{quality_str}_age{age_str}_{int(time.time())}.png"
+        filename = f"{group}_{face_id}_q{quality_str}_age{age_str}_{now}.png"
         filepath = self.temp_dir / filename
 
         try:
@@ -230,5 +247,12 @@ class FaceVault:
         }
 
     def stop(self):
+        """Stop the vault and do a final sync with timeout protection."""
         self.running = False
-        self.shutdown_push()
+        # Use a thread to enforce timeout on shutdown_push (prevents hanging)
+        import threading
+        sync_thread = threading.Thread(target=self.shutdown_push, daemon=True)
+        sync_thread.start()
+        sync_thread.join(timeout=30)  # Max 30 seconds for final sync
+        if sync_thread.is_alive():
+            logger.warning("Face vault shutdown timed out after 30s — forcing exit")

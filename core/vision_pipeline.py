@@ -1033,6 +1033,11 @@ class VisionPipeline:
                         timestamp_id = f"{face_id}_{cam_id}_{int(time.time() * 1000)}"
                         if self.vault.save_face(face_crop, timestamp_id, group, quality=age_conf, age=final_age):
                             logger.info(f"Face saved: {timestamp_id} (Group: {group}, Age: {final_age}, Quality: {age_conf:.2f})")
+                else:
+                    # No embedding or registry — still apply age smoothing using track ID
+                    if face_track_id:
+                        final_age = self._smooth_age(face_track_id, raw_age, age_conf)
+                        group = self._age_to_group(final_age)
 
                 results.append({
                     'id': face_id,
@@ -1114,6 +1119,11 @@ class VisionPipeline:
                         timestamp_id = f"{face_id}_{cam_id}_{int(time.time() * 1000)}"
                         if self.vault.save_face(face_crop, timestamp_id, group, quality=age_conf, age=final_age):
                             logger.info(f"Face saved: {timestamp_id} (Group: {group}, Age: {final_age}, Quality: {age_conf:.2f})")
+                else:
+                    # No embedding or registry — still apply age smoothing using track ID
+                    if face_track_id:
+                        final_age = self._smooth_age(face_track_id, raw_age, age_conf)
+                        group = self._age_to_group(final_age)
 
                 results.append({
                     'id': face_id,

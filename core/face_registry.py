@@ -132,9 +132,10 @@ class FaceRegistry:
             if cam_id is not None:
                 data['cam_ids'].add(cam_id)
 
-            # Periodic pruning
+            # Periodic pruning for both known faces and pending unknowns
             if time.time() - self.last_prune > self.prune_interval:
                 self._prune()
+                self.prune_pending_unknowns()
 
     def update_age(self, face_id, new_age):
         """Update the age estimate for a known face with temporal smoothing."""
