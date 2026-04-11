@@ -63,10 +63,19 @@ class AlchemistPlayer:
         return '/tmp/vibe_alchemist_mpv.sock'
 
     def _find_mpv(self):
-        return shutil.which('mpv') or "mpv"
+        mpv_path = shutil.which('mpv')
+        if mpv_path:
+            logger.info(f"MPV found at: {mpv_path}")
+        else:
+            logger.critical("MPV NOT INSTALLED! Music playback disabled. "
+                           "Install: apt-get install mpv (Linux) or brew install mpv (Mac)")
+        return mpv_path
 
     def _start_mpv(self):
         """Starts MPV in idle mode with IPC enabled."""
+        if not self.mpv_bin:
+            logger.warning("MPV not installed — music playback disabled. Server will still run vision pipeline.")
+            return
         if self.process:
             self.stop()
 

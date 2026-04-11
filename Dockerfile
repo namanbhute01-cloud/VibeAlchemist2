@@ -51,6 +51,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
     curl \
     g++ \
+    mpv \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy and install Python dependencies

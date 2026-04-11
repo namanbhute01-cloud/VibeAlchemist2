@@ -389,11 +389,19 @@ def processing_loop():
             # Periodic status logging every ~30 cycles
             log_counter += 1
             if log_counter % 600 == 0:  # ~30 seconds at 0.05s sleep
+                # Check camera health
+                cam_health = []
+                for w in cam_pool.workers:
+                    status = "connected" if w.connected else "DISCONNECTED"
+                    frame_age = f"last frame {time.time() - w.last_good_frame_time:.0f}s ago" if w.last_good_frame_time > 0 else "no frames yet"
+                    cam_health.append(f"Cam {w.cam_id}: {status} ({frame_age})")
+
                 logger.info(
                     f"Processing loop: {num_cameras} camera(s), "
                     f"{frames_processed} frames in last 30s ({frames_processed/30:.1f} fps), "
                     f"total faces: {faces_detected_count}, "
-                    f"quality_journal: {len(vibe_engine.quality_journal) if vibe_engine else 0}"
+                    f"quality_journal: {len(vibe_engine.quality_journal) if vibe_engine else 0} | "
+                    f"{' | '.join(cam_health)}"
                 )
                 faces_detected_count = 0  # Reset counter
                 frames_processed = 0
