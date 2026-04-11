@@ -41,27 +41,30 @@ def music_handover_loop():
     Background thread that monitors song playback position.
 
     FIXED LOGIC:
-    1. On startup: Wait for face detections, then start first song
-    2. While song plays: Collect ALL face detections in vibe_engine.journal
+    1. On startup: WAIT for face detections — do NOT start music without faces
+    2. While song plays: Collect ALL face detections in a per-song buffer
     3. At song end (percent drops OR player clears current_song):
-       a. Calculate average age from all detections collected during this song
-       b. Determine target group from that average age
-       c. Start ONE new song from that group
+       a. Calculate target group from detections collected during THIS song only
+       b. Use prepare_handover() + commit_handover() from vibe_engine
+       c. Start ONE new song from the determined group
     4. NEVER start overlapping songs — only one song plays at a time
-    5. If no faces detected yet: use default 'adults' group after 30s timeout
+    5. If no faces detected during song: continue current folder (no random switching)
+    6. NEVER auto-start without face detections — wait indefinitely
     """
     global vibe_engine, player
 
-    has_played_once = False  # Prevent auto-start on boot
+    has_played_once = False
     last_monitored_song = None
     last_percent = 0
-    song_ending = False  # True when we've decided to end and are waiting for clean state
-    end_attempted_time = 0
-    startup_time = time.time()
-    last_face_check_time = time.time()
-    faces_detected_at_start = 0
+    song_ending = False
 
-    logger.info("Music handover monitor started (waits for faces before playing)")
+    # ── Per-song detection tracking ──
+    startup_time = time.time()
+    song_detections = []  # List of (group, age, quality, timestamp) for CURRENT song
+    song_start_time = time.time()
+
+    logger.info("Music handover monitor started (per-song detection tracking)")
+    logger.info("WAITING for face detections before starting first song...")
 
     while True:
         try:
@@ -72,55 +75,53 @@ def music_handover_loop():
             status = player.get_status()
             current_song = status.get('song', 'None')
             percent_pos = status.get('percent', 0)
+            is_stopped = getattr(player, 'is_stopped', False)
+
+            # ── CASE 0: User manually stopped the music ──
+            # Do NOT auto-restart — wait for user to start again
+            if is_stopped:
+                time.sleep(1)
+                continue
 
             # ── CASE 1: No song playing ──
             if current_song == 'None':
-                # Start a song if:
-                # a) We've played before AND a song just ended (percent was high)
-                # b) OR it's first boot AND we have face detections (or timeout reached)
                 should_start = False
-                target_group = "adults"  # Default
+                target_group = None
 
                 if has_played_once:
-                    # Song just ended — calculate vibe from detections during this song
-                    if last_percent > 50 or song_ending:
-                        song_ending = False
-                        target_group = _calculate_target_group()
-                        logger.info(f"Song ended. Detections during song -> target: {target_group}")
-                        should_start = True
-                    else:
-                        # No song and we're not ending one — idle
-                        time.sleep(1)
-                        continue
+                    # Song just ended — calculate target from THIS song's detections
+                    target_group = _calculate_target_group_from_song(song_detections)
+                    logger.info(
+                        f"Song ended. Detections during song: {len(song_detections)} "
+                        f"-> target: {target_group}"
+                    )
+                    song_detections = []  # Reset for next song
+                    song_start_time = time.time()
+                    should_start = True
                 else:
-                    # First boot — wait for face detections before starting
-                    # Check if we have any face detections in the journal
-                    current_faces = vibe_engine.journal if hasattr(vibe_engine, 'journal') else []
-                    current_face_count = len(current_faces) if current_faces else 0
-                    
-                    # Also check quality_journal
+                    # First boot — WAIT for face detections before starting
+                    # NEVER start music without detecting faces first
+                    current_face_count = 0
                     if hasattr(vibe_engine, 'quality_journal'):
                         current_face_count = len(vibe_engine.quality_journal)
 
                     time_since_startup = time.time() - startup_time
-                    
-                    # Start if we have faces OR timeout reached (30 seconds)
+
                     if current_face_count > 0:
-                        target_group = _calculate_target_group()
+                        target_group = _calculate_target_group_from_song(
+                            list(vibe_engine.quality_journal)
+                        )
                         logger.info(f"First boot: {current_face_count} face(s) detected -> target: {target_group}")
                         should_start = True
-                    elif time_since_startup > 30:
-                        # Timeout — start with default after 30 seconds
-                        logger.info(f"First boot timeout (30s). No faces detected -> target: adults (default)")
-                        target_group = "adults"
-                        should_start = True
                     else:
-                        # Still waiting for faces
+                        # Log progress every 15 seconds
+                        if int(time_since_startup) % 15 == 0 and int(time_since_startup) > 0:
+                            logger.info(f"Waiting for face detections... ({int(time_since_startup)}s elapsed, no faces yet)")
                         time.sleep(1)
                         continue
 
                 # Start the song
-                if should_start:
+                if should_start and target_group:
                     with _playback_lock:
                         try:
                             success = player.next(target_group)
@@ -131,6 +132,9 @@ def music_handover_loop():
                                     has_played_once = True
                                     last_monitored_song = verify.get('song', 'None')
                                     last_percent = 0
+                                    # ── Commit handover to vibe_engine ──
+                                    if vibe_engine:
+                                        vibe_engine.commit_handover()
                                     logger.info(f"Next song started: {target_group}")
                                     continue
                                 else:
@@ -143,13 +147,18 @@ def music_handover_loop():
                             continue
 
             # ── CASE 2: Song is playing — monitor for end ──
-            # Detect new song started (by user or by our handover)
             if current_song != last_monitored_song:
                 last_monitored_song = current_song
                 last_percent = 0
                 song_ending = False
-                has_played_once = True  # Mark that we've played at least once
+                has_played_once = True
+                # Reset per-song detection buffer
+                song_detections = []
+                song_start_time = time.time()
                 logger.info(f"Now playing: {current_song}")
+
+            # Collect detections from vibe_engine for this song
+            _collect_song_detections(song_detections, song_start_time)
 
             # Detect song ending: percent dropped from high to low
             if last_percent > 85 and percent_pos < 10 and not song_ending:
@@ -167,12 +176,7 @@ def music_handover_loop():
             else:
                 music_handover_loop._stuck_start = None
 
-            # ── CASE 3: Song ended naturally (player cleared it) ──
-            # This is caught by CASE 1 on next iteration when current_song == 'None'
-
             last_percent = percent_pos
-
-            # Poll every 200ms
             time.sleep(0.2)
 
         except Exception as e:
@@ -180,28 +184,67 @@ def music_handover_loop():
             time.sleep(1)
 
 
-def _calculate_target_group() -> str:
+def _collect_song_detections(song_detections, song_start_time):
     """
-    Calculate the target music group from all face detections collected
-    during the current song. Uses vibe_engine's journal and average_age.
+    Collect new detections from vibe_engine's quality_journal since song started.
+    Appends to song_detections list (mutable, passed by reference).
     """
-    avg_age = vibe_engine.average_age
+    if not vibe_engine or not hasattr(vibe_engine, 'quality_journal'):
+        return
 
-    if avg_age and avg_age > 0:
-        logger.info(f"Average age during song: {avg_age:.1f}")
-    else:
-        logger.info("No faces detected during song — using default 'adults'")
+    # Get entries from quality_journal that occurred after song started
+    for entry in vibe_engine.quality_journal:
+        ts = entry.get('timestamp', 0)
+        if ts > song_start_time:
+            # Check if we already have this entry (avoid duplicates)
+            entry_id = (entry.get('group'), entry.get('cam_id'), ts)
+            existing_ids = [(d.get('group'), d.get('cam_id'), d.get('timestamp', 0)) for d in song_detections]
+            if entry_id not in existing_ids:
+                song_detections.append(entry)
+
+
+def _calculate_target_group_from_song(song_detections) -> str:
+    """
+    Calculate the target music group from detections collected during the current song.
+    Uses quality-weighted voting. Falls back to vibe_engine's prepare_handover().
+    """
+    # Filter out old entries (before song start)
+    valid_detections = [d for d in song_detections if isinstance(d, dict) and 'group' in d]
+
+    if not valid_detections:
+        # No detections during this song — use vibe_engine's handover logic
+        logger.info("No face detections during song — using vibe_engine handover")
+        if vibe_engine:
+            return vibe_engine.prepare_handover()
         return "adults"
 
-    # Map average age to group with fuzzy boundaries
-    if avg_age < 14:
-        return "kids"
-    elif avg_age < 22:
-        return "youths"
-    elif avg_age < 55:
+    # Quality-weighted voting
+    quality_votes = {}
+    total_quality = 0.0
+
+    for entry in valid_detections:
+        group = entry.get('group', 'adults')
+        quality = entry.get('quality', 0.5)
+        weight = max(0.1, min(1.0, quality))
+
+        quality_votes[group] = quality_votes.get(group, 0) + weight
+        total_quality += weight
+
+    if not quality_votes:
         return "adults"
-    else:
-        return "seniors"
+
+    # Get the winning group
+    winner = max(quality_votes, key=quality_votes.get)
+    winner_quality = quality_votes[winner]
+
+    # Log the voting breakdown
+    vote_summary = ", ".join(f"{g}: {q:.1f}" for g, q in sorted(quality_votes.items(), key=lambda x: -x[1]))
+    logger.info(
+        f"Song detection vote: {winner} wins ({vote_summary}) | "
+        f"{len(valid_detections)} detections, dominance: {winner_quality/total_quality:.2f}"
+    )
+
+    return winner
 
 
 # --- VISION PROCESSING LOOP ---
@@ -215,13 +258,20 @@ def processing_loop():
     - Per-camera rate limiting with adaptive intervals
     - No race conditions with face registry (single-threaded)
     - Graceful handling of camera disconnects
+    - Explicit memory management (prevent frame accumulation leaks)
     """
     global pipeline, cam_pool, vibe_engine, face_vault, face_registry, player
     faces_detected_count = 0
+    log_counter = 0
+    frames_processed = 0
+    last_gc_check = time.time()
+    last_frame_processed_time = time.time()  # Watchdog: track when we last processed a frame
 
     # Per-camera rate limiting
     camera_last_process = {}
     base_process_interval = 0.5  # Process each camera every 500ms
+
+    logger.info("Vision processing loop started")
 
     while True:
         try:
@@ -237,6 +287,31 @@ def processing_loop():
             current_time = time.time()
             processed_any = False
 
+            # ── Watchdog: Detect if processing loop is stuck ──
+            # If no frames processed in 30 seconds but cameras are connected, something is wrong
+            time_since_last_frame = current_time - last_frame_processed_time
+            if time_since_last_frame > 30 and processed_any is False:
+                # Check if cameras are actually connected
+                connected_cams = sum(1 for w in cam_pool.workers if w.connected)
+                if connected_cams > 0:
+                    logger.warning(
+                        f"⚠️ WATCHDOG: Processing loop appears stuck! "
+                        f"No frames processed for {time_since_last_frame:.0f}s "
+                        f"({connected_cams} cameras connected). Forcing frame check."
+                    )
+                    # Force check: clear and re-read latest_frames
+                    for cam_id in range(num_cameras):
+                        frame = cam_pool.latest_frames.get(cam_id)
+                        if frame is not None and isinstance(frame, np.ndarray):
+                            logger.info(f"Watchdog: Found stale frame for cam {cam_id}, processing now")
+                            local_frame = frame.copy()
+                            detections = pipeline.process_frame(local_frame, cam_id)
+                            process_detections(detections, cam_id, pipeline, vibe_engine, player, face_vault, face_registry)
+                            frames_processed += len(detections)
+                            last_frame_processed_time = current_time
+                            del local_frame
+                            processed_any = True
+
             # ── STEP 1: Process frames from queue (newest frames per camera) ──
             try:
                 # Drain queue but only process the latest frame per camera
@@ -245,6 +320,10 @@ def processing_loop():
                     try:
                         item = frame_queue.get_nowait()
                         cam_id = item["cam_id"]
+                        # If we already have a newer frame, discard the old one
+                        if cam_id in latest_per_cam:
+                            # Explicitly delete old frame reference to free memory
+                            del latest_per_cam[cam_id]["frame"]
                         latest_per_cam[cam_id] = item  # Keep only latest
                     except queue.Empty:
                         break
@@ -254,10 +333,16 @@ def processing_loop():
                     last_process = camera_last_process.get(cam_id, 0)
                     if current_time - last_process >= base_process_interval:
                         camera_last_process[cam_id] = current_time
-                        detections = pipeline.process_frame(item["frame"], cam_id)
+                        frame = item["frame"]
+                        detections = pipeline.process_frame(frame, cam_id)
                         process_detections(detections, cam_id, pipeline, vibe_engine, player, face_vault, face_registry)
                         faces_detected_count += len(detections)
+                        frames_processed += 1
+                        last_frame_processed_time = current_time  # Watchdog heartbeat
                         processed_any = True
+                        # Explicitly release frame reference after processing
+                        del frame
+                        del item
 
             except queue.Empty:
                 pass
@@ -271,16 +356,53 @@ def processing_loop():
                     frame = cam_pool.latest_frames.get(cam_id)
                     if frame is not None and isinstance(frame, np.ndarray):
                         camera_last_process[cam_id] = current_time
-                        detections = pipeline.process_frame(frame, cam_id)
+                        # Make a local copy so the shared dict can be updated independently
+                        local_frame = frame.copy()
+                        detections = pipeline.process_frame(local_frame, cam_id)
                         process_detections(detections, cam_id, pipeline, vibe_engine, player, face_vault, face_registry)
                         faces_detected_count += len(detections)
+                        frames_processed += 1
+                        last_frame_processed_time = current_time  # Watchdog heartbeat
                         processed_any = True
+                        # Explicitly release local frame reference
+                        del local_frame
+
+            # ── Memory Management: Periodic garbage collection ──
+            # Run GC every 60 seconds to clean up accumulated numpy frames
+            if current_time - last_gc_check > 60:
+                import gc
+                collected = gc.collect()
+                last_gc_check = current_time
+                if collected > 100:
+                    logger.debug(f"GC collected {collected} objects (memory cleanup)")
+
+            # ── Clean up stale annotated frames (older than 5 seconds) ──
+            if cam_pool and hasattr(cam_pool, 'annotated_frames'):
+                stale_threshold = current_time - 5.0
+                stale_keys = [
+                    k for k, v in cam_pool.annotated_frames.items()
+                    if k not in cam_pool.latest_frames  # Clean up cameras that disconnected
+                ]
+                for k in stale_keys:
+                    del cam_pool.annotated_frames[k]
+
+            # Periodic status logging every ~30 cycles
+            log_counter += 1
+            if log_counter % 600 == 0:  # ~30 seconds at 0.05s sleep
+                logger.info(
+                    f"Processing loop: {num_cameras} camera(s), "
+                    f"{frames_processed} frames in last 30s ({frames_processed/30:.1f} fps), "
+                    f"total faces: {faces_detected_count}, "
+                    f"quality_journal: {len(vibe_engine.quality_journal) if vibe_engine else 0}"
+                )
+                faces_detected_count = 0  # Reset counter
+                frames_processed = 0
 
             # Small sleep to prevent CPU spinning
             time.sleep(0.05)
 
         except Exception as e:
-            logger.error(f"Processing loop error: {e}")
+            logger.error(f"Processing loop error: {e}", exc_info=True)
             time.sleep(1)
 
 # Global lock to prevent race condition between handover loop and detection loop
@@ -347,45 +469,45 @@ def _draw_bounding_boxes(detections, cam_id, pipeline):
             quality = det.get('quality', 0)
 
             color = (0, 255, 0) if is_good else (0, 255, 255)
-            thickness = 3 if is_good else 2
+            thickness = 2
 
             cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), color, thickness)
 
-            label = f"Age:{det['age']} {det['group']} ({quality:.1f})"
-            (label_w, label_h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
+            label = f"{det['age']} {det['group']}"
+            (label_w, label_h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.4, 1)
 
             cv2.rectangle(
                 annotated_frame,
-                (x1, y1 - label_h - 8),
-                (x1 + label_w + 6, y1),
+                (x1, y1 - label_h - 4),
+                (x1 + label_w + 4, y1),
                 color, -1
             )
 
             cv2.putText(
                 annotated_frame, label,
-                (x1 + 3, y1 - 4),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1
+                (x1 + 2, y1 - 2),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1
             )
 
         # Detection counter badge
         total = len(detections)
         if total > 0:
-            counter_text = f"Faces: {good_count}/{total}"
+            counter_text = f"Faces: {total}"
             (cw, ch), _ = cv2.getTextSize(counter_text, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
             cv2.rectangle(
                 annotated_frame,
-                (w - cw - 20, 8),
-                (w - 8, 8 + ch + 8),
+                (w - cw - 16, 6),
+                (w - 6, 6 + ch + 6),
                 (0, 255, 0) if good_count == total else (0, 165, 255), -1
             )
             cv2.putText(
                 annotated_frame, counter_text,
-                (w - cw - 15, 8 + ch + 3),
+                (w - cw - 12, 6 + ch + 3),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1
             )
 
-        # Encode and store in annotated_frames (thread-safe)
-        ret, buffer = cv2.imencode('.jpg', annotated_frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
+        # Encode and store in annotated_frames (thread-safe, lower quality for speed)
+        ret, buffer = cv2.imencode('.jpg', annotated_frame, [cv2.IMWRITE_JPEG_QUALITY, 75, cv2.IMWRITE_JPEG_OPTIMIZE, 1])
         if ret:
             with pipeline.pool._frame_lock:
                 pipeline.pool.annotated_frames[cam_id] = buffer.tobytes()
@@ -403,11 +525,13 @@ def process_detections(detections, cam_id, pipeline, vibe_engine, player, face_v
         return
 
     try:
+        logger.debug(f"Processing {len(detections)} detection(s) from cam {cam_id}: "
+                     f"groups={[d['group'] for d in detections]}, ages=[d['age'] for d in detections]")
         good_detections = _log_detections(detections, vibe_engine, cam_id)
         _handle_playback(good_detections, vibe_engine, player)
         _draw_bounding_boxes(detections, cam_id, pipeline)
     except Exception as e:
-        logger.error(f"process_detections error (non-fatal): {e}")
+        logger.error(f"process_detections error (non-fatal): {e}", exc_info=True)
 
 # --- LIFECYCLE ---
 @asynccontextmanager
@@ -628,7 +752,7 @@ async def websocket_endpoint(websocket: WebSocket):
     except Exception as e:
         logger.error(f"WebSocket error: {e}", exc_info=True)
 
-# 4. MJPEG /feed/{cam_id} - Serves frames with bounding boxes
+# 4. MJPEG /feed/{cam_id} - Serves frames with bounding boxes (low latency)
 @app.get("/feed/{cam_id}")
 async def camera_feed(cam_id: int):
     # Validate camera ID
@@ -650,13 +774,14 @@ async def camera_feed(cam_id: int):
                             if len(frame_data) > 100:
                                 yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame_data + b'\r\n')
                         elif isinstance(frame_data, np.ndarray):
-                            # Raw frame from camera — encode in thread pool
+                            # Raw frame from camera — encode in thread pool (non-blocking)
                             _, buf = await loop.run_in_executor(
                                 executor,
                                 cv2.imencode, '.jpg', frame_data,
-                                [cv2.IMWRITE_JPEG_QUALITY, 85, cv2.IMWRITE_JPEG_OPTIMIZE, 1]
+                                [cv2.IMWRITE_JPEG_QUALITY, 70, cv2.IMWRITE_JPEG_OPTIMIZE, 1, cv2.IMWRITE_JPEG_PROGRESSIVE, 0]
                             )
                             yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + buf.tobytes() + b'\r\n')
+                # 30fps target (33ms)
                 await asyncio.sleep(0.033)
             except Exception:
                 # Client disconnected — exit generator gracefully
@@ -669,6 +794,7 @@ async def camera_feed(cam_id: int):
             "Cache-Control": "no-cache, no-store, must-revalidate",
             "Pragma": "no-cache",
             "Expires": "0",
+            "X-Frame-Rate": "30",
         }
     )
 

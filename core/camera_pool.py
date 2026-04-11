@@ -15,6 +15,12 @@ class CameraWorker(threading.Thread):
     Worker thread for a single camera source.
     Lightweight: just capture, resize, and push.
     Enhancement is done ONCE in vision_pipeline (not here).
+
+    Improvements:
+    - RTSP stream health monitoring (detects stale streams)
+    - Forced reconnection after N seconds without a good frame
+    - Frame timestamp tracking for lag detection
+    - Periodic connection health logging
     """
 
     def __init__(self, source: Union[int, str], cam_id: int, frame_queue: queue.Queue, pool, target_height=720):
@@ -30,29 +36,52 @@ class CameraWorker(threading.Thread):
         self.frame_count = 0
         self.last_log = time.time()
 
+        # ── RTSP Health Monitoring ──
+        self.last_good_frame_time = 0.0  # Timestamp of last successfully read frame
+        self.stale_stream_threshold = 15.0  # Seconds without a frame = stream is dead
+        self.reconnect_attempts = 0
+        self.max_reconnect_attempts = 50  # Unlimited retries (reset on success)
+
     def _connect(self):
         """Connect to camera source with optimized settings."""
         if self.cap:
-            self.cap.release()
+            try:
+                self.cap.release()
+            except Exception:
+                pass
             self.connected = False
 
-        logger.info(f"[Cam {self.cam_id}] Connecting: {self.source}")
+        self.reconnect_attempts += 1
+        logger.info(f"[Cam {self.cam_id}] Connecting (attempt {self.reconnect_attempts}): {self.source}")
 
         if isinstance(self.source, str):
             # HTTP/RTSP stream — optimize for low latency
-            # Try FFMPEG first, fall back to default if unavailable
+            # CRITICAL: Use FFMPEG backend for network streams with aggressive timeout settings
+            cap = None
+            # Try FFMPEG backend first with explicit buffer and timeout options
             try:
-                self.cap = cv2.VideoCapture(self.source, cv2.CAP_FFMPEG)
+                cap = cv2.VideoCapture(self.source, cv2.CAP_FFMPEG)
+                if cap.isOpened():
+                    # CRITICAL: Set FFMPEG-specific options to prevent buffering
+                    # These must be set AFTER opening the stream
+                    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # Only keep latest frame
+                    cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 5000)
+                    cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 5000)
+                    # FFMPEG-specific: reduce internal buffer
+                    cap.set(cv2.CAP_PROP_FPS, 15)  # Cap at 15fps to prevent backlog
             except Exception:
                 logger.debug(f"[Cam {self.cam_id}] CAP_FFMPEG unavailable, using default backend")
-                self.cap = cv2.VideoCapture(self.source)
+                cap = None
 
-            if self.cap.isOpened():
-                # Reduce buffer to 1 frame (lowest latency)
-                self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
-                # Set timeouts for network streams
-                self.cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 5000)
-                self.cap.set(cv2.CAP_PROP_READ_TIMEOUT_MSEC, 5000)
+            # Fallback to default backend
+            if cap is None or not cap.isOpened():
+                if cap:
+                    cap.release()
+                cap = cv2.VideoCapture(self.source)
+                if cap.isOpened():
+                    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+
+            self.cap = cap
         else:
             # USB webcam
             self.cap = cv2.VideoCapture(self.source)
@@ -62,8 +91,10 @@ class CameraWorker(threading.Thread):
 
         if self.cap and self.cap.isOpened():
             self.connected = True
-            logger.info(f"[Cam {self.cam_id}] Connected")
+            self.last_good_frame_time = time.time()
+            logger.info(f"[Cam {self.cam_id}] Connected successfully")
         else:
+            self.connected = False
             logger.error(f"[Cam {self.cam_id}] Failed to open")
 
     def run(self):
@@ -72,8 +103,32 @@ class CameraWorker(threading.Thread):
 
         reconnect_delay = 2  # Start with 2s
         max_delay = 10
+        last_stale_check = time.time()
 
         while self.running:
+            # ── Stale Stream Detection (for network streams) ──
+            # If we haven't received a good frame in N seconds, force reconnect
+            if self.connected and isinstance(self.source, str):
+                time_since_frame = time.time() - self.last_good_frame_time
+                if time_since_frame > self.stale_stream_threshold:
+                    logger.warning(
+                        f"[Cam {self.cam_id}] STALE STREAM DETECTED: "
+                        f"No frames for {time_since_frame:.0f}s — forcing reconnect"
+                    )
+                    self.cap.release()
+                    self.connected = False
+                    reconnect_delay = 2  # Reset delay on forced reconnect
+                    continue
+
+                # Periodic health check log (every 60s)
+                now = time.time()
+                if now - last_stale_check > 60:
+                    logger.debug(
+                        f"[Cam {self.cam_id}] Health: OK (last frame {time_since_frame:.1f}s ago, "
+                        f"reconnects: {self.reconnect_attempts})"
+                    )
+                    last_stale_check = now
+
             if not self.cap or not self.cap.isOpened():
                 logger.warning(f"[Cam {self.cam_id}] Reconnecting in {reconnect_delay}s...")
                 time.sleep(reconnect_delay)
@@ -82,15 +137,20 @@ class CameraWorker(threading.Thread):
                 continue
 
             ret, frame = self.cap.read()
-            if not ret:
+            if not ret or frame is None:
                 logger.warning(f"[Cam {self.cam_id}] Read failed, reconnecting...")
-                self.cap.release()
+                try:
+                    self.cap.release()
+                except Exception:
+                    pass
                 self.connected = False
                 time.sleep(1)
                 continue
 
-            # Reset reconnect delay on successful read
-            reconnect_delay = 2
+            # ── Frame received — update health tracking ──
+            self.last_good_frame_time = time.time()
+            self.reconnect_attempts = 0  # Reset on success
+            reconnect_delay = 2  # Reset delay
 
             try:
                 # ── Lightweight resize only (no enhancement) ──
@@ -123,7 +183,7 @@ class CameraWorker(threading.Thread):
                 now = time.time()
                 if now - self.last_log > 10:
                     fps = self.frame_count / (now - self.last_log)
-                    logger.debug(f"[Cam {self.cam_id}] {fps:.1f} FPS")
+                    logger.info(f"[Cam {self.cam_id}] {fps:.1f} FPS (connected: {self.connected})")
                     self.frame_count = 0
                     self.last_log = now
 
@@ -137,7 +197,10 @@ class CameraWorker(threading.Thread):
                 time.sleep(1)
 
         if self.cap:
-            self.cap.release()
+            try:
+                self.cap.release()
+            except Exception:
+                pass
         logger.info(f"[Cam {self.cam_id}] Stopped")
 
     def stop(self):
@@ -197,14 +260,20 @@ class CameraPool:
             return None
 
     def get_status(self) -> list:
-        """Return status of all cameras."""
+        """Return status of all cameras with health metrics."""
         status = []
+        now = time.time()
         for i, worker in enumerate(self.workers):
+            time_since_frame = now - worker.last_good_frame_time if worker.last_good_frame_time > 0 else -1
+            is_stale = time_since_frame > worker.stale_stream_threshold if time_since_frame > 0 else False
             status.append({
                 "id": i,
                 "source": str(worker.source),
                 "connected": worker.connected,
-                "frames": worker.frame_count
+                "frames": worker.frame_count,
+                "last_frame_age_sec": round(time_since_frame, 1) if time_since_frame > 0 else None,
+                "stale": is_stale,
+                "reconnect_attempts": worker.reconnect_attempts,
             })
         return status
 

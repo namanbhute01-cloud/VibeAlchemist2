@@ -37,6 +37,7 @@ class AlchemistPlayer:
         self.current_song = None
         self.is_playing = False
         self.paused = False
+        self.is_stopped = False  # NEW: Manual stop flag
         self.volume = 70
         self.shuffle_mode = True
 
@@ -131,16 +132,23 @@ class AlchemistPlayer:
                         else:
                             high_count = 0
                     else:
-                        # null response = MPV has no active file (idle mode)
-                        # Treat as song-end
-                        with self._lock:
-                            if self.is_playing:
-                                self.current_song = None
-                                self.is_playing = False
-                                self.paused = False
-                                self._cached_percent = 0.0
-                                logger.info("Song ended (null position = idle)")
-                        high_count = 0
+                        # null response from IPC — could be:
+                        # 1. MPV has no active file (idle mode) → song ended
+                        # 2. IPC call failed (socket missing during restart) → ignore
+                        # Only treat as song-end if we actually got a response (not None)
+                        if res is not None and "data" in res:
+                            # Actual null data = no active file
+                            with self._lock:
+                                if self.is_playing:
+                                    self.current_song = None
+                                    self.is_playing = False
+                                    self.paused = False
+                                    self._cached_percent = 0.0
+                                    logger.info("Song ended (null position = idle)")
+                            high_count = 0
+                        else:
+                            # IPC returned None (socket missing, etc.) — ignore
+                            pass
                 except Exception:
                     pass
                 time.sleep(0.5)  # Poll every 500ms
@@ -176,19 +184,12 @@ class AlchemistPlayer:
 
         # Check if MPV process is still alive BEFORE trying to connect
         if self.process.poll() is not None:
-            logger.warning("MPV process died — restarting before IPC")
-            self._start_mpv()
-            time.sleep(0.5)
-            if not self.process or self.process.poll() is not None:
-                return None
-        else:
-            # MPV is alive — if socket doesn't exist, restart MPV
-            if not os.path.exists(self.socket_path):
-                logger.warning("MPV alive but socket missing — restarting")
-                self._start_mpv()
-                time.sleep(0.5)
-                if not self.process or self.process.poll() is not None:
-                    return None
+            # MPV died — let the monitor thread restart it, don't restart here (prevents race condition)
+            return None
+
+        # MPV is alive — if socket doesn't exist, don't restart here either (let monitor handle it)
+        if not os.path.exists(self.socket_path):
+            return None
 
         try:
             msg = json.dumps({"command": command}) + "\n"
@@ -216,19 +217,11 @@ class AlchemistPlayer:
 
         # Check if MPV process is still alive BEFORE trying to connect
         if self.process.poll() is not None:
-            logger.warning("MPV process died — restarting before IPC")
-            self._start_mpv()
-            time.sleep(0.5)
-            if not self.process or self.process.poll() is not None:
-                return None
-        else:
-            # MPV is alive — if socket doesn't exist, restart MPV
-            if not os.path.exists(self.socket_path):
-                logger.warning("MPV alive but socket missing — restarting")
-                self._start_mpv()
-                time.sleep(0.5)
-                if not self.process or self.process.poll() is not None:
-                    return None
+            return None
+
+        # MPV is alive — if socket doesn't exist, don't restart here
+        if not os.path.exists(self.socket_path):
+            return None
 
         try:
             msg = json.dumps({"command": command}) + "\n"
@@ -249,18 +242,31 @@ class AlchemistPlayer:
         except Exception:
             return None
 
-    def play(self, filepath: str):
-        """Plays a specific file. Returns True if playback started successfully."""
+    def play(self, filepath: str = None):
+        """
+        Plays a specific file, or the next track from the loaded playlist.
+        Returns True if playback started successfully.
+        """
+        if not self.process or not os.path.exists(self.socket_path):
+            logger.warning(f"MPV not ready — cannot play {filepath}")
+            return False
+
+        # If no filepath given, pick next from playlist
+        if filepath is None:
+            if not hasattr(self, "_playlist") or not self._playlist:
+                logger.warning("No playlist loaded")
+                return False
+
+            if self.shuffle_mode:
+                filepath = str(random.choice(self._playlist))
+            else:
+                filepath = str(self._playlist[self._playlist_index % len(self._playlist)])
+                self._playlist_index = (self._playlist_index + 1) % len(self._playlist)
+
         result = self._send_ipc(["loadfile", filepath])
         if result is None:
-            logger.error(f"Failed to load file via IPC: {filepath} — MPV may be unresponsive")
-            # Try to restart MPV
-            self._start_mpv()
-            time.sleep(0.5)
-            result = self._send_ipc(["loadfile", filepath])
-            if result is None:
-                logger.error(f"Still failed after MPV restart: {filepath}")
-                return False
+            logger.warning(f"IPC failed for {filepath} — MPV may be restarting")
+            return False
 
         # Apply LUFS-based volume adjustment
         self._apply_lufs_gain(filepath)
@@ -271,6 +277,7 @@ class AlchemistPlayer:
             self.is_playing = True
             self.paused = False
             self._cached_percent = 0.0
+            self.is_stopped = False  # Clear stopped flag when starting new song
         logger.info(f"Now Playing: {self.current_song}")
         return True
 
@@ -303,6 +310,7 @@ class AlchemistPlayer:
         """Plays a song from the specified group. Returns True if playback started."""
         with self._lock:
             self.current_folder = group
+            self.is_stopped = False  # Clear stopped flag when starting new song
 
         folder = self.music_root / group
         songs = list(folder.glob("*.*"))
@@ -392,16 +400,22 @@ class AlchemistPlayer:
             }
 
     def stop(self):
-        """Stops the MPV process."""
+        """Stops the MPV process and sets stopped flag."""
         if self.process:
             try:
+                self._send_ipc_fast(["stop"])
                 self.process.terminate()
                 self.process.wait(timeout=3)
             except Exception:
-                self.process.kill()
+                try:
+                    self.process.kill()
+                except Exception:
+                    pass
             self.process = None
         with self._lock:
             self.is_playing = False
+            self.is_stopped = True  # Mark as manually stopped
+            self.current_song = None
             self._cached_percent = 0.0
 
     def load_playlist(self, folder_path: str, shuffle: bool = True) -> bool:
@@ -430,44 +444,4 @@ class AlchemistPlayer:
         self._playlist = songs
         self._playlist_index = 0
         logger.info(f"Loaded {len(songs)} tracks from {folder_path}")
-        return True
-
-    def play(self, filepath: str = None):
-        """
-        Plays a specific file, or the next track from the loaded playlist.
-        Returns True if playback started successfully.
-        """
-        # If no filepath given, pick next from playlist
-        if filepath is None:
-            if not hasattr(self, "_playlist") or not self._playlist:
-                logger.warning("No playlist loaded")
-                return False
-
-            if self.shuffle_mode:
-                filepath = str(random.choice(self._playlist))
-            else:
-                filepath = str(self._playlist[self._playlist_index % len(self._playlist)])
-                self._playlist_index = (self._playlist_index + 1) % len(self._playlist)
-
-        result = self._send_ipc(["loadfile", filepath])
-        if result is None:
-            logger.error(f"Failed to load file via IPC: {filepath} — MPV may be unresponsive")
-            # Try to restart MPV
-            self._start_mpv()
-            time.sleep(0.5)
-            result = self._send_ipc(["loadfile", filepath])
-            if result is None:
-                logger.error(f"Still failed after MPV restart: {filepath}")
-                return False
-
-        # Apply LUFS-based volume adjustment
-        self._apply_lufs_gain(filepath)
-
-        with self._lock:
-            self.current_song = Path(filepath).stem
-            self.song_history.append(filepath)
-            self.is_playing = True
-            self.paused = False
-            self._cached_percent = 0.0
-        logger.info(f"Now Playing: {self.current_song}")
         return True
