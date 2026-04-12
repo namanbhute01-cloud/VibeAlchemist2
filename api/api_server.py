@@ -824,28 +824,50 @@ async def camera_feed(cam_id: int):
 
     loop = asyncio.get_event_loop()
     executor = None  # default ThreadPoolExecutor
+    last_frame_time = 0  # Track last frame send time for skipping stale frames
 
     async def generate():
+        nonlocal last_frame_time
         while True:
             try:
                 if cam_pool:
                     # Get annotated frame (JPEG bytes with bounding boxes) or raw frame
                     frame_data = cam_pool.get_latest_frame(cam_id)
                     if frame_data is not None:
+                        current_time = time.time()
+                        
+                        # Skip stale frames - if we're falling behind, skip encoding
+                        # This prevents latency buildup when client is slow
+                        if current_time - last_frame_time < 0.02:  # Max ~50fps send rate
+                            await asyncio.sleep(0.01)
+                            continue
+                        
                         if isinstance(frame_data, bytes):
                             # Already encoded (annotated frame with bounding boxes)
                             if len(frame_data) > 100:
                                 yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame_data + b'\r\n')
+                                last_frame_time = time.time()
                         elif isinstance(frame_data, np.ndarray):
-                            # Raw frame from camera — encode in thread pool (non-blocking)
+                            # Raw frame from camera — encode with OPTIMIZED settings for speed
+                            # FIX: Lower quality (60) + FAST_HUFFMAN + NO_PROGRESSIVE = much faster encoding
                             _, buf = await loop.run_in_executor(
                                 executor,
                                 cv2.imencode, '.jpg', frame_data,
-                                [cv2.IMWRITE_JPEG_QUALITY, 70, cv2.IMWRITE_JPEG_OPTIMIZE, 1, cv2.IMWRITE_JPEG_PROGRESSIVE, 0]
+                                [
+                                    cv2.IMWRITE_JPEG_QUALITY, 60,          # Lowered from 70 for speed
+                                    cv2.IMWRITE_JPEG_OPTIMIZE, 1,          # Optimize Huffman tables
+                                    cv2.IMWRITE_JPEG_PROGRESSIVE, 0,       # Disable progressive (faster)
+                                    cv2.IMWRITE_JPEG_RST_INTERVAL, 0,      # No restart markers
+                                    cv2.IMWRITE_JPEG_LUMA_QUALITY, 60,     # Match overall quality
+                                    cv2.IMWRITE_JPEG_CHROMA_QUALITY, 55,   # Slightly lower chroma (less noticeable)
+                                ]
                             )
                             yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + buf.tobytes() + b'\r\n')
-                # 30fps target (33ms)
-                await asyncio.sleep(0.033)
+                            last_frame_time = time.time()
+                
+                # FIX: Reduced from 33ms (30fps) to 25ms (40fps) for lower latency
+                # Browser/display will limit to actual refresh rate anyway
+                await asyncio.sleep(0.025)
             except Exception:
                 # Client disconnected — exit generator gracefully
                 return
@@ -854,10 +876,14 @@ async def camera_feed(cam_id: int):
         generate(),
         media_type="multipart/x-mixed-replace;boundary=frame",
         headers={
-            "Cache-Control": "no-cache, no-store, must-revalidate",
+            # FIX: Add more aggressive cache control for lowest latency
+            "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
             "Pragma": "no-cache",
             "Expires": "0",
-            "X-Frame-Rate": "30",
+            "X-Frame-Rate": "40",
+            "Connection": "keep-alive",
+            # Prevent browser buffering
+            "X-Accel-Buffering": "no",
         }
     )
 

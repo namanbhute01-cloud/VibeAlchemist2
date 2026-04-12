@@ -39,14 +39,20 @@ export function CameraGrid() {
         const hasError = errorCount > 0
         // Change key to force img reload on retry
         const imgKey = `${cam.id}-${errorCount}`
+        
+        // FIX: Add cache-busting timestamp to prevent browser caching
+        const feedUrl = `${api.feedUrl(cam.id)}?t=${Date.now()}`
 
         return (
           <Card key={cam.id} className="overflow-hidden bg-black/40 border-white/5 backdrop-blur-md">
             <div className="relative aspect-video bg-black">
               <img
                 key={imgKey}
-                src={api.feedUrl(cam.id)}
+                src={feedUrl}
                 className={`w-full h-full object-contain ${hasError ? 'opacity-30' : ''}`}
+                // FIX: Add loading="eager" and decoding="sync" for lowest latency
+                loading="eager"
+                decoding="sync"
                 onError={() => {
                   setFeedErrors(prev => ({ ...prev, [cam.id]: (prev[cam.id] || 0) + 1 }))
                 }}
