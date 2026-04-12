@@ -8,6 +8,8 @@ import { useState, useEffect } from 'react'
 export function CameraGrid() {
   const cameras = useCameras()
   const [feedErrors, setFeedErrors] = useState<Record<number, number>>({})
+  // FIX: Store cache-buster timestamp per camera, only update on error recovery
+  const [feedKeys, setFeedKeys] = useState<Record<number, number>>({})
 
   // Auto-retry: increment error counter periodically to trigger img reload
   useEffect(() => {
@@ -37,11 +39,19 @@ export function CameraGrid() {
       {cameras.map(cam => {
         const errorCount = feedErrors[cam.id] || 0
         const hasError = errorCount > 0
-        // Change key to force img reload on retry
         const imgKey = `${cam.id}-${errorCount}`
         
-        // FIX: Add cache-busting timestamp to prevent browser caching
-        const feedUrl = `${api.feedUrl(cam.id)}?t=${Date.now()}`
+        // FIX: Only add cache-buster when recovering from error, not on every render
+        const feedUrl = hasError 
+          ? `${api.feedUrl(cam.id)}?retry=${Date.now()}`
+          : api.feedUrl(cam.id)
+        
+        // FIX: Update feed key when recovering from error to force reload
+        useEffect(() => {
+          if (hasError && errorCount > 0) {
+            setFeedKeys(prev => ({ ...prev, [cam.id]: Date.now() }))
+          }
+        }, [errorCount])
 
         return (
           <Card key={cam.id} className="overflow-hidden bg-black/40 border-white/5 backdrop-blur-md">

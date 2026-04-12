@@ -147,30 +147,36 @@ export default function AudiencePage() {
           </AnimatedCard>
         </div>
 
-        {/* Live detections - using vibe state for real-time updates */}
+        {/* Current state - real-time from WebSocket */}
         <AnimatedCard delay={500}>
             <div className="flex items-center gap-2 mb-4">
                 <UserCheck className="w-4 h-4 text-[hsl(var(--rose))]" />
-                <p className="text-xs uppercase tracking-widest text-muted-foreground">Live Detection Events</p>
+                <p className="text-xs uppercase tracking-widest text-muted-foreground">Current Audience State</p>
             </div>
-            <div className="space-y-2">
-                {vibeState ? (
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/50">
-                        <div className="flex items-center gap-4">
-                            <span className="font-mono text-[hsl(var(--info))] text-xs">DETECT-{Date.now().toString().slice(-6)}</span>
-                            <span className="text-sm font-medium">{vibeState.detected_group.toUpperCase()}</span>
-                        </div>
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                            <span>Est. Age: {vibeState.age}</span>
-                            <span>Vibe: {vibeState.current_vibe}</span>
-                        </div>
+            {vibeState ? (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div className="p-3 rounded-lg bg-muted/30 border border-border/50 text-center">
+                        <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Detected Group</p>
+                        <p className="text-lg font-bold text-[hsl(var(--info))]">{vibeState.detected_group.toUpperCase()}</p>
                     </div>
-                ) : (
-                    <div className="py-8 text-center text-muted-foreground text-xs uppercase tracking-widest opacity-20">
-                        No active detections
+                    <div className="p-3 rounded-lg bg-muted/30 border border-border/50 text-center">
+                        <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Estimated Age</p>
+                        <p className="text-lg font-bold text-[hsl(var(--violet))]">{vibeState.age}</p>
                     </div>
-                )}
-            </div>
+                    <div className="p-3 rounded-lg bg-muted/30 border border-border/50 text-center">
+                        <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Active Cameras</p>
+                        <p className="text-lg font-bold text-[hsl(var(--success))]">{vibeState.active_cameras}</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-muted/30 border border-border/50 text-center">
+                        <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Unique Faces</p>
+                        <p className="text-lg font-bold text-[hsl(var(--rose))]">{vibeState.unique_faces}</p>
+                    </div>
+                </div>
+            ) : (
+                <div className="py-8 text-center text-muted-foreground text-xs uppercase tracking-widest opacity-20">
+                    Waiting for detections...
+                </div>
+            )}
         </AnimatedCard>
       </div>
     </DashboardLayout>

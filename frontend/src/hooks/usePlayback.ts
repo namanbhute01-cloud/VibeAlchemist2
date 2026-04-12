@@ -138,6 +138,13 @@ export function usePlayback() {
         ...prev, volume: 70
       }))
     }, [optimisticAction]),
+
+    // FIX: Add stop action — was missing from UI
+    stop: useCallback(() => {
+      optimisticAction('stop', undefined, prev => ({
+        ...prev, paused: true, playing: false, song: 'None', percent: 0
+      }))
+    }, [optimisticAction]),
   }
 
   return {

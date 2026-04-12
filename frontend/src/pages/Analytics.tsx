@@ -15,17 +15,35 @@ export default function AnalyticsPage() {
   const [journal, setJournal] = useState<any>(null);
   const [weeklyData, setWeeklyData] = useState<any[]>([]);
 
-  // Load journal data
+  // FIX: Load journal data with actual time range support
   useEffect(() => {
     const poll = () => {
       api.getVibeJournal()
-        .then(setJournal)
+        .then(data => {
+          // FIX: Client-side filtering based on selected range
+          // Backend doesn't support time-range filtering yet, so we filter here
+          let filteredData = data;
+          if (data && data.entries) {
+            const now = Date.now();
+            const rangeMs = range === "Today" ? 24 * 60 * 60 * 1000 :
+                           range === "7 Days" ? 7 * 24 * 60 * 60 * 1000 :
+                           range === "30 Days" ? 30 * 24 * 60 * 60 * 1000 :
+                           90 * 24 * 60 * 60 * 1000;
+            
+            filteredData = {
+              ...data,
+              entries: data.entries.filter((e: any) => now - e.timestamp < rangeMs),
+              count: data.entries.filter((e: any) => now - e.timestamp < rangeMs).length,
+            };
+          }
+          setJournal(filteredData);
+        })
         .catch(err => console.error('[Analytics] Journal error:', err));
     };
     poll();
     const interval = setInterval(poll, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [range]); // FIX: Re-fetch when range changes
 
   // Generate mock weekly data based on journal
   useEffect(() => {
