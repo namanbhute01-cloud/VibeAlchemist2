@@ -13,15 +13,22 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 # Load .env file if it exists in the working directory
 if [ -f /app/.env ]; then
     echo "  Loading .env configuration..."
-    # Safe loading: read key=value pairs without executing shell commands
+    # FIX: Safe loading without xargs (which mangles quotes/special chars)
     while IFS='=' read -r key value; do
         # Skip comments and empty lines
         case "$key" in
             \#*|"") continue ;;
         esac
-        # Trim whitespace
-        key=$(echo "$key" | xargs)
-        value=$(echo "$value" | xargs)
+        # Trim leading/trailing whitespace using shell parameter expansion
+        key="${key#"${key%%[![:space:]]*}"}"
+        key="${key%"${key##*[![:space:]]}"}"
+        # Remove surrounding quotes from value if present
+        value="${value#"${value%%[![:space:]]*}"}"
+        value="${value%"${value##*[![:space:]]}"}"
+        value="${value%\"}"
+        value="${value#\"}"
+        value="${value%\'}"
+        value="${value#\'}"
         if [ -n "$key" ] && [ -n "$value" ]; then
             export "$key=$value"
         fi

@@ -109,12 +109,24 @@ class AlchemistPlayer:
         Background thread to poll MPV for position without blocking API calls.
         Also detects song-end events: when percent-pos returns null or stays at 100,
         clears current_song so the handover loop can queue the next song.
+        
+        FIX: Track poller thread to prevent multiple pollers after restart.
         """
+        # Stop existing poller if running
+        if hasattr(self, '_poller_thread') and self._poller_thread is not None:
+            logger.debug("Stopping existing poller before starting new one")
+            # Old poller will exit when self._poller_running is set to False
+            self._poller_running = False
+            # Give it time to exit
+            time.sleep(0.3)
+        
+        # Reset poller running flag
+        self._poller_running = True
         high_count = 0  # Consecutive polls at >= 99%
 
         def poller():
             nonlocal high_count
-            while self.process is not None:
+            while self._poller_running and self.process is not None:
                 try:
                     res = self._send_ipc_fast(["get_property", "percent-pos"])
                     if res and "data" in res and res["data"] is not None:
@@ -164,6 +176,7 @@ class AlchemistPlayer:
 
         t = threading.Thread(target=poller, daemon=True, name="mpv-pos-poller")
         t.start()
+        self._poller_thread = t
 
     def _start_mpv_monitor(self):
         """Background thread to monitor MPV process and auto-restart if it crashes."""
@@ -172,6 +185,11 @@ class AlchemistPlayer:
                 time.sleep(2)
                 with self._lock:
                     proc = self.process
+                    stopped = self.is_stopped
+
+                # FIX: Don't restart if user manually stopped
+                if stopped:
+                    continue
 
                 if proc is not None:
                     poll_result = proc.poll()

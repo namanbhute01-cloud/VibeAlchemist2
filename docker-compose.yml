@@ -83,8 +83,9 @@ services:
       # Logs
       - ./logs:/app/logs
 
-      # .env file - mount read-only so container can read but not modify it
-      - ./.env:/app/.env:ro
+      # .env file - mount read-write so env_manager can update settings from UI
+      # FIX: Changed from :ro to read-write to allow settings persistence
+      - ./.env:/app/.env
 
       # Google Drive credentials (service account key)
       # Mount read-only — container needs to read but never modify
@@ -100,8 +101,13 @@ services:
       - /dev/video2:/dev/video2
       - /dev/video3:/dev/video3
 
-    # ── Privileged Mode (required for V4L2 camera access) ──
-    privileged: true
+    # ── Security: Use specific capabilities instead of privileged mode ──
+    # FIX: Removed privileged: true for better security
+    # Only grant necessary capabilities for device access
+    cap_add:
+      - SYS_ADMIN  # Required for V4L2 camera access
+    security_opt:
+      - apparmor:unconfined  # May be needed for device access on some systems
 
     # ── Resource Limits ──
     # Prevents Vibe Alchemist from starving the HRMS server

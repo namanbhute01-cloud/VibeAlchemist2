@@ -62,7 +62,7 @@ class KalmanAgeSmoother:
         # ── Prediction Step ──
         # State transition is identity (age doesn't change rapidly)
         x_pred = self._x
-        P_pred = self._x + self._Q  # P_k = P_{k-1} + Q
+        P_pred = self._P + self._Q  # P_k = P_{k-1} + Q
 
         # ── Update Step ──
         # Kalman gain: K = P_pred / (P_pred + R)

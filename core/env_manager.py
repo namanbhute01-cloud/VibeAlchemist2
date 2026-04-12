@@ -187,9 +187,22 @@ def save_settings_to_env(settings: Dict[str, Any]) -> bool:
                     new_lines.append(f"{key}={formatted_value}\n")
                     logger.info(f"Added {key}={formatted_value} to .env")
 
-            # Write back to .env
-            with open(ENV_PATH, "w") as f:
-                f.writelines(new_lines)
+            # FIX: Atomic write — write to temp file, then rename
+            # Prevents .env corruption if process crashes during write
+            temp_path = ENV_PATH.with_suffix('.env.tmp')
+            try:
+                with open(temp_path, "w") as f:
+                    f.writelines(new_lines)
+                    f.flush()
+                    os.fsync(f.fileno())  # Ensure data is written to disk
+                
+                # Atomic rename
+                os.replace(str(temp_path), str(ENV_PATH))
+            except Exception:
+                # Clean up temp file if rename failed
+                if temp_path.exists():
+                    temp_path.unlink()
+                raise
 
             # Reload environment variables for current process
             load_dotenv(ENV_PATH, override=True)
@@ -218,7 +231,9 @@ def update_setting(key: str, value: Any) -> tuple[bool, Optional[str]]:
         # Try to coerce
         try:
             if expected_type == bool:
-                value = bool(value)
+                # FIX: Use _parse_value for correct boolean coercion
+                # bool("false") == True in Python, which is wrong
+                value = _parse_value(str(value), bool)
             elif expected_type == int:
                 value = int(value)
             elif expected_type == float:

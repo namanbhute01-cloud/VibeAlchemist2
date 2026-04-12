@@ -68,13 +68,12 @@ class VisionPipeline:
         self.age_outlier_threshold = 15  # Lowered from 20 — tighter outlier rejection
 
         # ── Detection deduplication within a single frame ──
-        self.frame_nms_iou = 0.45
+        self.frame_nms_iou = 0.35  # Lowered from 0.40 — keep more overlapping detections
 
         # ── Face quality thresholds (RESTAURANT RANGE OPTIMIZED) ──
         self.min_face_size = 15  # Lowered from 40 to detect distant/small faces (restaurant angles)
         self.max_blur_score = 100
         self.max_aspect_ratio = 3.0  # Relaxed from 2.5 for more angles
-        self.frame_nms_iou = 0.35  # Lowered from 0.40 — keep more overlapping detections
 
         # ── Human detection thresholds (RESTAURANT RANGE OPTIMIZED) ──
         self.person_conf_threshold = 0.15  # Lowered from 0.25 for distant/partial people
@@ -107,6 +106,15 @@ class VisionPipeline:
             logger.error(f"V4 Age Estimator FAILED to load: {e}")
             self.age_estimator = None
             logger.warning("Age estimation will fall back to DEX-only mode (lower accuracy)")
+
+        # ── V4: EMA Smoother for temporal age consistency ──
+        try:
+            from core.age_ema import AgeEMASmoother
+            self.age_ema = AgeEMASmoother(alpha=0.15)
+            logger.info("V4 EMA Smoother: ENABLED (α=0.15)")
+        except Exception as e:
+            logger.warning(f"V4 EMA Smoother unavailable: {e}")
+            self.age_ema = None
 
         # ── V4: Advanced Face Quality Scorer ──
         try:

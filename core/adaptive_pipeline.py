@@ -11,6 +11,7 @@ import cv2
 import numpy as np
 import logging
 import time
+from collections import deque  # FIX: Use deque for O(1) popleft
 from core.capability_detector import PROFILE
 from core.model_registry import (
     get_detection_config, get_face_recognition_config,
@@ -148,8 +149,8 @@ class AdaptivePipeline:
     def _init_emotion(self):
         cfg = get_emotion_config()
         self._emotion = None
-        self._emotion_history = []
         self._emotion_smooth = cfg.get("smooth_frames", 5)
+        self._emotion_history = deque(maxlen=self._emotion_smooth)  # FIX: Use deque for O(1) popleft
         if not cfg["enabled"]:
             logger.info("Emotion: DISABLED (Tier 1)")
             return
@@ -336,9 +337,7 @@ class AdaptivePipeline:
             gray = cv2.cvtColor(face_crop, cv2.COLOR_BGR2GRAY)
             gray = cv2.resize(gray, (48, 48)).astype(np.float32) / 255.0
             out = self._emotion.run(None, {"input": gray[np.newaxis, np.newaxis]})[0][0]
-            self._emotion_history.append(out)
-            if len(self._emotion_history) > self._emotion_smooth:
-                self._emotion_history.pop(0)
+            self._emotion_history.append(out)  # FIX: deque auto-manages maxlen, no pop needed
             avg = np.mean(self._emotion_history, axis=0)
             scores = dict(zip(LABELS, avg.tolist()))
             best = max(scores, key=scores.get)

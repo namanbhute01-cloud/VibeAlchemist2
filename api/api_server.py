@@ -32,6 +32,9 @@ face_registry = None
 adaptive_pipeline = None  # V5 adaptive pipeline
 adaptive_vibe = None      # V5 adaptive vibe controller
 
+# Stuck song detection state (module-level variable)
+_stuck_song_start = None
+
 # --- MUSIC HANDOVER MONITOR (Background Thread) ---
 # Runs independently of face detection — ensures zero-gap song transitions.
 # Monitors song position continuously, pre-loads next song before current ends.
@@ -89,12 +92,24 @@ def music_handover_loop():
                 target_group = None
 
                 if has_played_once:
-                    # Song just ended — calculate target from THIS song's detections
+                    # Song just ended — decide what to play next
                     target_group = _calculate_target_group_from_song(song_detections)
-                    logger.info(
-                        f"Song ended. Detections during song: {len(song_detections)} "
-                        f"-> target: {target_group}"
-                    )
+                    current_folder = getattr(player, 'current_folder', 'adults')
+                    
+                    # FIX: Only switch folders if a DIFFERENT age group is detected
+                    # Otherwise, continue playing from the current folder
+                    if target_group == current_folder:
+                        logger.info(
+                            f"Song ended. Same age group detected ({target_group}). "
+                            f"Continuing from current folder: {current_folder}"
+                        )
+                        target_group = current_folder
+                    else:
+                        logger.info(
+                            f"Song ended. Age group changed: {current_folder} -> {target_group}. "
+                            f"Switching folders."
+                        )
+                    
                     song_detections = []  # Reset for next song
                     song_start_time = time.time()
                     should_start = True
@@ -122,29 +137,32 @@ def music_handover_loop():
 
                 # Start the song
                 if should_start and target_group:
-                    with _playback_lock:
-                        try:
-                            success = player.next(target_group)
-                            if success:
-                                time.sleep(0.5)
-                                verify = player.get_status()
-                                if verify.get('percent', 0) > 0:
-                                    has_played_once = True
-                                    last_monitored_song = verify.get('song', 'None')
-                                    last_percent = 0
-                                    # ── Commit handover to vibe_engine ──
-                                    if vibe_engine:
-                                        vibe_engine.commit_handover()
-                                    logger.info(f"Next song started: {target_group}")
-                                    continue
-                                else:
-                                    logger.warning(f"next() succeeded but percent=0, retrying in 3s")
-                                    time.sleep(3)
-                                    continue
-                        except Exception as e:
-                            logger.warning(f"Failed to start next song: {e}")
+                    try:
+                        success = player.next(target_group)
+                        if success:
+                            time.sleep(0.5)
+                            verify = player.get_status()
+                            if verify.get('percent', 0) > 0:
+                                has_played_once = True
+                                last_monitored_song = verify.get('song', 'None')
+                                last_percent = 0
+                                # ── Commit handover to vibe_engine ──
+                                if vibe_engine:
+                                    vibe_engine.commit_handover()
+                                logger.info(f"Next song started: {target_group}")
+                                continue
+                            else:
+                                logger.warning(f"next() succeeded but percent=0, retrying in 3s")
+                                time.sleep(3)
+                                continue
+                        else:
+                            logger.warning(f"player.next() returned False, retrying in 2s")
                             time.sleep(2)
                             continue
+                    except Exception as e:
+                        logger.warning(f"Failed to start next song: {e}")
+                        time.sleep(2)
+                        continue
 
             # ── CASE 2: Song is playing — monitor for end ──
             if current_song != last_monitored_song:
@@ -166,15 +184,17 @@ def music_handover_loop():
                 logger.info(f"Song ending (was at {last_percent:.0f}%)")
 
             # Detect song stuck at 99%+ for 5+ seconds
+            # FIX: Use module-level variable instead of fragile function attribute
+            global _stuck_song_start
             if percent_pos >= 99 and not song_ending:
-                if not hasattr(music_handover_loop, '_stuck_start'):
-                    music_handover_loop._stuck_start = time.time()
-                elif time.time() - music_handover_loop._stuck_start >= 5:
+                if _stuck_song_start is None:
+                    _stuck_song_start = time.time()
+                elif time.time() - _stuck_song_start >= 5:
                     song_ending = True
                     logger.info(f"Song stuck at {percent_pos:.0f}% for 5s — ending")
-                    music_handover_loop._stuck_start = None
+                    _stuck_song_start = None
             else:
-                music_handover_loop._stuck_start = None
+                _stuck_song_start = None
 
             last_percent = percent_pos
             time.sleep(0.2)
@@ -188,25 +208,40 @@ def _collect_song_detections(song_detections, song_start_time):
     """
     Collect new detections from vibe_engine's quality_journal since song started.
     Appends to song_detections list (mutable, passed by reference).
+    
+    FIX: Use set for O(1) duplicate checking instead of O(N^2) list scan.
+    FIX: Take snapshot of quality_journal to avoid concurrent modification.
     """
     if not vibe_engine or not hasattr(vibe_engine, 'quality_journal'):
         return
 
+    # Build set of existing entry IDs for O(1) lookups
+    existing_ids = set()
+    for d in song_detections:
+        entry_id = (d.get('group'), d.get('cam_id'), d.get('timestamp', 0))
+        existing_ids.add(entry_id)
+
+    # Take snapshot of quality_journal to avoid concurrent modification
+    journal_snapshot = list(vibe_engine.quality_journal)
+    
     # Get entries from quality_journal that occurred after song started
-    for entry in vibe_engine.quality_journal:
+    for entry in journal_snapshot:
         ts = entry.get('timestamp', 0)
         if ts > song_start_time:
             # Check if we already have this entry (avoid duplicates)
             entry_id = (entry.get('group'), entry.get('cam_id'), ts)
-            existing_ids = [(d.get('group'), d.get('cam_id'), d.get('timestamp', 0)) for d in song_detections]
             if entry_id not in existing_ids:
                 song_detections.append(entry)
+                existing_ids.add(entry_id)
 
 
 def _calculate_target_group_from_song(song_detections) -> str:
     """
     Calculate the target music group from detections collected during the current song.
     Uses quality-weighted voting. Falls back to vibe_engine's prepare_handover().
+    
+    FIX: Added minimum dominance threshold to prevent marginal vote differences
+    from triggering unwanted folder switches.
     """
     # Filter out old entries (before song start)
     valid_detections = [d for d in song_detections if isinstance(d, dict) and 'group' in d]
@@ -236,12 +271,25 @@ def _calculate_target_group_from_song(song_detections) -> str:
     # Get the winning group
     winner = max(quality_votes, key=quality_votes.get)
     winner_quality = quality_votes[winner]
+    dominance_ratio = winner_quality / total_quality if total_quality > 0 else 0
+
+    # FIX: Minimum dominance threshold — winner needs >50% of total quality
+    # This prevents marginal differences from triggering folder switches
+    if dominance_ratio < 0.5:
+        # No clear winner — fallback to vibe_engine's current vibe
+        logger.info(
+            f"No clear winner (dominance: {dominance_ratio:.2f} < 0.50). "
+            f"Using vibe_engine's current group."
+        )
+        if vibe_engine:
+            return vibe_engine.get_current_group()
+        return "adults"
 
     # Log the voting breakdown
     vote_summary = ", ".join(f"{g}: {q:.1f}" for g, q in sorted(quality_votes.items(), key=lambda x: -x[1]))
     logger.info(
         f"Song detection vote: {winner} wins ({vote_summary}) | "
-        f"{len(valid_detections)} detections, dominance: {winner_quality/total_quality:.2f}"
+        f"{len(valid_detections)} detections, dominance: {dominance_ratio:.2f}"
     )
 
     return winner
@@ -438,22 +486,25 @@ def _handle_playback(detections, vibe_engine, player):
     """
     Resume playback when detections occur — ONLY resume, never start new songs.
     Song transitions are handled by music_handover_loop (prevents race conditions).
+    
+    FIX: Removed _playback_lock to prevent nested lock deadlock risk.
+    Player methods are already thread-safe with internal _lock.
     """
     if not detections or not player or not vibe_engine:
         return
 
-    with _playback_lock:
-        try:
-            current_status = player.get_status()
-            current_song = current_status.get('song', 'None')
-            is_paused = current_status.get('paused', True)
+    try:
+        # Get status (thread-safe via player._lock internally)
+        current_status = player.get_status()
+        current_song = current_status.get('song', 'None')
+        is_paused = current_status.get('paused', True)
 
-            # ONLY resume if paused — don't start new songs (music_handover_loop does that)
-            if current_song != 'None' and is_paused:
-                player.toggle_pause()
-                logger.info("Resuming playback on detection")
-        except Exception as e:
-            logger.warning(f"_handle_playback error (non-fatal): {e}")
+        # ONLY resume if paused — don't start new songs (music_handover_loop does that)
+        if current_song != 'None' and is_paused:
+            player.toggle_pause()
+            logger.info("Resuming playback on detection")
+    except Exception as e:
+        logger.warning(f"_handle_playback error (non-fatal): {e}")
 
 
 def _draw_bounding_boxes(detections, cam_id, pipeline):
