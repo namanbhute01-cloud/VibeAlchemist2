@@ -236,9 +236,15 @@ class CameraPool:
     def start(self):
         logger.info(f"Starting CameraPool: {len(self.sources)} source(s)")
         for i, source in enumerate(self.sources):
+            logger.info(f"  Camera {i}: {source}")
             worker = CameraWorker(source, i, self.queue, self, target_height=self.target_height)
             worker.start()
             self.workers.append(worker)
+        
+        logger.info(f"CameraPool started: {len(self.workers)} cameras active")
+        logger.info(f"  All cameras will be processed independently")
+        logger.info(f"  Person detection: HUMANS ONLY (COCO class 0)")
+        logger.info(f"  Face detection: Multi-scale with Haar fallback")
 
     def get_latest_frame(self, cam_id: int):
         """

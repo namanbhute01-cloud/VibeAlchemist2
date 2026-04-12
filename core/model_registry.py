@@ -20,19 +20,34 @@ def _env(key: str, default: str) -> str:
 def get_detection_config() -> dict:
     """
     YOLOv11 face/person detector config per tier.
-    Base model: yolo11n-face (ALL tiers — only official variant).
-    Tier affects resolution and confidence thresholds.
+    
+    IMPROVED FOR RESTAURANT RANGE:
+    - ALL tiers use lower confidence thresholds for maximum detection range
+    - Resolution optimized for distant/small face detection
+    - Multi-scale inference enabled for ALL tiers (in vision_pipeline.py)
     """
-    # NOTE: yolo11s-face and yolo11m-face don't exist on Ultralytics hub.
-    # All tiers use yolo11n-face.pt with different inference settings.
-    model = _env("YOLO_FACE_MODEL", "models/yolo11n-face.pt")
+    model = _env("YOLO_FACE_MODEL", "models/yolov8n-face.onnx")
+    
+    # CRITICAL: Use yolov8n-face.onnx which EXISTS, not yolo11n-face.pt which doesn't
+    if not os.path.exists(model):
+        # Try alternative paths
+        for fallback in ["models/yolov8n-face.onnx", "models/yolo11n-face.pt"]:
+            if os.path.exists(fallback):
+                model = fallback
+                break
 
     if PROFILE.tier == 1:
-        return {"model": model, "imgsz": 384, "conf": 0.35}
+        # IMPROVED Tier 1: 480p (was 384p) for better range
+        # Lowered confidence to detect distant faces in restaurants
+        return {"model": model, "imgsz": 480, "conf": 0.20}
     elif PROFILE.tier == 2:
-        return {"model": model, "imgsz": 512, "conf": 0.25}  # Lowered from 0.30 for range
+        # IMPROVED Tier 2: 576p (was 512p) for better range
+        # Lowered confidence for maximum distant face detection
+        return {"model": model, "imgsz": 576, "conf": 0.15}
     else:
-        return {"model": model, "imgsz": 640, "conf": 0.15}  # Lowered from 0.25 for max range
+        # IMPROVED Tier 3: 704p (was 640p) for maximum range
+        # Lowest confidence for longest distance detection
+        return {"model": model, "imgsz": 704, "conf": 0.10}
 
 
 def get_face_recognition_config() -> dict:
@@ -61,19 +76,19 @@ def get_face_recognition_config() -> dict:
 def get_demographics_config() -> dict:
     """MiVOLO model config per tier."""
     if PROFILE.tier == 1:
-        # Tier 1: MiVOLO XXS enabled (better than DEX alone, still lightweight)
+        # IMPROVED Tier 1: Enable MiVOLO XXS for better accuracy (lightweight but better than DEX)
         return {
             "enabled": True,
             "model_path": _env("MIVOLO_XXS_MODEL", "models/mivolo_xxs.onnx"),
         }
     elif PROFILE.tier == 2:
-        # Tier 2: MiVOLO XXS (good accuracy, reasonable speed)
+        # IMPROVED Tier 2: MiVOLO XXS with higher update frequency
         return {
             "enabled": True,
             "model_path": _env("MIVOLO_XXS_MODEL", "models/mivolo_xxs.onnx"),
         }
     else:
-        # Tier 3: MiVOLO Full — maximum demographics accuracy
+        # IMPROVED Tier 3: MiVOLO Full — maximum demographics accuracy
         return {
             "enabled": True,
             "model_path": _env("MIVOLO_FULL_MODEL", "models/mivolo_full.onnx"),
@@ -109,33 +124,40 @@ def get_tracking_config() -> dict:
 def get_pipeline_schedule() -> dict:
     """
     How often to run each inference stage.
-    Tier 1 = most aggressive skipping.
+    
+    IMPROVED FOR MAXIMUM ACCURACY:
+    - Tier 1: More frequent recognition (every 10 frames, was 15)
+    - Tier 2: Better update frequency for all features
+    - Tier 3: Maximum update frequency for real-time accuracy
     """
     if PROFILE.tier == 1:
+        # IMPROVED Tier 1: More frequent updates for better accuracy
         return {
-            "detection_every": 1,    # every frame (fast, 384p)
-            "recognition_every": 15, # every 15 frames
-            "demographics_every": 10, # every 10 frames (MiVOLO XXS enabled)
-            "emotion_every": 0,      # disabled
-            "vibe_update_every": 30, # every 30 frames
-            "motion_gate_iou": 0.92,
+            "detection_every": 1,    # every frame (fast, 480p)
+            "recognition_every": 10, # IMPROVED: every 10 frames (was 15)
+            "demographics_every": 8, # IMPROVED: every 8 frames (was 10)
+            "emotion_every": 0,      # disabled for performance
+            "vibe_update_every": 20, # IMPROVED: every 20 frames (was 30)
+            "motion_gate_iou": 0.90, # IMPROVED: Lowered from 0.92 for better motion detection
         }
     elif PROFILE.tier == 2:
+        # IMPROVED Tier 2: Better update frequency
         return {
             "detection_every": 1,
-            "recognition_every": 5,
-            "demographics_every": 5,
-            "emotion_every": 5,
-            "vibe_update_every": 20,
-            "motion_gate_iou": 0.90,
+            "recognition_every": 4,  # IMPROVED: every 4 frames (was 5)
+            "demographics_every": 4, # IMPROVED: every 4 frames (was 5)
+            "emotion_every": 4,
+            "vibe_update_every": 15, # IMPROVED: every 15 frames (was 20)
+            "motion_gate_iou": 0.88, # IMPROVED: Lowered from 0.90
         }
     else:  # Tier 3
+        # IMPROVED Tier 3: Maximum accuracy
         return {
             "detection_every": 1,
             "recognition_every": 2,
-            "demographics_every": 3,
-            "emotion_every": 3,
-            "vibe_update_every": 10,
+            "demographics_every": 2,  # IMPROVED: every 2 frames (was 3)
+            "emotion_every": 2,       # IMPROVED: every 2 frames (was 3)
+            "vibe_update_every": 8,   # IMPROVED: every 8 frames (was 10)
             "motion_gate_iou": 0.85,
         }
 

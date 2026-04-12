@@ -170,10 +170,11 @@ def music_handover_loop():
                 last_percent = 0
                 song_ending = False
                 has_played_once = True
-                # Reset per-song detection buffer
+                # FIX: Reset per-song detection buffer IMMEDIATELY when new song starts
+                # This must happen BEFORE _collect_song_detections is called
                 song_detections = []
                 song_start_time = time.time()
-                logger.info(f"Now playing: {current_song}")
+                logger.info(f"Now playing: {current_song} (detection buffer reset)")
 
             # Collect detections from vibe_engine for this song
             _collect_song_detections(song_detections, song_start_time)
@@ -200,8 +201,11 @@ def music_handover_loop():
             time.sleep(0.2)
 
         except Exception as e:
+            import traceback
             logger.error(f"Music handover error: {e}")
-            time.sleep(1)
+            logger.error(f"Handover traceback: {traceback.format_exc()}")
+            # Don't sleep too long — keep monitoring
+            time.sleep(0.5)
 
 
 def _collect_song_detections(song_detections, song_start_time):

@@ -70,15 +70,15 @@ class VisionPipeline:
         # ── Detection deduplication within a single frame ──
         self.frame_nms_iou = 0.35  # Lowered from 0.40 — keep more overlapping detections
 
-        # ── Face quality thresholds (RESTAURANT RANGE OPTIMIZED) ──
-        self.min_face_size = 15  # Lowered from 40 to detect distant/small faces (restaurant angles)
+        # ── Face quality thresholds (OPTIMIZED FOR MAXIMUM DETECTION) ──
+        self.min_face_size = 12  # Lowered from 15 to detect very small/distant faces
         self.max_blur_score = 100
-        self.max_aspect_ratio = 3.0  # Relaxed from 2.5 for more angles
+        self.max_aspect_ratio = 3.5  # Relaxed from 3.0 for more angles/profile views
 
-        # ── Human detection thresholds (RESTAURANT RANGE OPTIMIZED) ──
-        self.person_conf_threshold = 0.15  # Lowered from 0.25 for distant/partial people
-        self.min_person_size = 20  # Lowered from 50 for seated/distant people
-        self.max_person_aspect = 5.0  # Relaxed from 4.0 for seated/partial views
+        # ── Human detection thresholds (MAXIMUM RANGE FOR RESTAURANTS) ──
+        self.person_conf_threshold = 0.12  # Lowered from 0.15 for maximum distance detection
+        self.min_person_size = 18  # Lowered from 20 for very distant/seated people
+        self.max_person_aspect = 5.5  # Relaxed from 5.0 for extreme seated/partial views
 
         # ── Multi-scale inference for better small/distant detection ──
         # ENABLED for Tier 2/3 to increase detection range
@@ -130,16 +130,17 @@ class VisionPipeline:
         self.face_tracks = {}  # track_id -> (last_bbox, last_embedding, last_frame_time)
 
         # ── V4: Face save dedup — prevent saving same face every frame ──
-        # Only save one face per track every N seconds
-        self.face_save_cooldown = {}  # track_id -> last_save_time
-        self.face_save_interval = 5.0  # seconds between saves per track
+        # Only save one face per FACE ID (not track ID) every N seconds
+        # FIX: Use stable face_id from registry, not transient face_track_id
+        self.face_save_cooldown = {}  # face_id -> last_save_time
+        self.face_save_interval = 10.0  # seconds between saves per face (increased from 5.0)
 
-    def _should_save_face(self, track_id):
-        """Check if enough time has passed since last save for this track."""
+    def _should_save_face(self, face_id):
+        """Check if enough time has passed since last save for this face identity."""
         now = time.time()
-        last_save = self.face_save_cooldown.get(track_id, 0)
+        last_save = self.face_save_cooldown.get(face_id, 0)
         if now - last_save >= self.face_save_interval:
-            self.face_save_cooldown[track_id] = now
+            self.face_save_cooldown[face_id] = now
             return True
         return False
 
@@ -244,37 +245,355 @@ class VisionPipeline:
         return None
 
     # ═══════════════════════════════════════════════════════════════
-    # Image Enhancement
+    # Image Enhancement — FULLY ADAPTIVE TO ALL LIGHTING CONDITIONS
     # ═══════════════════════════════════════════════════════════════
 
-    def auto_enhance_frame(self, frame):
-        """Enhance frame only if lighting is poor (saves CPU)."""
+    def auto_enhance_frame(self, frame, force_level=None):
+        """
+        FULLY ADAPTIVE: Automatically adjusts to ANY lighting condition.
+        
+        Handles:
+        - Pitch dark (brightness <30)
+        - Very dark restaurants (30-50)
+        - Dim lighting (50-80)
+        - Normal lighting (80-150) - NO enhancement needed
+        - Bright lighting (150-180) - mild adjustment
+        - Very bright (180-210) - highlight recovery
+        - Overexposed/glare (210-240) - aggressive recovery
+        - Blown out (>240) - maximum highlight recovery
+        
+        Args:
+            frame: Input frame (BGR numpy array)
+            force_level: Override enhancement level
+                Negative: Bright levels (-3=max bright recovery, -2=very bright, -1=bright)
+                Positive: Dark levels (1=dim, 2=dark, 3=very dark, 4=pitch dark)
+        
+        Returns:
+            Enhanced frame optimized for detection in ANY lighting
+        """
         lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
         l, a, b = cv2.split(lab)
 
+        # Calculate brightness statistics
         mean_brightness = np.mean(l)
         self.frame_brightness_history.append(mean_brightness)
         if len(self.frame_brightness_history) > 30:
             self.frame_brightness_history.pop(0)
 
         avg_brightness = np.mean(self.frame_brightness_history)
+        
+        # Also check for overexposure (clipped highlights)
+        overexposed_pixels = np.sum(l > 240) / l.size  # Fraction of blown-out pixels
+        underexposed_pixels = np.sum(l < 30) / l.size  # Fraction of crushed shadows
 
-        # Only enhance if lighting is poor — skip on well-lit frames
-        if 70 < avg_brightness < 190:
-            return frame  # Frame is fine as-is
+        # Determine enhancement level based on comprehensive analysis
+        if force_level is not None:
+            level = force_level
+        elif avg_brightness < 30:
+            level = 4  # PITCH DARK - maximum enhancement
+        elif avg_brightness < 50:
+            level = 3  # VERY DARK - aggressive enhancement
+        elif avg_brightness < 70:
+            level = 2  # DARK - medium enhancement
+        elif avg_brightness < 90:
+            level = 1  # DIM - mild enhancement
+        elif avg_brightness < 160:
+            return frame  # NORMAL - frame is fine as-is
+        elif avg_brightness < 185:
+            level = -1  # BRIGHT - mild recovery
+        elif avg_brightness < 210:
+            level = -2  # VERY BRIGHT - medium recovery
+        elif avg_brightness < 235 or overexposed_pixels > 0.15:
+            level = -3  # OVEREXPOSED - aggressive recovery
+        else:
+            level = -4  # BLOWN OUT - maximum recovery
 
-        # CLAHE for adaptive contrast (only when needed)
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        cl = clahe.apply(l)
+        # Log enhancement activity
+        if level != 0:
+            logger.debug(f"Frame enhancement: Level {level} (brightness={avg_brightness:.1f}, overexposed={overexposed_pixels*100:.1f}%)")
 
-        # Brightness correction
-        if avg_brightness < 80:
+        # Progressive enhancement based on level
+        cl = l.copy()
+
+        # ═══════════════════════════════════════════════════════════
+        # DARK CONDITIONS (levels 1-4)
+        # ═══════════════════════════════════════════════════════════
+
+        if level == 4:
+            # ═══════════════════════════════════════════════════════
+            # LEVEL 4: PITCH DARK - MAXIMUM ENHANCEMENT
+            # For near-darkness, very poor lighting
+            # ═══════════════════════════════════════════════════════
+            
+            # 1. Aggressive gamma correction (brighten dramatically)
+            gamma = 0.3
+            inv_gamma = 1.0 / gamma
+            table = np.array([((i / 255.0) ** inv_gamma) * 255 for i in np.arange(0, 256)]).astype("uint8")
+            cl = cv2.LUT(cl, table)
+
+            # 2. Very aggressive CLAHE
+            clahe = cv2.createCLAHE(clipLimit=5.0, tileGridSize=(8, 8))
+            cl = clahe.apply(cl)
+
+            # 3. Major brightness boost (+70)
+            cl = cv2.add(cl, 70)
+
+            # 4. Second gamma pass
+            gamma = 0.5
+            inv_gamma = 1.0 / gamma
+            table = np.array([((i / 255.0) ** inv_gamma) * 255 for i in np.arange(0, 256)]).astype("uint8")
+            cl = cv2.LUT(cl, table)
+
+            # 5. Final contrast polish
+            clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(16, 16))
+            cl = clahe.apply(cl)
+
+            logger.debug(f"  Level 4: PITCH DARK -> gamma(0.3) + CLAHE(5.0) + brightness(+70) + gamma(0.5)")
+
+        elif level == 3:
+            # ═══════════════════════════════════════════════════════
+            # LEVEL 3: VERY DARK - AGGRESSIVE ENHANCEMENT
+            # For very dark restaurants, night scenes, poor lighting
+            # ═══════════════════════════════════════════════════════
+            
+            # 1. Gamma correction (brighten shadows dramatically)
+            gamma = 0.4
+            inv_gamma = 1.0 / gamma
+            table = np.array([((i / 255.0) ** inv_gamma) * 255 for i in np.arange(0, 256)]).astype("uint8")
+            cl = cv2.LUT(cl, table)
+
+            # 2. Aggressive CLAHE
+            clahe = cv2.createCLAHE(clipLimit=4.0, tileGridSize=(8, 8))
+            cl = clahe.apply(cl)
+
+            # 3. Brightness boost (+50)
+            cl = cv2.add(cl, 50)
+
+            # 4. Second pass gamma
+            gamma = 0.6
+            inv_gamma = 1.0 / gamma
+            table = np.array([((i / 255.0) ** inv_gamma) * 255 for i in np.arange(0, 256)]).astype("uint8")
+            cl = cv2.LUT(cl, table)
+
+            # 5. Final contrast boost
+            clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(16, 16))
+            cl = clahe.apply(cl)
+
+            logger.debug(f"  Level 3: VERY DARK -> gamma(0.4) + CLAHE(4.0) + brightness(+50) + gamma(0.6)")
+
+        elif level == 2:
+            # ═══════════════════════════════════════════════════════
+            # LEVEL 2: DARK - MEDIUM ENHANCEMENT
+            # For dimly lit restaurants, evening lighting
+            # ═══════════════════════════════════════════════════════
+            
+            # 1. Gamma correction
+            gamma = 0.6
+            inv_gamma = 1.0 / gamma
+            table = np.array([((i / 255.0) ** inv_gamma) * 255 for i in np.arange(0, 256)]).astype("uint8")
+            cl = cv2.LUT(cl, table)
+
+            # 2. CLAHE moderate
+            clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
+            cl = clahe.apply(cl)
+
+            # 3. Brightness boost (+30)
+            cl = cv2.add(cl, 30)
+
+            logger.debug(f"  Level 2: DARK -> gamma(0.6) + CLAHE(3.0) + brightness(+30)")
+
+        elif level == 1:
+            # ═══════════════════════════════════════════════════════
+            # LEVEL 1: DIM - MILD ENHANCEMENT
+            # For slightly dim conditions, saves CPU
+            # ═══════════════════════════════════════════════════════
+            
+            # 1. Mild gamma
+            gamma = 0.8
+            inv_gamma = 1.0 / gamma
+            table = np.array([((i / 255.0) ** inv_gamma) * 255 for i in np.arange(0, 256)]).astype("uint8")
+            cl = cv2.LUT(cl, table)
+
+            # 2. CLAHE conservative
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+            cl = clahe.apply(cl)
+
+            # 3. Small brightness boost (+15)
             cl = cv2.add(cl, 15)
-        elif avg_brightness > 180:
-            cl = cv2.add(cl, -10)
+
+            logger.debug(f"  Level 1: DIM -> gamma(0.8) + CLAHE(2.0) + brightness(+15)")
+
+        # ═══════════════════════════════════════════════════════════
+        # BRIGHT CONDITIONS (levels -1 to -4)
+        # ═══════════════════════════════════════════════════════════
+
+        elif level == -1:
+            # ═══════════════════════════════════════════════════════
+            # LEVEL -1: BRIGHT - MILD RECOVERY
+            # For bright rooms, near windows
+            # ═══════════════════════════════════════════════════════
+            
+            # 1. Mild gamma >1.0 darkens highlights
+            gamma = 1.2
+            inv_gamma = 1.0 / gamma
+            table = np.array([((i / 255.0) ** inv_gamma) * 255 for i in np.arange(0, 256)]).astype("uint8")
+            cl = cv2.LUT(cl, table)
+
+            # 2. CLAHE to recover detail in bright areas
+            clahe = cv2.createCLAHE(clipLimit=1.5, tileGridSize=(8, 8))
+            cl = clahe.apply(cl)
+
+            # 3. Slight brightness reduction (-10)
+            cl = cv2.subtract(cl, 10)
+
+            logger.debug(f"  Level -1: BRIGHT -> gamma(1.2) + CLAHE(1.5) + brightness(-10)")
+
+        elif level == -2:
+            # ═══════════════════════════════════════════════════════
+            # LEVEL -2: VERY BRIGHT - MEDIUM RECOVERY
+            # For direct sunlight, harsh lighting
+            # ═══════════════════════════════════════════════════════
+            
+            # 1. Gamma correction to darken (gamma > 1.0)
+            gamma = 1.4
+            inv_gamma = 1.0 / gamma
+            table = np.array([((i / 255.0) ** inv_gamma) * 255 for i in np.arange(0, 256)]).astype("uint8")
+            cl = cv2.LUT(cl, table)
+
+            # 2. CLAHE to recover blown-out details
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+            cl = clahe.apply(cl)
+
+            # 3. Moderate brightness reduction (-25)
+            cl = cv2.subtract(cl, 25)
+
+            # 4. Second gamma pass for stubborn highlights
+            gamma = 1.2
+            inv_gamma = 1.0 / gamma
+            table = np.array([((i / 255.0) ** inv_gamma) * 255 for i in np.arange(0, 256)]).astype("uint8")
+            cl = cv2.LUT(cl, table)
+
+            logger.debug(f"  Level -2: VERY BRIGHT -> gamma(1.4) + CLAHE(2.0) + brightness(-25) + gamma(1.2)")
+
+        elif level == -3:
+            # ═══════════════════════════════════════════════════════
+            # LEVEL -3: OVEREXPOSED - AGGRESSIVE RECOVERY
+            # For glare, reflections, extreme brightness
+            # ═══════════════════════════════════════════════════════
+            
+            # 1. Strong gamma to darken significantly
+            gamma = 1.6
+            inv_gamma = 1.0 / gamma
+            table = np.array([((i / 255.0) ** inv_gamma) * 255 for i in np.arange(0, 256)]).astype("uint8")
+            cl = cv2.LUT(cl, table)
+
+            # 2. Aggressive CLAHE to recover detail
+            clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8))
+            cl = clahe.apply(cl)
+
+            # 3. Major brightness reduction (-40)
+            cl = cv2.subtract(cl, 40)
+
+            # 4. Second gamma pass
+            gamma = 1.4
+            inv_gamma = 1.0 / gamma
+            table = np.array([((i / 255.0) ** inv_gamma) * 255 for i in np.arange(0, 256)]).astype("uint8")
+            cl = cv2.LUT(cl, table)
+
+            # 5. Final CLAHE polish
+            clahe = cv2.createCLAHE(clipLimit=1.8, tileGridSize=(16, 16))
+            cl = clahe.apply(cl)
+
+            logger.debug(f"  Level -3: OVEREXPOSED -> gamma(1.6) + CLAHE(2.5) + brightness(-40) + gamma(1.4)")
+
+        elif level == -4:
+            # ═══════════════════════════════════════════════════════
+            # LEVEL -4: BLOWN OUT - MAXIMUM RECOVERY
+            # For completely overexposed frames, direct glare
+            # ═══════════════════════════════════════════════════════
+            
+            # 1. Very strong gamma
+            gamma = 1.8
+            inv_gamma = 1.0 / gamma
+            table = np.array([((i / 255.0) ** inv_gamma) * 255 for i in np.arange(0, 256)]).astype("uint8")
+            cl = cv2.LUT(cl, table)
+
+            # 2. Very aggressive CLAHE
+            clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
+            cl = clahe.apply(cl)
+
+            # 3. Maximum brightness reduction (-60)
+            cl = cv2.subtract(cl, 60)
+
+            # 4. Second gamma pass
+            gamma = 1.6
+            inv_gamma = 1.0 / gamma
+            table = np.array([((i / 255.0) ** inv_gamma) * 255 for i in np.arange(0, 256)]).astype("uint8")
+            cl = cv2.LUT(cl, table)
+
+            # 5. Third gamma pass for extreme cases
+            gamma = 1.3
+            inv_gamma = 1.0 / gamma
+            table = np.array([((i / 255.0) ** inv_gamma) * 255 for i in np.arange(0, 256)]).astype("uint8")
+            cl = cv2.LUT(cl, table)
+
+            # 6. Final CLAHE polish
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(16, 16))
+            cl = clahe.apply(cl)
+
+            logger.debug(f"  Level -4: BLOWN OUT -> gamma(1.8) + CLAHE(3.0) + brightness(-60) + gamma(1.6) + gamma(1.3)")
 
         enhanced_lab = cv2.merge((cl, a, b))
         return cv2.cvtColor(enhanced_lab, cv2.COLOR_LAB2BGR)
+
+    def progressive_enhance_until_faces_detected(self, frame, face_detector):
+        """
+        FULLY ADAPTIVE: Progressive enhancement loop for ANY lighting condition.
+        
+        Tries levels from least to most aggressive until faces are detected.
+        Works for both VERY DARK and VERY BRIGHT conditions.
+        
+        Tries: Original -> Dark levels (1,2,3,4) -> Bright levels (-1,-2,-3,-4)
+        Stops as soon as faces are found.
+        
+        Args:
+            frame: Input frame
+            face_detector: Function that returns list of faces (the _detect_faces method)
+        
+        Returns:
+            (enhanced_frame, faces, enhancement_level_used)
+        """
+        # Try original frame first
+        faces = face_detector(frame, 0, 0)
+        if faces:
+            return frame, faces, 0  # No enhancement needed
+        
+        # Calculate brightness to determine which direction to try
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        avg_brightness = np.mean(gray)
+        
+        if avg_brightness < 90:
+            # Dark conditions - try increasing enhancement levels
+            enhancement_levels = [1, 2, 3, 4]
+            logger.debug(f"Progressive enhancement: Dark scene (brightness={avg_brightness:.1f}), trying levels {enhancement_levels}")
+        else:
+            # Bright conditions - try increasing recovery levels
+            enhancement_levels = [-1, -2, -3, -4]
+            logger.debug(f"Progressive enhancement: Bright scene (brightness={avg_brightness:.1f}), trying levels {enhancement_levels}")
+        
+        # Try progressive enhancement levels
+        for level in enhancement_levels:
+            enhanced = self.auto_enhance_frame(frame, force_level=level)
+            faces = face_detector(enhanced, 0, 0)
+            
+            if faces:
+                logger.info(f"Progressive enhancement: Level {level} succeeded, found {len(faces)} face(s)")
+                return enhanced, faces, level
+        
+        # No faces found even with maximum enhancement - return moderate level
+        moderate_level = 2 if avg_brightness < 90 else -2
+        logger.debug(f"Progressive enhancement: No faces found at any level, using level {moderate_level}")
+        return self.auto_enhance_frame(frame, force_level=moderate_level), [], moderate_level
 
     def enhance_face(self, face_crop):
         """Enhance face crop for better feature extraction."""
@@ -371,29 +690,30 @@ class VisionPipeline:
 
     def _detect_faces(self, person_crop, offset_x, offset_y):
         """
-        Detect faces with relaxed validation for better range.
+        Detect faces with IMPROVED sensitivity for better range.
         Returns list of (x1, y1, x2, y2, confidence).
         """
         faces = []
         h, w = person_crop.shape[:2]
 
-        # ── YOLO Face Detection (RESTAURANT RANGE OPTIMIZED) ──
+        # ── YOLO Face Detection (IMPROVED SENSITIVITY) ──
         if self.face_model:
             try:
                 yolo_faces = self.face_model(
                     person_crop,
-                    conf=0.15,     # Lowered from 0.30 — detect distant/far-away faces
+                    conf=0.12,     # Lowered from 0.15 for better distant face detection
                     iou=0.30,      # Relaxed from 0.35 — allow more face detections
                     verbose=False,
                     augment=True,  # ENABLED TTA for +2% face detection accuracy
-                    half=False
+                    half=False,
+                    max_det=8      # Increased to detect more faces per person
                 )
                 for box in yolo_faces[0].boxes:
                     fx1, fy1, fx2, fy2 = map(int, box.xyxy[0])
                     conf = float(box.conf[0])
 
-                    # Relaxed confidence threshold — accept distant faces
-                    if conf < 0.15:  # Lowered from 0.30
+                    # IMPROVED: Lower confidence threshold to accept more faces
+                    if conf < 0.12:  # Lowered from 0.15
                         continue
 
                     gx1, gy1 = offset_x + fx1, offset_y + fy1
@@ -402,13 +722,13 @@ class VisionPipeline:
                     face_w = gx2 - gx1
                     face_h = gy2 - gy1
 
-                    # RESTAURANT RANGE: Detect very small/distant faces
-                    if face_w < 15 or face_h < 15:  # Lowered from 30 for distant detection
+                    # IMPROVED: Detect very small/distant faces
+                    if face_w < 12 or face_h < 12:  # Lowered from 15 for very distant detection
                         continue
 
-                    # Aspect ratio validation — very flexible for angles
+                    # Aspect ratio validation — very flexible for angles/profiles
                     aspect = max(face_w, face_h) / min(face_w, face_h)
-                    if aspect > 3.0:  # Relaxed from 2.5 for side/angled faces
+                    if aspect > 3.5:  # Relaxed from 3.0 for profile/side views
                         continue
 
                     faces.append((gx1, gy1, gx2, gy2, conf))
@@ -418,7 +738,7 @@ class VisionPipeline:
             except Exception as e:
                 logger.debug(f"YOLO face detection error: {e}")
 
-        # ── Haar Cascade Fallback (VERY RELAXED for restaurant range) ──
+        # ── Haar Cascade Fallback (IMPROVED for maximum range) ──
         if self.haar_cascade is not None and not self.haar_cascade.empty():
             try:
                 gray = cv2.cvtColor(person_crop, cv2.COLOR_BGR2GRAY)
@@ -426,9 +746,9 @@ class VisionPipeline:
 
                 haar_faces = self.haar_cascade.detectMultiScale(
                     gray,
-                    scaleFactor=1.03,      # Lowered from 1.05 — VERY sensitive to small faces
-                    minNeighbors=3,        # Lowered from 4 — accept more detections
-                    minSize=(15, 15),      # Lowered from 30 — detect very small faces
+                    scaleFactor=1.02,      # Lowered from 1.03 — MORE sensitive to tiny faces
+                    minNeighbors=2,        # Lowered from 3 — accept more detections
+                    minSize=(12, 12),      # Lowered from 15 — detect very small faces
                     flags=cv2.CASCADE_SCALE_IMAGE
                 )
 
@@ -437,8 +757,8 @@ class VisionPipeline:
                     gx2, gy2 = offset_x + fx + fw, offset_y + fy + fh
 
                     aspect = max(fw, fh) / min(fw, fh)
-                    if aspect < 3.0:  # Relaxed from 2.5
-                        faces.append((gx1, gy1, gx2, gy2, 0.3))  # Lower default confidence
+                    if aspect < 3.5:  # Relaxed from 3.0
+                        faces.append((gx1, gy1, gx2, gy2, 0.3))  # Default confidence
 
             except Exception as e:
                 logger.debug(f"Haar face detection error: {e}")
@@ -860,12 +1180,12 @@ class VisionPipeline:
                 persons = self.person_model(
                     scaled_frame,
                     classes=[0],       # COCO class 0 = person ONLY
-                    conf=0.15,         # Lowered from 0.25 for restaurant range (distant person was 0.163)
+                    conf=0.12,         # Lowered from 0.15 for MAXIMUM range (distant person detection)
                     iou=0.45,          # Increased from 0.40 to allow more overlap (multi-scale)
                     verbose=False,
                     augment=True,      # ENABLED TTA for better accuracy at all scales
                     half=False,
-                    max_det=12         # Increased from 8 to detect more people at distance
+                    max_det=15         # Increased from 12 to detect more people at distance
                 )
 
                 for result in persons:
@@ -884,21 +1204,21 @@ class VisionPipeline:
                         box_w = x2 - x1
                         box_h = y2 - y1
 
-                        # RESTAURANT RANGE: Detect very small/distant people (even seated/partial)
-                        if box_w < 20 or box_h < 25:  # Lowered from 40/60 for distant detection
+                        # MAXIMUM RANGE: Detect very small/distant people (even seated/partial)
+                        if box_w < 18 or box_h < 22:  # Lowered from 20/25 for maximum distance
                             continue
 
                         # Aspect ratio: humans are taller than wide (very flexible for restaurant angles)
                         aspect = box_h / max(box_w, 1)
-                        if aspect < 0.4 or aspect > 5.0:  # Relaxed from 0.6-4.0 for seated/partial views
+                        if aspect < 0.35 or aspect > 5.5:  # Relaxed from 0.4-5.0 for extreme seated views
                             continue
 
                         # Head-to-body proportion: VERY relaxed for restaurant (seated, partial views)
-                        if box_h < box_w * 0.4:  # Relaxed from 0.6 — seated people are wider
+                        if box_h < box_w * 0.35:  # Relaxed from 0.4 — extreme seated people
                             continue
 
-                        # Position check — relaxed for restaurant (allow near edges)
-                        if y1 < 2 or y2 > (h - 2):  # Relaxed from 5 to 2
+                        # Position check — very relaxed for restaurant (allow near edges)
+                        if y1 < 1 or y2 > (h - 1):  # Relaxed from 2 to 1 for maximum coverage
                             continue
 
                         all_person_boxes.append((x1, y1, x2, y2, conf))
@@ -906,12 +1226,12 @@ class VisionPipeline:
             persons = self.person_model(
                 enhanced,
                 classes=[0],         # COCO class 0 = person ONLY (no dogs/cats/cars)
-                conf=0.15,           # Lowered from 0.25 for restaurant range (distant person was 0.163)
+                conf=0.12,           # Lowered from 0.15 for MAXIMUM range
                 iou=0.45,            # Relaxed NMS — allow more detections
                 verbose=False,
                 augment=True,        # ENABLED TTA for +2-3% accuracy
                 half=False,
-                max_det=12           # Increased from 8 — detect more people
+                max_det=15           # Increased from 12 — detect more people
             )
 
             for result in persons:
@@ -924,31 +1244,31 @@ class VisionPipeline:
                     box_w = x2 - x1
                     box_h = y2 - y1
 
-                    # RESTAURANT RANGE: Detect very small/distant people
-                    if box_w < 20 or box_h < 25:  # Lowered from 40/60
+                    # MAXIMUM RANGE: Detect very small/distant people
+                    if box_w < 18 or box_h < 22:  # Lowered from 20/25
                         continue
 
                     # Aspect ratio: very flexible for restaurant angles
                     aspect = box_h / max(box_w, 1)
-                    if aspect < 0.4 or aspect > 5.0:  # Relaxed from 0.6-4.0
+                    if aspect < 0.35 or aspect > 5.5:  # Relaxed from 0.4-5.0
                         continue
 
                     # Head-to-body proportion: VERY relaxed for seated people
-                    if box_h < box_w * 0.4:  # Relaxed from 0.6
+                    if box_h < box_w * 0.35:  # Relaxed from 0.4
                         continue
 
                     # Position check — very relaxed for restaurant
-                    if y1 < 2 or y2 > (h - 2):  # Relaxed from 5 to 2
+                    if y1 < 1 or y2 > (h - 1):  # Relaxed from 2 to 1
                         continue
 
                     all_person_boxes.append((x1, y1, x2, y2, conf))
 
-        # NMS to merge multi-scale detections (more relaxed to keep more detections)
+        # NMS to merge multi-scale detections (MAXIMUM RANGE - keep more detections)
         if len(all_person_boxes) > 1:
             boxes_np = np.array([[b[0], b[1], b[2], b[3]] for b in all_person_boxes], dtype=np.float32)
             confs_np = np.array([b[4] for b in all_person_boxes], dtype=np.float32)
-            # Score threshold must be BELOW minimum person conf (0.15) to keep low-conf detections
-            indices = cv2.dnn.NMSBoxes(boxes_np.tolist(), confs_np.tolist(), 0.10, 0.50)
+            # Score threshold MUST be BELOW minimum person conf (0.12) to keep low-conf detections
+            indices = cv2.dnn.NMSBoxes(boxes_np.tolist(), confs_np.tolist(), 0.08, 0.45)  # Lowered from 0.10/0.50
             if len(indices) > 0:
                 indices = indices.flatten() if len(indices.shape) > 1 else indices
             else:
@@ -1037,8 +1357,9 @@ class VisionPipeline:
                         self.registry.update_age(face_id, final_age)
 
                     # ── Save detected face (with cooldown to prevent duplicates) ──
-                    if self.vault and self._should_save_face(face_track_id):
-                        timestamp_id = f"{face_id}_{cam_id}_{int(time.time() * 1000)}"
+                    # FIX: Use stable face_id for cooldown, not transient face_track_id
+                    if self.vault and self._should_save_face(face_id):
+                        timestamp_id = f"{face_id}_{cam_id}_{int(time.time())}"
                         if self.vault.save_face(face_crop, timestamp_id, group, quality=age_conf, age=final_age):
                             logger.info(f"Face saved: {timestamp_id} (Group: {group}, Age: {final_age}, Quality: {age_conf:.2f})")
                 else:
@@ -1123,8 +1444,9 @@ class VisionPipeline:
                     group = self._age_to_group(final_age)
 
                     # ── Save detected face (with cooldown) ──
-                    if self.vault and self._should_save_face(face_track_id):
-                        timestamp_id = f"{face_id}_{cam_id}_{int(time.time() * 1000)}"
+                    # FIX: Use stable face_id for cooldown, not transient face_track_id
+                    if self.vault and self._should_save_face(face_id):
+                        timestamp_id = f"{face_id}_{cam_id}_{int(time.time())}"
                         if self.vault.save_face(face_crop, timestamp_id, group, quality=age_conf, age=final_age):
                             logger.info(f"Face saved: {timestamp_id} (Group: {group}, Age: {final_age}, Quality: {age_conf:.2f})")
                 else:

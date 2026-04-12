@@ -73,11 +73,11 @@ class FaceVault:
     def save_face(self, face_img, face_id, group, quality=0.0, age=None):
         """
         Save a face crop locally with quality metadata.
-        ONLY saves if this face_id hasn't been saved in the last 10 seconds.
+        DOUBLE-CHECK: Only saves if this face_id hasn't been saved in the last 10 seconds.
 
         Args:
             face_img: Face image to save
-            face_id: Unique face identifier
+            face_id: Unique face identifier (stable identity ID)
             group: Age group (kids/youths/adults/seniors)
             quality: Detection quality score (0.0-1.0)
             age: Estimated age
@@ -89,18 +89,28 @@ class FaceVault:
             logger.warning(f"Cannot save face {face_id}: image is empty")
             return False
 
+        # FIX: More robust dedup - extract base face_id from timestamp_id if needed
+        # face_id could be "adults_25_1_cam0_1712345678" or just "track_0"
+        # Extract the identity part (everything before the last timestamp)
+        base_face_id = face_id
+        parts = str(face_id).rsplit('_', 1)
+        if len(parts) == 2 and parts[1].isdigit():
+            base_face_id = parts[0]  # Remove trailing timestamp
+
         # Check if this face_id was recently saved (prevent duplicates within 10s)
         now = int(time.time())
-        existing = list(self.temp_dir.glob(f"*_{face_id}_*"))
+        existing = list(self.temp_dir.glob(f"*{base_face_id}*"))
         if existing:
             # Check if any existing file was saved recently (within 10 seconds)
             for f in existing:
-                # Extract timestamp from filename: {group}_{face_id}_q{quality}_age{age}_{timestamp}.png
                 try:
-                    timestamp = int(f.stem.split('_')[-1])
-                    if now - timestamp < 10:
-                        logger.debug(f"Face {face_id} recently saved ({now - timestamp}s ago), skipping")
-                        return False
+                    # Extract timestamp from filename: last part after underscore
+                    fname_parts = f.stem.rsplit('_', 1)
+                    if len(fname_parts) == 2 and fname_parts[1].isdigit():
+                        timestamp = int(fname_parts[1])
+                        if now - timestamp < 10:
+                            logger.debug(f"Face {base_face_id} recently saved ({now - timestamp}s ago), skipping")
+                            return False
                 except (ValueError, IndexError):
                     pass
 
@@ -118,7 +128,7 @@ class FaceVault:
             success = cv2.imwrite(str(filepath), face_img)
             if success:
                 logger.info(
-                    f"Saved face: {face_id} | "
+                    f"Saved face: {base_face_id} | "
                     f"Group: {group} | Quality: {quality:.2f} | Age: {age} | "
                     f"Size: {face_img.shape[0]}x{face_img.shape[1]}"
                 )
