@@ -3,28 +3,30 @@ import { api } from '@/lib/api'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Users, Eye, RefreshCw } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 export function CameraGrid() {
   const cameras = useCameras()
   const [feedErrors, setFeedErrors] = useState<Record<number, number>>({})
-  // FIX: Store cache-buster timestamp per camera, only update on error recovery
-  const [feedKeys, setFeedKeys] = useState<Record<number, number>>({})
+  const retryCountRef = useRef<Record<number, number>>({})
 
-  // Auto-retry: increment error counter periodically to trigger img reload
+  // Auto-retry: increment error counter every 10s to trigger img reload
   useEffect(() => {
-    if (Object.keys(feedErrors).length === 0) return
     const interval = setInterval(() => {
       setFeedErrors(prev => {
         const updated: Record<number, number> = {}
+        let changed = false
         for (const [k, v] of Object.entries(prev)) {
-          if (v < 3) updated[Number(k)] = v + 1
+          if (v < 3) {
+            updated[Number(k)] = v + 1
+            changed = true
+          }
         }
-        return updated
+        return changed ? updated : prev
       })
-    }, 10000) // Increased from 5s to 10s to reduce flickering
+    }, 10000)
     return () => clearInterval(interval)
-  }, [feedErrors])
+  }, [])
 
   if (cameras.length === 0) {
     return (
@@ -39,19 +41,9 @@ export function CameraGrid() {
       {cameras.map(cam => {
         const errorCount = feedErrors[cam.id] || 0
         const hasError = errorCount > 0
+        // Use errorCount as cache-buster — only changes on actual error/retry
         const imgKey = `${cam.id}-${errorCount}`
-        
-        // FIX: Only add cache-buster when recovering from error, not on every render
-        const feedUrl = hasError 
-          ? `${api.feedUrl(cam.id)}?retry=${Date.now()}`
-          : api.feedUrl(cam.id)
-        
-        // FIX: Update feed key when recovering from error to force reload
-        useEffect(() => {
-          if (hasError && errorCount > 0) {
-            setFeedKeys(prev => ({ ...prev, [cam.id]: Date.now() }))
-          }
-        }, [errorCount])
+        const feedUrl = `${api.feedUrl(cam.id)}${hasError ? `&retry=${errorCount}` : ''}`
 
         return (
           <Card key={cam.id} className="overflow-hidden bg-black/40 border-white/5 backdrop-blur-md">
@@ -60,7 +52,6 @@ export function CameraGrid() {
                 key={imgKey}
                 src={feedUrl}
                 className={`w-full h-full object-contain ${hasError ? 'opacity-30' : ''}`}
-                // FIX: Add loading="eager" and decoding="sync" for lowest latency
                 loading="eager"
                 decoding="sync"
                 onError={() => {
@@ -68,7 +59,7 @@ export function CameraGrid() {
                 }}
               />
 
-              {/* Error overlay with reconnecting indicator */}
+              {/* Error overlay */}
               {hasError && errorCount >= 3 && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground bg-black/60">
                   <RefreshCw className="w-8 h-8 mb-2 opacity-50 animate-spin" />
@@ -83,7 +74,7 @@ export function CameraGrid() {
                 <span className="text-[9px] font-medium text-red-400 uppercase tracking-wider">LIVE</span>
               </div>
 
-              {/* Auto-enhancement indicator */}
+              {/* AI Enhanced indicator */}
               <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-emerald-500/20 backdrop-blur-sm px-2 py-1 rounded border border-emerald-500/30">
                 <Eye className="w-3 h-3 text-emerald-400" />
                 <span className="text-[9px] font-medium text-emerald-400 uppercase tracking-wider">AI Enhanced</span>
