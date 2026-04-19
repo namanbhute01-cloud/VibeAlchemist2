@@ -1,6 +1,6 @@
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { AnimatedCard } from "@/components/AnimatedCard";
-import { Music, Play, Pause, SkipForward, Shuffle, Plus, Search, Filter, Disc, Upload, X } from "lucide-react";
+import { Music, Play, Pause, SkipForward, Shuffle, Plus, Search, Filter, Disc, Upload, X, Youtube, Link, Download } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { api } from "@/lib/api";
 import { usePlayback } from "@/hooks/usePlayback";
@@ -25,6 +25,8 @@ export default function PlaylistPage() {
   const [selectedGroup, setSelectedGroup] = useState("adults");
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [addMode, setAddMode] = useState<"upload" | "youtube">("upload");
+  const [youtubeUrl, setYoutubeUrl] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load library from backend
@@ -129,6 +131,51 @@ export default function PlaylistPage() {
     }
   };
 
+  const handleYoutubeDownload = async () => {
+    if (!youtubeUrl) {
+      toast.error("URL required", { description: "Please paste a YouTube URL" });
+      return;
+    }
+    
+    if (!youtubeUrl.includes("youtube.com") && !youtubeUrl.includes("youtu.be")) {
+      toast.error("Invalid URL", { description: "Please provide a valid YouTube link" });
+      return;
+    }
+    
+    setUploading(true);
+    try {
+      const result = await api.addSong(null, selectedGroup, youtubeUrl);
+      
+      if (result.ok) {
+        toast.success("Song downloaded!", { 
+          description: `${result.filename} added to ${result.group} library` 
+        });
+        setShowAddModal(false);
+        setYoutubeUrl("");
+        // Reload library
+        const lib = await api.getLibrary();
+        const allTracks: Track[] = [];
+        Object.entries(lib).forEach(([group, files]) => {
+          (files as string[]).forEach((file, idx) => {
+            allTracks.push({
+              id: `${group}-${idx}`,
+              title: file.replace(/\.[^/.]+$/, ""),
+              group: group
+            });
+          });
+        });
+        setTracks(allTracks);
+      } else {
+        toast.error("Download failed", { description: result.error });
+      }
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error("Download failed", { description: "Please check your connection and try again" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -198,6 +245,99 @@ export default function PlaylistPage() {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Music Auto-Downloader Section (V6 Upgrade) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <AnimatedCard delay={100} className="border-[hsl(var(--violet))/0.2] bg-gradient-to-br from-[hsl(var(--violet))/0.02] to-transparent">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Youtube className="w-5 h-5 text-red-500" />
+                <h3 className="text-lg font-bold">Music Auto-Downloader</h3>
+              </div>
+              
+              <div className="flex flex-col gap-3">
+                <div className="relative">
+                  <Link className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={youtubeUrl}
+                    onChange={(e) => setYoutubeUrl(e.target.value)}
+                    placeholder="Paste YouTube URL here..."
+                    className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-card border border-border/50 text-sm focus:outline-none focus:border-[hsl(var(--violet))/0.5] transition-colors"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <select 
+                    value={selectedGroup} 
+                    onChange={(e) => setSelectedGroup(e.target.value)}
+                    className="px-3 py-2.5 rounded-lg bg-card border border-border/50 text-xs focus:outline-none focus:border-[hsl(var(--violet))/0.5] transition-colors"
+                  >
+                    {["kids", "youths", "adults", "seniors"].map(g => (
+                      <option key={g} value={g}>{g.toUpperCase()}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={handleYoutubeDownload}
+                    disabled={uploading || !youtubeUrl}
+                    className="flex-1 px-6 py-2.5 rounded-lg bg-[hsl(var(--violet))] text-white text-sm font-bold hover:bg-[hsl(var(--violet))/0.9] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {uploading ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Working...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4" />
+                        <span>Download</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+              
+              <div className="p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/10">
+                <p className="text-[10px] text-yellow-500/80 leading-relaxed italic">
+                  Note: Audio will be saved to the selected folder and immediately available for playback.
+                </p>
+              </div>
+            </div>
+          </AnimatedCard>
+
+          <AnimatedCard delay={150} className="border-border/30">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Disc className="w-4 h-4 text-[hsl(var(--violet))]" />
+                <h3 className="text-sm font-bold uppercase tracking-widest">Library Manifest</h3>
+              </div>
+              <span className="text-[9px] text-muted-foreground">FLAT VIEW</span>
+            </div>
+            
+            <div className="h-[180px] overflow-y-auto pr-2 space-y-1.5 scrollbar-thin">
+              {tracks.length > 0 ? (
+                tracks.map((track, i) => (
+                  <div key={track.id} className="flex items-center justify-between py-2 px-3 rounded bg-muted/20 border border-transparent hover:border-[hsl(var(--violet))/0.2] hover:bg-muted/40 transition-all cursor-pointer" onClick={() => handlePlayTrack(track)}>
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <div className="w-6 h-6 rounded bg-primary/10 flex items-center justify-center shrink-0">
+                        <Music className="w-3 h-3 text-primary" />
+                      </div>
+                      <span className="text-xs font-medium truncate">{track.title}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[hsl(var(--violet))/0.1] text-[hsl(var(--violet))] font-mono uppercase">{track.group}</span>
+                      <Play className="w-2.5 h-2.5 text-muted-foreground opacity-0 group-hover:opacity-100" />
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-muted-foreground opacity-30">
+                  <Search className="w-8 h-8 mb-2" />
+                  <p className="text-[10px]">No tracks in manifest</p>
+                </div>
+              )}
+            </div>
+          </AnimatedCard>
         </div>
 
         {/* Now Playing Banner */}
@@ -296,9 +436,31 @@ export default function PlaylistPage() {
             </div>
             
             <div className="p-4 space-y-4">
+              {/* Mode Toggle */}
+              <div className="flex p-1 bg-muted rounded-lg">
+                <button
+                  onClick={() => setAddMode("upload")}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-xs font-medium transition-all",
+                    addMode === "upload" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Upload className="w-3.5 h-3.5" /> Upload File
+                </button>
+                <button
+                  onClick={() => setAddMode("youtube")}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-2 py-2 rounded-md text-xs font-medium transition-all",
+                    addMode === "youtube" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Youtube className="w-3.5 h-3.5" /> YouTube Download
+                </button>
+              </div>
+
               {/* Group Selection */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Age Group</label>
+                <label className="text-sm font-medium">Target Age Group</label>
                 <div className="flex gap-2">
                   {["kids", "youths", "adults", "seniors"].map(group => (
                     <button
@@ -316,43 +478,85 @@ export default function PlaylistPage() {
                 </div>
               </div>
               
-              {/* File Upload */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Audio File</label>
-                <div
-                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                    dragActive 
-                      ? "border-[hsl(var(--violet))] bg-[hsl(var(--violet))/0.05]" 
-                      : "border-border/50 hover:border-[hsl(var(--violet))/0.5]"
-                  }`}
-                  onDragEnter={handleDrag}
-                  onDragLeave={handleDrag}
-                  onDragOver={handleDrag}
-                  onDrop={handleDrop}
-                >
-                  <Upload className="w-8 h-8 mx-auto mb-3 text-muted-foreground opacity-50" />
-                  <p className="text-sm font-medium mb-1">Drop audio file here</p>
-                  <p className="text-xs text-muted-foreground mb-3">or click to browse</p>
-                  <p className="text-[10px] text-muted-foreground">MP3, WAV, FLAC, M4A, OGG</p>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".mp3,.wav,.flac,.m4a,.ogg,audio/*"
-                    onChange={(e) => e.target.files && handleFileSelect(e.target.files[0])}
-                    className="hidden"
-                  />
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="mt-3 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs hover:bg-primary/90 transition-colors"
+              {/* Conditional Content */}
+              {addMode === "upload" ? (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Audio File</label>
+                  <div
+                    className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                      dragActive 
+                        ? "border-[hsl(var(--violet))] bg-[hsl(var(--violet))/0.05]" 
+                        : "border-border/50 hover:border-[hsl(var(--violet))/0.5]"
+                    }`}
+                    onDragEnter={handleDrag}
+                    onDragLeave={handleDrag}
+                    onDragOver={handleDrag}
+                    onDrop={handleDrop}
                   >
-                    Browse Files
+                    <Upload className="w-8 h-8 mx-auto mb-3 text-muted-foreground opacity-50" />
+                    <p className="text-sm font-medium mb-1">Drop audio file here</p>
+                    <p className="text-xs text-muted-foreground mb-3">or click to browse</p>
+                    <p className="text-[10px] text-muted-foreground">MP3, WAV, FLAC, M4A, OGG</p>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".mp3,.wav,.flac,.m4a,.ogg,audio/*"
+                      onChange={(e) => e.target.files && handleFileSelect(e.target.files[0])}
+                      className="hidden"
+                    />
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="mt-3 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs hover:bg-primary/90 transition-colors"
+                    >
+                      Browse Files
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">YouTube URL</label>
+                    <div className="relative">
+                      <Link className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <input
+                        type="text"
+                        value={youtubeUrl}
+                        onChange={(e) => setYoutubeUrl(e.target.value)}
+                        placeholder="https://www.youtube.com/watch?v=..."
+                        className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-card border border-border/50 text-sm focus:outline-none focus:border-[hsl(var(--violet))/0.5] transition-colors placeholder:text-muted-foreground"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/20">
+                    <p className="text-[10px] text-yellow-500/80 leading-relaxed italic">
+                      Disclaimer: This tool is for personal, offline use only. Please respect copyright laws and the terms of service of content providers.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={handleYoutubeDownload}
+                    disabled={uploading || !youtubeUrl}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-[hsl(var(--violet))] text-white text-sm font-medium hover:bg-[hsl(var(--violet))/0.9] disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
+                  >
+                    {uploading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Downloading...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4" /> Download Audio
+                      </>
+                    )}
                   </button>
                 </div>
-              </div>
+              )}
               
-              {uploading && (
-                <div className="text-center text-sm text-muted-foreground">
-                  <p>Uploading...</p>
+              {uploading && addMode === "upload" && (
+                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground py-2">
+                  <div className="w-3 h-3 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
+                  <p>Uploading song...</p>
                 </div>
               )}
             </div>

@@ -604,10 +604,20 @@ async def lifespan(app: FastAPI):
     logger.info("Initializing Vibe Alchemist V5 Systems...")
     app.state.start_time = time.time()
 
+    # 1. Ensure ROOT_MUSIC_DIR exists
     music_dir = Path(os.getenv("ROOT_MUSIC_DIR", "./OfflinePlayback"))
     for group in ["kids", "youths", "adults", "seniors", "default"]:
         (music_dir / group).mkdir(parents=True, exist_ok=True)
     Path(os.getenv("FACE_TEMP_DIR", "./temp_faces")).mkdir(exist_ok=True)
+
+    # 2. Check for ffmpeg (required for YouTube downloader)
+    import shutil
+    ffmpeg_path = shutil.which("ffmpeg")
+    if not ffmpeg_path:
+        logger.error("FFMPEG NOT FOUND! YouTube music downloads will fail. "
+                     "Install: apt-get install ffmpeg (Linux) or brew install ffmpeg (Mac)")
+    else:
+        logger.info(f"FFmpeg found at: {ffmpeg_path}")
 
     try:
         from core.camera_pool import CameraPool
@@ -758,6 +768,56 @@ app.include_router(playback.router, prefix="/api")
 app.include_router(vibe.router, prefix="/api")
 app.include_router(faces.router, prefix="/api")
 app.include_router(settings.router, prefix="/api")
+
+# 2b. YouTube Music Auto-Downloader
+from core.music_downloader import download_song
+
+@app.post("/api/music/download")
+async def music_download(request: Request):
+    """YouTube Music Auto-Downloader endpoint."""
+    try:
+        data = await request.json()
+        url = data.get("url")
+        if not url:
+            raise HTTPException(status_code=400, detail="URL is required")
+        
+        # Simple validation
+        if "youtube.com" not in url and "youtu.be" not in url:
+            raise HTTPException(status_code=400, detail="Invalid YouTube URL")
+            
+        logger.info(f"Downloading YouTube song: {url}")
+        result = await download_song(url) # Saves directly to ROOT_MUSIC_DIR as requested
+        return result
+    except Exception as e:
+        logger.error(f"Download error: {e}")
+        return {"status": "error", "message": str(e)}
+
+@app.get("/api/music/library")
+async def music_library():
+    """Returns list of all .mp3/.m4a files in ROOT_MUSIC_DIR."""
+    music_dir = Path(os.getenv("ROOT_MUSIC_DIR", "./OfflinePlayback"))
+    if not music_dir.exists():
+        return []
+    
+    library = []
+    # User specifically requested .mp3/.m4a but we support more
+    valid_exts = {".mp3", ".m4a", ".wav", ".flac", ".ogg", ".opus"}
+    
+    # Recursively find music files
+    for root, _, files in os.walk(music_dir):
+        for file in files:
+            file_path = Path(root) / file
+            if file_path.suffix.lower() in valid_exts:
+                stats = file_path.stat()
+                library.append({
+                    "filename": file,
+                    "size_mb": round(stats.st_size / (1024 * 1024), 2),
+                    "added": int(stats.st_mtime)
+                })
+                
+    # Sort by added time (newest first)
+    library.sort(key=lambda x: x["added"], reverse=True)
+    return library
 
 # 3. WebSocket /ws and /ws/vibe-stream
 @app.websocket("/ws")

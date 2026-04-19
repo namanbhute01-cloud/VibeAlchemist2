@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Request, UploadFile, File, Form
+from fastapi import APIRouter, Request, UploadFile, File, Form, HTTPException
 import logging
 import os
 import shutil
 from pathlib import Path
 from typing import Optional
+from core.music_downloader import download_song
 
 router = APIRouter(prefix="/playback", tags=["playback"])
 logger = logging.getLogger("PlaybackRoute")
@@ -27,13 +28,73 @@ async def get_library():
         for group in ["kids", "youths", "adults", "seniors"]:
             group_dir = music_dir / group
             if group_dir.exists():
-                files = [f.name for f in group_dir.iterdir() if f.is_file() and f.suffix.lower() in ['.mp3', '.wav', '.flac', '.m4a', '.ogg']]
+                files = [f.name for f in group_dir.iterdir() if f.is_file() and f.suffix.lower() in ['.mp3', '.wav', '.flac', '.m4a', '.ogg', '.opus']]
                 library[group] = files
             else:
                 library[group] = []
         return library
 
     return {"kids": [], "youths": [], "adults": [], "seniors": []}
+
+@router.get("/music/library")
+async def get_detailed_library():
+    """Returns a flat list of all music files with size and timestamp."""
+    player = refs.get("player")
+    if not player or not hasattr(player, 'music_root'):
+        return []
+
+    music_root = Path(player.music_root)
+    library = []
+    
+    valid_extensions = {'.mp3', '.wav', '.flac', '.m4a', '.ogg', '.opus'}
+    
+    for group in ["kids", "youths", "adults", "seniors", "default"]:
+        group_dir = music_root / group
+        if not group_dir.exists():
+            continue
+            
+        for file in group_dir.iterdir():
+            if file.is_file() and file.suffix.lower() in valid_extensions:
+                stats = file.stat()
+                library.append({
+                    "filename": file.name,
+                    "group": group,
+                    "size_mb": round(stats.st_size / (1024 * 1024), 2),
+                    "added": int(stats.st_mtime)
+                })
+    
+    # Sort by added time (newest first)
+    library.sort(key=lambda x: x["added"], reverse=True)
+    return library
+
+@router.post("/music/download")
+async def download_youtube_song(request: Request):
+    """
+    Download a song from YouTube.
+    Body: { "url": "...", "group": "..." }
+    """
+    try:
+        data = await request.json()
+        url = data.get("url")
+        group = data.get("group", "adults")
+        
+        if not url:
+            raise HTTPException(status_code=400, detail="YouTube URL is required")
+            
+        if "youtube.com" not in url and "youtu.be" not in url:
+            raise HTTPException(status_code=400, detail="Invalid YouTube URL")
+            
+        logger.info(f"Downloading YouTube song: {url} to {group}")
+        result = await download_song(url, group)
+        
+        if result["status"] == "success":
+            return {"ok": True, **result}
+        else:
+            return {"ok": False, "error": result["message"]}
+            
+    except Exception as e:
+        logger.error(f"Error in download_youtube_song: {e}")
+        return {"ok": False, "error": str(e)}
 
 @router.get("/status")
 async def get_status():
@@ -109,12 +170,20 @@ async def add_song(
             
             logger.info(f"Uploaded song: {filename} to {group}")
         
-        # Handle URL download (future enhancement - would need yt-dlp or similar)
+        # Handle URL download (YouTube)
         elif url:
-            return {
-                "ok": False, 
-                "error": "URL download not yet implemented. Please upload file directly."
-            }
+            if "youtube.com" in url or "youtu.be" in url:
+                logger.info(f"Downloading YouTube song via add-song: {url} to {group}")
+                download_result = await download_song(url, group)
+                if download_result["status"] == "success":
+                    filename = download_result["filename"]
+                else:
+                    return {"ok": False, "error": download_result["message"]}
+            else:
+                return {
+                    "ok": False, 
+                    "error": "Only YouTube URLs are currently supported for downloads."
+                }
         
         else:
             return {"ok": False, "error": "No file or URL provided"}

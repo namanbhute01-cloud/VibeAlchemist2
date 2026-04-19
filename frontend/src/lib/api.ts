@@ -94,16 +94,35 @@ export const api = {
   // Playback
   getPlayback:         () => jsonFetch(`${BASE}/playback/status`),
   getLibrary:          () => jsonFetch(`${BASE}/playback/library`),
-  addSong:             (file: File, group: string) => {
+  getDetailedLibrary:  () => jsonFetch(`${BASE}/playback/music/library`),
+  addSong:             (file: File | null, group: string, url?: string) => {
     const formData = new FormData()
-    formData.append('file', file)
+    if (file) formData.append('file', file)
     formData.append('group', group)
+    if (url) formData.append('url', url)
+    
     return fetch(`${BASE}/playback/add-song`, {
       method: 'POST',
       body: formData,
-      signal: AbortSignal.timeout(30000),  // 30s for file uploads
+      signal: AbortSignal.timeout(60000),  // 60s for file uploads/downloads
     }).then(r => r.json())
   },
+  downloadMusic: (url: string, group: string) =>
+    jsonFetch(`${BASE}/playback/music/download`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ url, group }),
+      signal: AbortSignal.timeout(60000), // 60s for downloads
+    }),
+  // Simple Music Downloader (V6 Upgrade)
+  getMusicLibrary: () => jsonFetch(`${BASE}/music/library`),
+  downloadMusicSimple: (url: string) =>
+    jsonFetch(`${BASE}/music/download`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ url }),
+      signal: AbortSignal.timeout(60000), // 60s for downloads
+    }),
   playbackAction: (action: string, body?: object) =>
     jsonFetch(`${BASE}/playback/${action}`, {
       method: 'POST',
