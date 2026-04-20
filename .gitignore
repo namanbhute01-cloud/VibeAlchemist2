@@ -7,7 +7,7 @@ venv/
 env/
 .vscode/
 .idea/
-
+/offlinePlayback
 # Models
 models/**/*.onnx
 models/**/*.pt
