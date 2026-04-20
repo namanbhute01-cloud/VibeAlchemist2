@@ -727,10 +727,9 @@ app = FastAPI(title="Vibe Alchemist V2", lifespan=lifespan)
 # Defaults to localhost variants for development
 cors_origins = os.getenv("CORS_ORIGINS", "")
 allowed_origins = [o.strip() for o in cors_origins.split(",") if o.strip()] if cors_origins else [
-    "http://127.0.0.1:5173", "http://127.0.0.1:8000",
-    "http://localhost:5173", "http://localhost:8000",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:8080",
 ]
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,

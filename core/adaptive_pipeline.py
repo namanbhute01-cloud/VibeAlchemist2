@@ -132,7 +132,7 @@ class AdaptivePipeline:
         if not cfg["enabled"]:
             logger.info("Demographics: DISABLED (Tier 1)")
             return
-        import os, onnxruntime as ort
+        import onnxruntime as ort
         if os.path.exists(cfg["model_path"]):
             try:
                 self._demographics = ort.InferenceSession(
@@ -154,7 +154,7 @@ class AdaptivePipeline:
         if not cfg["enabled"]:
             logger.info("Emotion: DISABLED (Tier 1)")
             return
-        import os, onnxruntime as ort
+        import onnxruntime as ort
         if os.path.exists(cfg["model_path"]):
             try:
                 self._emotion = ort.InferenceSession(

@@ -63,7 +63,7 @@ async def drive_status():
 async def test_drive_connection():
     """
     Tests Google Drive connection and returns detailed diagnostics.
-    Use this after setting up credentials.json to verify everything works.
+    Supports both Service Account and OAuth2 (User) credentials.
     """
     face_vault = refs.get("face_vault")
     if not face_vault:
@@ -71,79 +71,64 @@ async def test_drive_connection():
 
     result = {
         "ok": False,
-        "details": {}
+        "details": {
+            "token_file": face_vault.token_file,
+            "creds_file": face_vault.creds_file,
+            "folder_id": face_vault.drive_folder_id
+        }
     }
 
-    # Check 1: Credentials file exists
-    creds_path = face_vault.creds_file
-    result["details"]["credentials_file"] = creds_path or "not set"
-    if not creds_path or not os.path.exists(creds_path):
-        result["error"] = f"Credentials file not found: {creds_path or 'not set'}"
-        result["details"]["fix"] = "Download service account JSON key from Google Cloud Console and save as credentials.json in project root"
+    # Check 1: Do we have ANY credential file?
+    has_token = os.path.exists(face_vault.token_file)
+    has_creds = os.path.exists(face_vault.creds_file)
+    result["details"]["token_exists"] = has_token
+    result["details"]["creds_exists"] = has_creds
+
+    if not has_token and not has_creds:
+        result["error"] = "No Google Drive credentials found (token.json or credentials.json)"
+        result["details"]["fix"] = "Run 'bash setup-drive.sh' to authenticate."
         return result
 
-    # Check 2: Credentials file is valid JSON
-    try:
-        import json
-        with open(creds_path) as f:
-            creds_data = json.load(f)
-        result["details"]["service_account_email"] = creds_data.get("client_email", "unknown")
-        result["details"]["project_id"] = creds_data.get("project_id", "unknown")
-    except json.JSONDecodeError as e:
-        result["error"] = f"Invalid JSON in credentials file: {e}"
-        result["details"]["fix"] = "Re-download the service account key JSON from Google Cloud Console"
-        return result
-    except Exception as e:
-        result["error"] = f"Cannot read credentials file: {e}"
-        return result
-
-    # Check 3: Drive library installed
+    # Check 2: Drive library installed
     try:
         from google.oauth2 import service_account
+        from google.oauth2.credentials import Credentials
         from googleapiclient.discovery import build
         result["details"]["libraries"] = "installed"
     except ImportError:
         result["error"] = "Google Drive Python libraries not installed"
-        result["details"]["fix"] = "pip install google-auth google-api-python-client"
+        result["details"]["fix"] = "pip install google-auth google-api-python-client google-auth-oauthlib"
         return result
 
-    # Check 4: Authenticate
+    # Check 3: Authenticate and Test Access
     try:
-        scopes = ['https://www.googleapis.com/auth/drive.file']
-        creds = service_account.Credentials.from_service_account_file(creds_path, scopes=scopes)
-        service = build('drive', 'v3', credentials=creds)
+        # This re-uses the internal logic but captures errors for the UI
+        face_vault._authenticate()
+        if not face_vault.service:
+            result["error"] = "Authentication failed (check logs for details)"
+            return result
+        
         result["details"]["auth"] = "success"
-    except Exception as e:
-        result["error"] = f"Authentication failed: {e}"
-        result["details"]["fix"] = "Check that the service account key is valid and not revoked"
-        return result
+        
+        # Check 4: Folder ID is set
+        folder_id = face_vault.drive_folder_id
+        if not folder_id:
+            result["error"] = "GDRIVE_FOLDER_ID not configured in .env"
+            return result
 
-    # Check 5: Folder ID is set
-    folder_id = face_vault.drive_folder_id
-    result["details"]["folder_id"] = folder_id or "not set"
-    if not folder_id:
-        result["error"] = "GDRIVE_FOLDER_ID not configured in .env"
-        result["details"]["fix"] = "Set GDRIVE_FOLDER_ID in .env to your Google Drive folder ID (the long string in the folder URL)"
-        return result
-
-    # Check 6: Can access the folder
-    try:
-        folder_info = service.files().get(fileId=folder_id, fields='id,name').execute()
+        # Check 5: Can access the folder
+        folder_info = face_vault.service.files().get(fileId=folder_id, fields='id,name').execute()
         result["details"]["folder_name"] = folder_info.get("name", "unknown")
         result["details"]["folder_access"] = "success"
-    except Exception as e:
-        result["error"] = f"Cannot access Drive folder: {e}"
-        result["details"]["fix"] = "Share the Google Drive folder with the service account email (Editor access). Find the email in credentials.json under 'client_email'"
+        
+        # All checks passed
+        result["ok"] = True
+        result["message"] = f"Connected! Folder: {result['details']['folder_name']}"
         return result
 
-    # All checks passed
-    result["ok"] = True
-    result["message"] = (
-        f"Google Drive connected! "
-        f"Folder: {result['details']['folder_name']} | "
-        f"Account: {result['details']['service_account_email']}"
-    )
-    return result
+    except Exception as e:
+        result["error"] = f"Drive access test failed: {e}"
+        return result
 
 @router.post("/sync")
 async def sync_now():

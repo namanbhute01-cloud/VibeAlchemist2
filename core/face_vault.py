@@ -10,12 +10,16 @@ from pathlib import Path
 # Google Drive imports — optional (graceful degradation if not installed)
 try:
     from google.oauth2 import service_account
+    from google.oauth2.credentials import Credentials
+    from google.auth.transport.requests import Request
     from googleapiclient.discovery import build
     from googleapiclient.http import MediaFileUpload
     _GDRIVE_AVAILABLE = True
 except ImportError:
     _GDRIVE_AVAILABLE = False
     service_account = None  # type: ignore
+    Credentials = None  # type: ignore
+    Request = None  # type: ignore
     build = None  # type: ignore
     MediaFileUpload = None  # type: ignore
 
@@ -37,7 +41,8 @@ class FaceVault:
         self.temp_dir.mkdir(parents=True, exist_ok=True)
 
         self.drive_folder_id = drive_folder_id or os.getenv("GDRIVE_FOLDER_ID")
-        self.creds_file = credentials_file or os.getenv("GDRIVE_CREDENTIALS_FILE")
+        self.creds_file = credentials_file or os.getenv("GDRIVE_CREDENTIALS_FILE", "credentials.json")
+        self.token_file = os.getenv("GDRIVE_TOKEN_FILE", "token.json")
         self.upload_interval = int(upload_interval)
 
         self.service = None
@@ -45,15 +50,18 @@ class FaceVault:
         self.last_sync = 0
         self.upload_count = 0
 
-        # Start background syncer if credentials exist
-        if self.drive_folder_id and self.creds_file and os.path.exists(self.creds_file):
+        # Start background syncer if credentials or token exist
+        has_creds = self.creds_file and os.path.exists(self.creds_file)
+        has_token = self.token_file and os.path.exists(self.token_file)
+
+        if self.drive_folder_id and (has_creds or has_token):
             self._authenticate()
             threading.Thread(target=self._sync_loop, daemon=True).start()
             logger.info(f"Drive sync configured: every {self.upload_interval}s")
         else:
             logger.warning(
                 "Google Drive credentials not configured. "
-                "Faces saved locally only. Set GDRIVE_FOLDER_ID + credentials.json in .env to enable Drive sync."
+                "Faces saved locally only. Set GDRIVE_FOLDER_ID + credentials.json/token.json to enable Drive sync."
             )
 
     def _authenticate(self):
@@ -61,13 +69,44 @@ class FaceVault:
             logger.warning("Google Drive libraries not installed — Drive sync disabled")
             self.service = None
             return
+        
+        scopes = ['https://www.googleapis.com/auth/drive.file']
+        creds = None
+
         try:
-            scopes = ['https://www.googleapis.com/auth/drive.file']
-            creds = service_account.Credentials.from_service_account_file(self.creds_file, scopes=scopes)
-            self.service = build('drive', 'v3', credentials=creds)
-            logger.info("Connected to Google Drive API.")
+            # 1. Try OAuth2 User Token (from setup-drive.sh)
+            if os.path.exists(self.token_file):
+                try:
+                    creds = Credentials.from_authorized_user_file(self.token_file, scopes)
+                    if creds and creds.expired and creds.refresh_token:
+                        creds.refresh(Request())
+                    logger.info("Drive: Using OAuth2 User credentials (token.json)")
+                except Exception as e:
+                    logger.error(f"Failed to load token.json: {e}")
+                    creds = None
+
+            # 2. Fallback to Service Account (from scripts/setup_drive.sh)
+            if not creds and os.path.exists(self.creds_file):
+                try:
+                    # Check if it's a service account or client secret
+                    import json
+                    with open(self.creds_file) as f:
+                        data = json.load(f)
+                    
+                    if data.get("type") == "service_account":
+                        creds = service_account.Credentials.from_service_account_file(self.creds_file, scopes=scopes)
+                        logger.info("Drive: Using Service Account credentials (credentials.json)")
+                except Exception as e:
+                    logger.error(f"Failed to load service account: {e}")
+
+            if creds:
+                self.service = build('drive', 'v3', credentials=creds)
+                logger.info("Connected to Google Drive API.")
+            else:
+                logger.error("Drive Authentication Failed: No valid credentials found.")
+                self.service = None
         except Exception as e:
-            logger.error(f"Drive Authentication Failed: {e}")
+            logger.error(f"Drive Authentication Error: {e}")
             self.service = None
 
     def save_face(self, face_img, face_id, group, quality=0.0, age=None):
