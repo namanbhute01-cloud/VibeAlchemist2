@@ -4,28 +4,20 @@ import sys
 import asyncio
 import logging
 from pathlib import Path
+from dotenv import load_dotenv
 
-# Absolute project paths
-WORKSPACE_ROOT = Path("/home/naman/VibeAlchemist2")
-VIBEPRO_ROOT = WORKSPACE_ROOT / "vibepro "
-
-# Add vibepro root to sys.path so 'import core.music_downloader' works
-if str(VIBEPRO_ROOT) not in sys.path:
-    sys.path.insert(0, str(VIBEPRO_ROOT))
-
-# Also add WORKSPACE_ROOT to sys.path
-if str(WORKSPACE_ROOT) not in sys.path:
-    sys.path.insert(0, str(WORKSPACE_ROOT))
+# Add the project root (vibepro directory) to sys.path to allow importing core modules
+project_root = Path(__file__).resolve().parent
+sys.path.insert(0, str(project_root))
 
 from core.music_downloader import download_song_sync
-from dotenv import load_dotenv
 
 # Setup basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(levelname)s | %(name)s | %(message)s')
 logger = logging.getLogger(__name__)
 
-# Load environment variables from the .env file in the 'vibepro ' directory
-load_dotenv(VIBEPRO_ROOT / ".env")
+# Load environment variables from .env file in the vibepro directory
+load_dotenv(project_root / ".env")
 
 async def main():
     VIBE_PLAYLISTS = {
@@ -79,22 +71,15 @@ async def main():
         ]
     }
 
-    # Ensure ROOT_MUSIC_DIR is relative to VIBEPRO_ROOT if it's not absolute
-    root_music_dir_env = os.getenv("ROOT_MUSIC_DIR", "./OfflinePlayback")
-    if not os.path.isabs(root_music_dir_env):
-        full_music_path = (VIBEPRO_ROOT / root_music_dir_env).resolve()
-        os.environ["ROOT_MUSIC_DIR"] = str(full_music_path)
-        logger.info(f"Setting ROOT_MUSIC_DIR to: {full_music_path}")
-
     for group, urls in VIBE_PLAYLISTS.items():
         logger.info(f"Downloading songs for group: {group}")
         for url in urls:
             logger.info(f"Attempting to download: {url}")
             result = download_song_sync(url, group)
             if result["status"] == "success":
-                logger.info(f"Successfully downloaded '{result.get('title')}' to {result.get('filename')}")
+                logger.info(f"Successfully downloaded '{result["title"]}' to {result["filename"]}")
             else:
-                logger.error(f"Failed to download {url}: {result.get('message')}")
+                logger.error(f"Failed to download {url}: {result["message"]}")
 
 if __name__ == "__main__":
     asyncio.run(main())
