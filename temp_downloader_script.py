@@ -1,0 +1,86 @@
+
+import os
+import sys
+import asyncio
+import logging
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Explicitly add the project root to the sys.path
+project_root = Path(__file__).resolve().parent
+sys.path.insert(0, str(project_root))
+sys.path.insert(0, str(project_root / "vibepro "))
+
+from vibepro.core.music_downloader import download_song_sync
+
+# Setup basic logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(levelname)s | %(name)s | %(message)s')
+logger = logging.getLogger(__name__)
+
+# Load environment variables. The .env file is inside the 'vibepro ' directory.
+load_dotenv(project_root / "vibepro " / ".env")
+
+async def main():
+    VIBE_PLAYLISTS = {
+        "kids": [
+            "https://www.youtube.com/watch?v=XqZsoesa55w",  # Baby Shark
+            "https://www.youtube.com/watch?v=e_04ZrNroTo",  # Wheels on the Bus
+            "https://www.youtube.com/watch?v=L0MK7qz13bU",  # Let It Go
+            "https://www.youtube.com/watch?v=astISOttCQ0",  # Gummy Bear
+            "https://www.youtube.com/watch?v=bvWRMAU6V-c",  # We Don't Talk About Bruno
+            "https://www.youtube.com/watch?v=E_D2o51_y_g",  # Peppa Pig Theme
+            "https://www.youtube.com/watch?v=5o_shX0_Z_0",  # Minecraft - Wet Hands
+            "https://www.youtube.com/watch?v=kffacxfP7G4",  # Justin Bieber - Baby
+            "https://www.youtube.com/watch?v=f7Bq5Xm7-N0",  # Bluey Theme
+            "https://www.youtube.com/watch?v=AAnH6vE9D6Y"   # Phineas and Ferb
+        ],
+        "youths": [
+            "https://www.youtube.com/watch?v=4NRXx6U8ABQ",  # Blinding Lights
+            "https://www.youtube.com/watch?v=gNi_6U5Pm_o",  # Good 4 U
+            "https://www.youtube.com/watch?v=xpVfcZ0ZcFM",  # God's Plan
+            "https://www.youtube.com/watch?v=Cr8K8SbgfT4",  # Tití Me Preguntó
+            "https://www.youtube.com/watch?v=w-sQRS-Lc9k",  # Murder in My Mind (Phonk)
+            "https://www.youtube.com/watch?v=TUVcZfQe-Kw",  # Levitating
+            "https://www.youtube.com/watch?v=Dst9gZkq1a8",  # Goosebumps
+            "https://www.youtube.com/watch?v=sVTy_wno5as",  # NewJeans - OMG
+            "https://www.youtube.com/watch?v=UTHLKHL_whs",  # Industry Baby
+            "https://www.youtube.com/watch=Iq8h3GEe22o"   # Lovin On Me
+        ],
+        "adults": [
+            "https://www.youtube.com/watch?v=HgzGwKwLmgM",  # Don't Stop Me Now
+            "https://www.youtube.com/watch?v=Y3ywicffOj4",  # Dreams
+            "https://www.youtube.com/watch?v=hTWKbfoikeg",  # Smells Like Teen Spirit
+            "https://www.youtube.com/watch?v=HyHNuVaZJ-k",  # Feel Good Inc
+            "https://www.youtube.com/watch?v=dvgZkm1xWPE",  # Viva La Vida
+            "https://www.youtube.com/watch?v=5NV6Rdv1a3I",  # Get Lucky
+            "https://www.youtube.com/watch?v=_Yhyp-_hX2s",  # Lose Yourself
+            "https://www.youtube.com/watch?v=lDK9QqIzhwk",  # Livin' on a Prayer
+            "https://www.youtube.com/watch?v=gGdGFtwCNBE",  # Mr. Brightside
+            "https://www.youtube.com/watch?v=xwtdhWltSIg"   # Losing My Religion
+        ],
+        "seniors": [
+            "https://www.youtube.com/watch?v=mQR0bXO_yI8",  # Fly Me To The Moon
+            "https://www.youtube.com/watch?v=A_MjCqQoLLA",  # Hey Jude
+            "https://www.youtube.com/watch?v=vGJTaP6anOU",  # Can't Help Falling in Love
+            "https://www.youtube.com/watch?v=6FOUqQt3Kg0",  # Respect
+            "https://www.youtube.com/watch?v=rBrd_3VMC3c",  # What A Wonderful World
+            "https://www.youtube.com/watch?v=OnFlx2Lnr9Q",  # That's Amore
+            "https://www.youtube.com/watch?v=R3rnxQBizoU",  # Gimme Shelter
+            "https://www.youtube.com/watch?v=xP06GiTzNnw",  # Dancing Queen
+            "https://www.youtube.com/watch?v=ylXk1LBvI8U",  # So What
+            "https://www.youtube.com/watch?v=j6TmogXhOZ8"   # Dream A Little Dream of Me
+        ]
+    }
+
+    for group, urls in VIBE_PLAYLISTS.items():
+        logger.info(f"Downloading songs for group: {group}")
+        for url in urls:
+            logger.info(f"Attempting to download: {url}")
+            result = download_song_sync(url, group)
+            if result["status"] == "success":
+                logger.info(f"Successfully downloaded '{result["title"]}' to {result["filename"]}")
+            else:
+                logger.error(f"Failed to download {url}: {result["message"]}")
+
+if __name__ == "__main__":
+    asyncio.run(main())
